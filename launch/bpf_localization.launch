@@ -1,0 +1,7 @@
+<launch>
+    <node   pkg="bpf_localization" 
+            type="bpf_localization" 
+            name="bpf_localization"  
+            output="screen"
+    />
+</launch>
