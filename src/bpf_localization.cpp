@@ -1,3 +1,5 @@
+#define GUARANTED_RESAMPLING
+
 #include <bpf_localization/box_particle_filter.hpp>
 #include <ros/ros.h>
 
@@ -62,6 +64,8 @@ int main(int argc, char **argv)
     measures[0] = Interval(1., 2.);
     measures[1] = Interval(2., 3.);
     bpf.correction(measures);
+
+    bpf.resampling();
 
     ros::init(argc, argv, "bpf_localization");
     ros::NodeHandle nh;

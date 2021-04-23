@@ -182,44 +182,80 @@ class BoxParticleFilter
             return box;
         }
 
+
+        #ifdef MULTINOMIAL_RESAMPLING
+        std::vector<unsigned int> chooseSubdivisions(const std::vector<float>& cumulated_weights)
+        {
+            ROS_INFO_STREAM("Begin multinomial resampling");
+            // Multinomial resampling
+            double ui;
+            unsigned int j;
+            std::default_random_engine generator;
+            std::uniform_real_distribution<double> distribution(0.0,1.0);
+            std::vector<unsigned int> n(cumulated_weights.size(), 0.0);
+            for(unsigned int i = 0; i < N_; ++i)
+            {
+                ui = distribution(generator);
+                j=0;
+                while(ui <= cumulated_weights[j]) j++;
+                n[j-1] += 1;
+            }
+
+            return n;
+        }
+        #endif
+
+        #ifdef GUARANTED_RESAMPLING
+        std::vector<unsigned int> chooseSubdivisions(const std::vector<float>& cumulated_weights)
+        {
+            ROS_INFO_STREAM("Begin guaranted resampling");
+            // Guaranted resampling
+            double ui;
+            unsigned int j;
+            std::default_random_engine generator;
+            std::uniform_real_distribution<double> distribution(0.0,1.0);
+            std::vector<unsigned int> n(cumulated_weights.size(), 0.0);
+            for(unsigned int i = 0; i < N_; ++i)
+            {
+                ui = distribution(generator);
+                j=0;
+                while(ui <= cumulated_weights[j]) j++;
+                n[j-1] += 1;
+            }
+
+            return n;
+        }
+        #endif
+
         void resampling()
         {
+            ROS_INFO_STREAM("Will we resample");
             resampled_boxes_.clear();
             resampled_weights_.clear();
 
             // Check that we need to resample
             double Neff = 0;
-            for(unsigned int i = 0; i < corrected_boxes_.size(); ++i)
-                Neff += 1./pow(corrected_weights_[i], 2);
-            if(Neff < 0.5 * corrected_boxes_.size())
+            for(unsigned int i = 0; i < boxes_.size(); ++i)
+                Neff += 1./pow(weights_[i], 2);
+            if(true)//Neff <= 10 * boxes_.size())
             {
+                ROS_INFO_STREAM("We will resample");
 
                 // Compute cumulated weights
-                std::vector<double> cumulated_weights;
-                cumulated_weights.push_back(corrected_weights_[0]);
-                for(unsigned int i = 1; i < corrected_boxes_.size(); ++i)
-                    cumulated_weights[i] = cumulated_weights[i-1] + corrected_weights_[i];
+                std::vector<float> cumulated_weights;
+                cumulated_weights.push_back(weights_[0]);
+                for(unsigned int i = 1; i < boxes_.size(); ++i)
+                    cumulated_weights.push_back(cumulated_weights[i-1]  
+                                                + weights_[i]);
 
                 // Compute number of subdivisions per boxes
-                // Multinomial resampling
-                double ui;
-                unsigned int j;
-                std::default_random_engine generator;
-                std::uniform_real_distribution<double> distribution(0.0,1.0);
-                std::vector<unsigned int> n(corrected_boxes_.size(), 0.0);
-                for(unsigned int i = 0; i < N_; ++i)
-                {
-                    ui = distribution(generator);
-                    j=0;
-                    while(ui <= cumulated_weights[j]) j++;
-                    n[j-1] += 1;
-                }
+                std::vector<unsigned int> n = chooseSubdivisions(cumulated_weights);
 
                 // Subdivise boxes with ni boxes (delete box if ni=0) 
                 std::vector<IntervalVector> subdivided_box; 
-                for(unsigned int i = 0; i < corrected_boxes_.size(); i++)
+                for(unsigned int i = 0; i < boxes_.size(); i++)
                 {
-                    subdivided_box = subdiviseOverRandomDimensions( corrected_boxes_[i], 
+                    subdivided_box = subdiviseOverRandomDimensions( boxes_[i], 
                                                                     n[i]); 
                     resampled_boxes_.insert(resampled_boxes_.end(), subdivided_box.begin(), 
                                             subdivided_box.end());
@@ -227,11 +263,15 @@ class BoxParticleFilter
 
                 // Reset weights
                 resampled_weights_ = std::vector<float>(N_, 1.0/N_); 
+ 
+                ROS_INFO_STREAM("End resampling");
             }
+            else{ ROS_INFO_STREAM("We don't resample"); }
         }
 
         void correction(const IntervalVector& measures)
         {   
+            ROS_INFO_STREAM("Begin correction");
             innovation_.clear();
             corrected_boxes_.clear();
             corrected_weights_.clear();
@@ -264,5 +304,6 @@ class BoxParticleFilter
                                                         ::value_type(0));
             for(unsigned int i = 0; i < corrected_boxes_.size(); i++)
                 corrected_weights_[i] /= sum_of_weights;
+            ROS_INFO_STREAM("End correction");
         }
 };
