@@ -10,6 +10,7 @@ project(bpf_localization)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
+find_package(GTest REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -116,6 +117,7 @@ catkin_package(
 include_directories(
  include
   ${catkin_INCLUDE_DIRS}
+  ${GTEST_INCLUDE_DIRS}
   #  /usr/local/include/ibex
 )
 
@@ -150,6 +152,7 @@ target_link_libraries(bpf_localization
    /usr/local/lib/libibex.a
    /usr/local/lib/libprim.a
  )
+
 
 #############
 ## Install ##
@@ -198,10 +201,23 @@ target_link_libraries(bpf_localization
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_bpf_localization.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
+catkin_add_gtest(bpf_init_tests_uniformly_choosen_paving tests/bpf_init_tests_uniformly_choosen_paving.cpp)
+if(TARGET bpf_init_tests_uniformly_choosen_paving)
+    target_link_libraries(bpf_init_tests_uniformly_choosen_paving
+        ${catkin_LIBRARIES}
+        /usr/local/lib/libibex.a
+        /usr/local/lib/libprim.a
+    )
+endif()
+
+catkin_add_gtest(bpf_init_tests_uniform_paving tests/bpf_init_tests_uniform_paving.cpp)
+if(TARGET bpf_init_tests_uniformly_choosen_paving)
+    target_link_libraries(bpf_init_tests_uniform_paving
+        ${catkin_LIBRARIES}
+        /usr/local/lib/libibex.a
+        /usr/local/lib/libprim.a
+    )
+endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
