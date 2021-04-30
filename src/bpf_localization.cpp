@@ -8,7 +8,7 @@ class LocalizationBoxParticleFilter: public BoxParticleFilter
     protected:
         void setDynamicalModel()
         {
-            ROS_INFO_STREAM("set dynamics begin");
+            ROS_DEBUG_STREAM("set dynamics begin");
             dynamics_model_ 
                 = new Function(state_variable_, 
                         Return( Interval(1.),
@@ -18,7 +18,7 @@ class LocalizationBoxParticleFilter: public BoxParticleFilter
             measures_model_ = new Function(state_variable_, Return( state_variable_[0],
                                                                     state_variable_[1]
                                                                     +state_variable_[2]));
-            ROS_INFO_STREAM("set dynamics end");
+            ROS_DEBUG_STREAM("set dynamics end");
         }
 
     public:

@@ -94,7 +94,7 @@ class BoxParticleFilter
 
         void initializeBoxes(IntervalVector initial_box)
         {
-            ROS_INFO_STREAM("initialization begin");
+            ROS_DEBUG_STREAM("Uniform paving initialization begin");
             // We choose to subdvise the initial box with equal size boxes (1)
 
             boxes_.clear();
@@ -112,7 +112,7 @@ class BoxParticleFilter
                 }
                 current_boxes_nb = boxes_.size();
             }
-            ROS_INFO_STREAM("initialization end");
+            ROS_DEBUG_STREAM("Uniform paving initialization end");
         }
 
     public:
@@ -144,7 +144,7 @@ class BoxParticleFilter
  
         void prediction(const IntervalVector control, bool ivp=false)
         {
-            ROS_INFO_STREAM("prediction begin");
+            ROS_DEBUG_STREAM("prediction begin");
             predicted_boxes_.clear();
             predicted_weights_.clear();
 
@@ -178,7 +178,7 @@ class BoxParticleFilter
                 delete simu_;
                 problem.yinit = NULL;
             }
-            ROS_INFO_STREAM("prediction end");
+            ROS_DEBUG_STREAM("prediction end");
         }
 
         IntervalVector contract(IntervalVector innovation, IntervalVector& box)
@@ -193,7 +193,7 @@ class BoxParticleFilter
         std::vector<unsigned int> 
             chooseSubdivisions(const std::vector<float>& cumulated_weights)
         {
-            ROS_INFO_STREAM("Begin multinomial resampling");
+            ROS_DEBUG_STREAM("Begin multinomial resampling");
             // Multinomial resampling
             double ui;
             unsigned int j;
@@ -207,6 +207,7 @@ class BoxParticleFilter
                 n[j] += 1;
             }
 
+            ROS_DEBUG_STREAM("End multinomial resampling");
             return n;
         }
         #endif
@@ -215,7 +216,7 @@ class BoxParticleFilter
         std::vector<unsigned int> 
             chooseSubdivisions(const std::vector<float>& cumulated_weights)
         {
-            ROS_INFO_STREAM("Begin guaranted resampling");
+            ROS_DEBUG_STREAM("Begin guaranted resampling");
             // Guaranted resampling
             double ui;
             unsigned int j;
@@ -229,13 +230,14 @@ class BoxParticleFilter
                 n[j] += 1;
             }
 
+            ROS_DEBUG_STREAM("End guaranted resampling");
             return n;
         }
         #endif
 
         void resampling()
         {
-            ROS_INFO_STREAM("Will we resample");
+            ROS_DEBUG_STREAM("Will we resample");
             resampled_boxes_.clear();
             resampled_weights_.clear();
 
@@ -245,7 +247,7 @@ class BoxParticleFilter
                 Neff += 1./pow(weights_[i], 2);
             if(true)//Neff <= 10 * boxes_.size())
             {
-                ROS_INFO_STREAM("We will resample");
+                ROS_DEBUG_STREAM("We will resample");
 
                 // Compute cumulated weights
                 std::vector<float> cumulated_weights;
@@ -270,14 +272,14 @@ class BoxParticleFilter
                 // Reset weights
                 resampled_weights_ = std::vector<float>(N_, 1.0/N_); 
  
-                ROS_INFO_STREAM("End resampling");
+                ROS_DEBUG_STREAM("End resampling");
             }
-            else{ ROS_INFO_STREAM("We don't resample"); }
+            else{ ROS_DEBUG_STREAM("We don't resample"); }
         }
 
         void correction(const IntervalVector& measures)
         {   
-            ROS_INFO_STREAM("Begin correction");
+            ROS_DEBUG_STREAM("Begin correction");
             innovation_.clear();
             corrected_boxes_.clear();
             corrected_weights_.clear();
@@ -310,6 +312,6 @@ class BoxParticleFilter
                                                         ::value_type(0));
             for(unsigned int i = 0; i < corrected_boxes_.size(); i++)
                 corrected_weights_[i] /= sum_of_weights;
-            ROS_INFO_STREAM("End correction");
+            ROS_DEBUG_STREAM("End correction");
         }
 };
