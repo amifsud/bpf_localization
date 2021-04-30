@@ -17,6 +17,9 @@ class BoxParticleFilter
         std::vector<IntervalVector> boxes_;             // boxes
         std::vector<float> weights_;                    // weightis
 
+        //Random
+        std::uniform_real_distribution<double> distribution_;
+
         // Dynamical model
         Variable state_variable_;
         IntervalVector* control_;
@@ -67,6 +70,8 @@ class BoxParticleFilter
                                                                     unsigned int N)
         {
             std::vector<IntervalVector> boxes;
+            std::pair<IntervalVector, IntervalVector> pair
+                = box.bisect(0, 0.5);
             if(N > 1) boxes.push_back(box);
             unsigned int boxes_nb = 1;
             unsigned int direction;
@@ -75,9 +80,9 @@ class BoxParticleFilter
 
             while (boxes_nb < N)
             {
-                direction = rand() % list.size();
-                std::pair<IntervalVector, IntervalVector> pair 
-                    = boxes[0].bisect(direction, 0.5); 
+                std::default_random_engine generator;
+                direction = int(distribution_(generator) * list.size());
+                pair = boxes[0].bisect(direction, 0.5); 
                 boxes.push_back(std::get<0>(pair));
                 boxes.push_back(std::get<1>(pair));
                 boxes.erase(boxes.begin());
@@ -116,7 +121,8 @@ class BoxParticleFilter
                             float dt, IntervalVector& initial_box): 
             weights_(N, 1.0/N), 
             state_variable_(state_size),
-            control_(new IntervalVector(control_size))
+            control_(new IntervalVector(control_size)),
+            distribution_(0.0,1.0)
         {
             dt_         = dt;
             N_          = N;
@@ -184,21 +190,21 @@ class BoxParticleFilter
 
 
         #ifdef MULTINOMIAL_RESAMPLING
-        std::vector<unsigned int> chooseSubdivisions(const std::vector<float>& cumulated_weights)
+        std::vector<unsigned int> 
+            chooseSubdivisions(const std::vector<float>& cumulated_weights)
         {
             ROS_INFO_STREAM("Begin multinomial resampling");
             // Multinomial resampling
             double ui;
             unsigned int j;
-            std::default_random_engine generator;
-            std::uniform_real_distribution<double> distribution(0.0,1.0);
             std::vector<unsigned int> n(cumulated_weights.size(), 0.0);
             for(unsigned int i = 0; i < N_; ++i)
             {
-                ui = distribution(generator);
+                std::default_random_engine generator;
+                ui = distribution_(generator);
                 j=0;
-                while(ui <= cumulated_weights[j]) j++;
-                n[j-1] += 1;
+                while(ui >= cumulated_weights[j]) j++;
+                n[j] += 1;
             }
 
             return n;
@@ -206,21 +212,21 @@ class BoxParticleFilter
         #endif
 
         #ifdef GUARANTED_RESAMPLING
-        std::vector<unsigned int> chooseSubdivisions(const std::vector<float>& cumulated_weights)
+        std::vector<unsigned int> 
+            chooseSubdivisions(const std::vector<float>& cumulated_weights)
         {
             ROS_INFO_STREAM("Begin guaranted resampling");
             // Guaranted resampling
             double ui;
             unsigned int j;
-            std::default_random_engine generator;
-            std::uniform_real_distribution<double> distribution(0.0,1.0);
             std::vector<unsigned int> n(cumulated_weights.size(), 0.0);
             for(unsigned int i = 0; i < N_; ++i)
             {
-                ui = distribution(generator);
+                std::default_random_engine generator;
+                ui = distribution_(generator);
                 j=0;
-                while(ui <= cumulated_weights[j]) j++;
-                n[j-1] += 1;
+                while(ui >= cumulated_weights[j]) j++;
+                n[j] += 1;
             }
 
             return n;
