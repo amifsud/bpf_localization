@@ -1,4 +1,5 @@
 #define GUARANTED_RESAMPLING
+#define UNIFORMLY_CHOOSEN_PAVING_INIT
 
 #include <bpf_localization/box_particle_filter.hpp>
 #include <ros/ros.h>

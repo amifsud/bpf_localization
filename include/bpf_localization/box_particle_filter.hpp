@@ -46,6 +46,7 @@ class BoxParticleFilter
     protected:
         virtual void setDynamicalModel() = 0;
 
+        #ifdef UNIFORM_PAVING_INIT
         std::vector<IntervalVector> subdiviseOverAllDimensions(IntervalVector box, 
                                                             unsigned int dim = 0)
         {
@@ -65,6 +66,7 @@ class BoxParticleFilter
             }
             return vector;
         }
+        #endif
 
         std::vector<IntervalVector> subdiviseOverRandomDimensions(  IntervalVector box, 
                                                                     unsigned int N)
@@ -92,6 +94,7 @@ class BoxParticleFilter
             return boxes;
         }
 
+        #ifdef UNIFORM_PAVING_INIT
         void initializeBoxes(IntervalVector initial_box)
         {
             ROS_DEBUG_STREAM("Uniform paving initialization begin");
@@ -114,6 +117,20 @@ class BoxParticleFilter
             }
             ROS_DEBUG_STREAM("Uniform paving initialization end");
         }
+        #endif
+
+        #ifdef UNIFORMLY_CHOOSEN_PAVING_INIT
+        void initializeBoxes(IntervalVector initial_box)
+        {
+            ROS_DEBUG_STREAM("Uniformly choosen paving initialization begin");
+            // We choose to subdvise the initial box with equal size boxes (1)
+
+            boxes_.clear();
+            boxes_ = subdiviseOverRandomDimensions(initial_box, N_);
+
+            ROS_DEBUG_STREAM("Uniformly choosen paving initialization end");
+        }
+        #endif
 
     public:
         BoxParticleFilter(  unsigned int N, unsigned int state_size, 
