@@ -1,6 +1,9 @@
 #define MULTINOMIAL_RESAMPLING
 #define UNIFORM_PAVING_INIT
+#define LOG_LEVEL Info
 
+#include <stdlib.h>
+#include <ros/console.h>
 #include <gtest/gtest.h>
 #include <bpf_localization/box_particle_filter.hpp>
 
@@ -17,8 +20,8 @@ class LocalizationBoxParticleFilter: public BoxParticleFilter
                                 (*control_)[0]));
 
             measures_model_ = new Function(state_variable_, Return( state_variable_[0],
-                                                                    state_variable_[1]
-                                                                    +state_variable_[2]));
+                                                                    state_variable_[0]
+                                                                    +state_variable_[0]));
             ROS_DEBUG_STREAM("set dynamics end");
         }
 
@@ -40,41 +43,67 @@ class LocalizationBoxParticleFilter: public BoxParticleFilter
 TEST(UniformPavingInitTest, testCase1)
 {
     unsigned int state_size = 6;
-    unsigned int N = pow(pow(2,state_size),2);
+    unsigned int N = pow(pow(2,state_size),1);
     unsigned int control_size = 2;
     float dt = 1.;
     IntervalVector initial_box(state_size);
-    initial_box[0]= Interval(-10.0, 10.0);
-    initial_box[1]= Interval(-10.0, 10.0);
-    initial_box[2]= Interval(-10.0, 10.0);
+    initial_box[0]= Interval(-2.0, 2.0);
+    initial_box[1]= Interval(-2.0, 2.0);
+    initial_box[2]= Interval(-2.0, 2.0);
+    initial_box[3]= Interval(-2.0, 2.0);
+    initial_box[4]= Interval(-2.0, 2.0);
+    initial_box[5]= Interval(-2.0, 2.0);
 
     LocalizationBoxParticleFilter bpf(N, state_size, control_size, dt, initial_box);
+    std::vector<IntervalVector> boxes = bpf.getBoxes(); 
 
-    EXPECT_EQ(N, bpf.getBoxes().size());
+    EXPECT_TRUE(bpf.wellPavedTest(initial_box, boxes))
+        << "boxes not well pave initial box";
+
+    EXPECT_EQ(N, boxes.size()) << "In this test case we should have exactly N boxes";
+
+    bool equal_volume = true;
+    for(unsigned int i = 1; i < boxes.size(); ++i)
+        if(boxes[0].volume() != boxes[i].volume()) equal_volume = false; 
+
+    EXPECT_TRUE(equal_volume) << "Volume of each box should be equal to the others";
 }
 
 // Declare another test
 TEST(UniformPavingInitTest, testCase2)
 {
-    unsigned int state_size = 6;
-    unsigned int N = pow(pow(2,state_size),2)+24;
+    unsigned int state_size = 2;
+    unsigned int N = pow(pow(2,state_size),2) + 10;
     unsigned int control_size = 2;
     float dt = 1.;
     IntervalVector initial_box(state_size);
-    initial_box[0]= Interval(-10.0, 10.0);
-    initial_box[1]= Interval(-10.0, 10.0);
-    initial_box[2]= Interval(-10.0, 10.0);
+    initial_box[0]= Interval(-2.0, 2.0);
+    initial_box[1]= Interval(-2.0, 2.0);
 
     LocalizationBoxParticleFilter bpf(N, state_size, control_size, dt, initial_box);
+    std::vector<IntervalVector> boxes = bpf.getBoxes(); 
 
-    EXPECT_NE(N, bpf.getBoxes().size());
-    EXPECT_EQ(pow(pow(2,state_size),2), bpf.getBoxes().size());
+    EXPECT_TRUE(bpf.wellPavedTest(initial_box, boxes))
+        << "Boxes don't well pave initial box";
+
+    EXPECT_NE(boxes.size(), N);
+    EXPECT_EQ(boxes.size(), pow(pow(2,state_size),2));
+
+    bool equal_volume = true;
+    for(unsigned int i = 1; i < boxes.size(); ++i)
+        if(boxes[0].volume() != boxes[i].volume()) equal_volume = false; 
+
+    EXPECT_TRUE(equal_volume) << "Volume of each box should be equal to the others";
 }
 
 // Run all the tests that were declared with TEST()
-int main(int argc, char **argv){
-  testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "uniform_paving_init_tester");
-  ros::NodeHandle nh;
-  return RUN_ALL_TESTS();
+int main(int argc, char **argv)
+{
+    if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, 
+                ros::console::levels::LOG_LEVEL) ) // LOG_LEVEL defined as macro 
+       ros::console::notifyLoggerLevelsChanged();
+    testing::InitGoogleTest(&argc, argv);
+    ros::init(argc, argv, "uniform_paving_init_tester");
+    ros::NodeHandle nh;
+    return RUN_ALL_TESTS();
 }

@@ -1,5 +1,6 @@
 #define MULTINOMIAL_RESAMPLING
 #define UNIFORMLY_CHOOSEN_PAVING_INIT
+#define LOG_LEVEL Info
 
 #include <gtest/gtest.h>
 #include <bpf_localization/box_particle_filter.hpp>
@@ -37,44 +38,37 @@ class LocalizationBoxParticleFilter: public BoxParticleFilter
 };
 
 // Declare a test
-TEST(UniformlyChoosenInitTest, testCase1)
+TEST(UniformlyChoosenPavingInitTest, testCase1)
 {
     unsigned int state_size = 6;
-    unsigned int N = 12738;
+    unsigned int N = 1234;
     unsigned int control_size = 2;
     float dt = 1.;
     IntervalVector initial_box(state_size);
-    initial_box[0]= Interval(-10.0, 10.0);
-    initial_box[1]= Interval(-10.0, 10.0);
-    initial_box[2]= Interval(-10.0, 10.0);
+    initial_box[0]= Interval(-2.0, 2.0);
+    initial_box[1]= Interval(-2.0, 2.0);
+    initial_box[2]= Interval(-2.0, 2.0);
+    initial_box[3]= Interval(-2.0, 2.0);
+    initial_box[4]= Interval(-2.0, 2.0);
+    initial_box[5]= Interval(-2.0, 2.0);
 
     LocalizationBoxParticleFilter bpf(N, state_size, control_size, dt, initial_box);
+    std::vector<IntervalVector> boxes = bpf.getBoxes(); 
 
-    EXPECT_EQ(N, bpf.getBoxes().size());
-}
+    EXPECT_TRUE(bpf.wellPavedTest(initial_box, boxes))
+        << "boxes not well pave initial box";
 
-// Declare another test
-TEST(UniformlyChoosenInitTest, testCase2)
-{
-    unsigned int state_size = 6;
-    unsigned int N = pow(pow(2,state_size),2)+24;
-    unsigned int control_size = 2;
-    float dt = 1.;
-    IntervalVector initial_box(state_size);
-    initial_box[0]= Interval(-10.0, 10.0);
-    initial_box[1]= Interval(-10.0, 10.0);
-    initial_box[2]= Interval(-10.0, 10.0);
-
-    LocalizationBoxParticleFilter bpf(N, state_size, control_size, dt, initial_box);
-
-    EXPECT_EQ(N, bpf.getBoxes().size());
-    EXPECT_NE(pow(pow(2,state_size),2), bpf.getBoxes().size());
+    EXPECT_EQ(boxes.size(), N) << "In this test case we should have exactly N boxes";
 }
 
 // Run all the tests that were declared with TEST()
-int main(int argc, char **argv){
-  testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "uniformly_choosen_paving_tester");
-  ros::NodeHandle nh;
-  return RUN_ALL_TESTS();
+int main(int argc, char **argv)
+{
+    if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, 
+                ros::console::levels::LOG_LEVEL) ) // LOG_LEVEL defined as macro 
+       ros::console::notifyLoggerLevelsChanged();
+    testing::InitGoogleTest(&argc, argv);
+    ros::init(argc, argv, "uniformly_choosen_paving_tester");
+    ros::NodeHandle nh;
+    return RUN_ALL_TESTS();
 }
