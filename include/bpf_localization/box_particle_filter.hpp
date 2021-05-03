@@ -157,6 +157,47 @@ class BoxParticleFilter
             return boxes_;
         }
  
+        bool wellPavedTest(IntervalVector initial_box, std::vector<IntervalVector> boxes)
+        {
+            bool weak_disjoint = true;
+            bool intersect;
+            double intersect_volume;
+
+            for(unsigned int i = 0; i < boxes.size()-1; ++i)
+            {
+                for(unsigned int u = i+1; u < boxes.size(); ++u)
+                {
+                    intersect = boxes[i].intersects(boxes[u]);
+                    intersect_volume = (boxes[i] & boxes[u]).volume();
+                    weak_disjoint = not intersect | intersect & intersect_volume == 0;
+                    // We could used overlaps function that should give the right side 
+                    // of the OR operator condition, but it seems that it doesn't work
+                    if(!weak_disjoint) break;
+                }
+                if(!weak_disjoint) break;
+            }
+
+            EXPECT_TRUE(weak_disjoint)
+                << "All couple of boxes don't have zero volume intersection";
+
+            IntervalVector reconstructed_initial_box(boxes[0]);
+            double total_volume = boxes[0].volume();
+            for(unsigned int i = 1; i < boxes.size(); ++i)
+            {
+                reconstructed_initial_box = reconstructed_initial_box | boxes[i];
+                total_volume += boxes[i].volume();
+            }
+            bool no_outsiders = reconstructed_initial_box == initial_box;
+            bool volume_equality = std::abs(total_volume - initial_box.volume()) < 1e-10;
+
+            EXPECT_TRUE(no_outsiders)
+                << "There is no sub-box outside the initial one";
+            EXPECT_TRUE(volume_equality) 
+                << "Total reconstructed volume should be equal to the initial one";
+
+            return (no_outsiders & weak_disjoint & volume_equality);
+        }
+
         void prediction(const IntervalVector control, bool ivp=false)
         {
             ROS_DEBUG_STREAM("prediction begin");
