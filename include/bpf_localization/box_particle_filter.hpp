@@ -48,14 +48,14 @@ class BoxParticleFilter
 
         #ifdef UNIFORM_PAVING_INIT
         std::vector<IntervalVector> subdiviseOverAllDimensions(IntervalVector box, 
-                                                            unsigned int dim = 0)
+                                                               unsigned int dim = 0)
         {
             std::vector<IntervalVector> vector, vector_tmp;
-            std::pair<IntervalVector, IntervalVector> pair = box.bisect(dim, 0.5); 
-                // ratio=0.5 because (1)
+            std::pair<IntervalVector, IntervalVector> pair = box.bisect(dim); 
+
             if(dim < state_size_ - 1)
             {
-                vector = subdiviseOverAllDimensions(std::get<0>(pair), dim+1);
+                vector     = subdiviseOverAllDimensions(std::get<0>(pair), dim+1);
                 vector_tmp = subdiviseOverAllDimensions(std::get<1>(pair), dim+1);
                 vector.insert(vector.end(), vector_tmp.begin(), vector_tmp.end()); 
             }
@@ -72,19 +72,16 @@ class BoxParticleFilter
                                                                     unsigned int N)
         {
             std::vector<IntervalVector> boxes;
-            std::pair<IntervalVector, IntervalVector> pair
-                = box.bisect(0, 0.5);
+            std::pair<IntervalVector, IntervalVector> pair = box.bisect(0);
             if(N > 1) boxes.push_back(box);
             unsigned int boxes_nb = 1;
             unsigned int direction;
-            std::vector<int> list(state_size_);
-            std::iota(list.begin(), list.end(), 0);
 
             while (boxes_nb < N)
             {
                 std::default_random_engine generator;
-                direction = int(uniform_distribution_(generator) * list.size());
-                pair = boxes[0].bisect(direction, 0.5); 
+                direction = int(uniform_distribution_(generator) * state_size_);
+                pair = boxes[0].bisect(direction); 
                 boxes.push_back(std::get<0>(pair));
                 boxes.push_back(std::get<1>(pair));
                 boxes.erase(boxes.begin());
@@ -98,7 +95,6 @@ class BoxParticleFilter
         void initializeBoxes(IntervalVector initial_box)
         {
             ROS_DEBUG_STREAM("Uniform paving initialization begin");
-            // We choose to subdvise the initial box with equal size boxes (1)
 
             boxes_.clear();
             boxes_.push_back(initial_box);
