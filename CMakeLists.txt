@@ -211,7 +211,7 @@ if(TARGET bpf_init_tests_uniformly_choosen_paving)
 endif()
 
 catkin_add_gtest(bpf_init_tests_uniform_paving tests/bpf_init_tests_uniform_paving.cpp)
-if(TARGET bpf_init_tests_uniformly_choosen_paving)
+if(TARGET bpf_init_tests_uniform_paving)
     target_link_libraries(bpf_init_tests_uniform_paving
         ${catkin_LIBRARIES}
         /usr/local/lib/libibex.a
