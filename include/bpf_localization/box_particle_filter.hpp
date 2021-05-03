@@ -138,15 +138,16 @@ class BoxParticleFilter
             control_(new IntervalVector(control_size)),
             uniform_distribution_(0.0,1.0)
         {
-            dt_         = dt;
+            ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
+            ROS_ASSERT_MSG(state_size == initial_box.size(), 
+                    "State size and initial box size not consistent");
+
             N_          = N;
             state_size_ = state_size;
 
+            dt_         = dt;
             integration_method_ = RK4;
             precision_ = 1e-6;
-
-            if(state_size != initial_box.size()) 
-                ROS_ERROR("wrong intial box size, different than state size");
 
             initializeBoxes(initial_box);
         }
