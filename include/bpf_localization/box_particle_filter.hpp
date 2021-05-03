@@ -73,9 +73,10 @@ class BoxParticleFilter
         {
             std::vector<IntervalVector> boxes;
             std::pair<IntervalVector, IntervalVector> pair = box.bisect(0);
-            if(N > 1) boxes.push_back(box);
             unsigned int boxes_nb = 1;
             unsigned int direction;
+
+            boxes.push_back(box);
 
             while (boxes_nb < N)
             {
