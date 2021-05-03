@@ -18,7 +18,7 @@ class BoxParticleFilter
         std::vector<float> weights_;                    // weightis
 
         //Random
-        std::uniform_real_distribution<double> distribution_;
+        std::uniform_real_distribution<double> uniform_distribution_;
 
         // Dynamical model
         Variable state_variable_;
@@ -83,7 +83,7 @@ class BoxParticleFilter
             while (boxes_nb < N)
             {
                 std::default_random_engine generator;
-                direction = int(distribution_(generator) * list.size());
+                direction = int(uniform_distribution_(generator) * list.size());
                 pair = boxes[0].bisect(direction, 0.5); 
                 boxes.push_back(std::get<0>(pair));
                 boxes.push_back(std::get<1>(pair));
@@ -139,7 +139,7 @@ class BoxParticleFilter
             weights_(N, 1.0/N), 
             state_variable_(state_size),
             control_(new IntervalVector(control_size)),
-            distribution_(0.0,1.0)
+            uniform_distribution_(0.0,1.0)
         {
             dt_         = dt;
             N_          = N;
@@ -218,7 +218,7 @@ class BoxParticleFilter
             for(unsigned int i = 0; i < N_; ++i)
             {
                 std::default_random_engine generator;
-                ui = distribution_(generator);
+                ui = uniform_distribution_(generator);
                 j=0;
                 while(ui >= cumulated_weights[j]) j++;
                 n[j] += 1;
@@ -241,7 +241,7 @@ class BoxParticleFilter
             for(unsigned int i = 0; i < N_; ++i)
             {
                 std::default_random_engine generator;
-                ui = distribution_(generator);
+                ui = uniform_distribution_(generator);
                 j=0;
                 while(ui >= cumulated_weights[j]) j++;
                 n[j] += 1;
