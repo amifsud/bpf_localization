@@ -1,6 +1,5 @@
-#define MULTINOMIAL_RESAMPLING
-#define UNIFORMLY_CHOOSEN_PAVING_INIT
 #define LOG_LEVEL Info
+//#define INIT_METHOD    0
 
 #include <gtest/gtest.h>
 #include <bpf_localization/box_particle_filter.hpp>

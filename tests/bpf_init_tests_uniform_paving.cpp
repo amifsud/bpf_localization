@@ -1,6 +1,5 @@
-#define MULTINOMIAL_RESAMPLING
-#define UNIFORM_PAVING_INIT
 #define LOG_LEVEL Info
+#define INIT_METHOD     1
 
 #include <stdlib.h>
 #include <ros/console.h>

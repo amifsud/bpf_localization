@@ -5,7 +5,25 @@
 #include <numeric>
 #include <random>
 
-#ifdef UNIFORM_PAVING_INIT
+/*** Available algos ***/
+// Init
+//  * uniformly choosen : 0
+//  * uniform           : 1
+// Resampling
+//  * multinomial       : 0
+//  * guaranted         : 1
+
+/*** Defaults algos versions ***/
+#ifndef RESAMPLING_METHOD
+    #define RESAMPLING_METHOD   0
+#endif
+
+#ifndef INIT_METHOD
+    #define INIT_METHOD         0
+#endif
+
+/*** Algos dependencies ***/
+#if INIT_METHOD == 1
     #define SUBDIVISE_OVER_ALL_DIMENSIONS
 #endif
 
@@ -267,7 +285,23 @@ class BoxParticleFilter
 
         /*** Paving ***/
 
-        #ifdef UNIFORM_PAVING_INIT
+        #if INIT_METHOD == 0
+        void initializeBoxes(IntervalVector initial_box)
+        {
+            ROS_DEBUG_STREAM("Uniformly choosen paving initialization begin");
+            // We choose to subdvise the initial box with equal size boxes (1)
+
+            Particles* particles = getParticlesPtr();
+            particles->clear();
+            particles->append(initial_box, 1.);
+            particles->subdivise(0, N_);
+            particles->resetWeightsUniformly();
+
+            ROS_DEBUG_STREAM("Uniformly choosen paving initialization end");
+        }
+        #endif
+
+        #if INIT_METHOD == 1
         void initializeBoxes(IntervalVector initial_box)
         {
             ROS_DEBUG_STREAM("Uniform paving initialization begin");
@@ -291,22 +325,6 @@ class BoxParticleFilter
         }
         #endif
 
-        #ifdef UNIFORMLY_CHOOSEN_PAVING_INIT
-        void initializeBoxes(IntervalVector initial_box)
-        {
-            ROS_DEBUG_STREAM("Uniformly choosen paving initialization begin");
-            // We choose to subdvise the initial box with equal size boxes (1)
-
-            Particles* particles = getParticlesPtr();
-            particles->clear();
-            particles->append(initial_box, 1.);
-            particles->subdivise(0, N_);
-            particles->resetWeightsUniformly();
-
-            ROS_DEBUG_STREAM("Uniformly choosen paving initialization end");
-        }
-        #endif
-
         /*** Contraction ***/
 
         IntervalVector contract(IntervalVector innovation, IntervalVector box)
@@ -318,7 +336,7 @@ class BoxParticleFilter
 
         /*** Resampling ***/
 
-        #ifdef MULTINOMIAL_RESAMPLING
+        #if RESAMPLING_METHOD == 0
         std::vector<unsigned int> 
             chooseSubdivisions(const std::vector<float>& cumulated_weights)
         {
@@ -341,7 +359,7 @@ class BoxParticleFilter
         }
         #endif
 
-        #ifdef GUARANTED_RESAMPLING
+        #if RESAMPLING_METHOD == 1
         std::vector<unsigned int> 
             chooseSubdivisions(const std::vector<float>& cumulated_weights)
         {
