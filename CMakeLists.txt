@@ -200,10 +200,18 @@ target_link_libraries(bpf_localization
 ## Testing ##
 #############
 
-## Add gtest based cpp test target and link libraries
-catkin_add_gtest(bpf_init_tests_uniformly_choosen_paving tests/bpf_init_tests_uniformly_choosen_paving.cpp)
-if(TARGET bpf_init_tests_uniformly_choosen_paving)
-    target_link_libraries(bpf_init_tests_uniformly_choosen_paving
+catkin_add_gtest(bpf_particles_tests_uniform_paving tests/bpf_particles_tests_uniform_paving.cpp)
+if(TARGET bpf_particles_tests_uniform_paving)
+    target_link_libraries(bpf_particles_tests_uniform_paving
+        ${catkin_LIBRARIES}
+        /usr/local/lib/libibex.a
+        /usr/local/lib/libprim.a
+    )
+endif()
+
+catkin_add_gtest(bpf_particles_tests_uniformly_choosen_paving tests/bpf_particles_tests_uniformly_choosen_paving.cpp)
+if(TARGET bpf_particles_tests_uniformly_choosen_paving)
+    target_link_libraries(bpf_particles_tests_uniformly_choosen_paving
         ${catkin_LIBRARIES}
         /usr/local/lib/libibex.a
         /usr/local/lib/libprim.a
@@ -213,6 +221,15 @@ endif()
 catkin_add_gtest(bpf_init_tests_uniform_paving tests/bpf_init_tests_uniform_paving.cpp)
 if(TARGET bpf_init_tests_uniform_paving)
     target_link_libraries(bpf_init_tests_uniform_paving
+        ${catkin_LIBRARIES}
+        /usr/local/lib/libibex.a
+        /usr/local/lib/libprim.a
+    )
+endif()
+
+catkin_add_gtest(bpf_init_tests_uniformly_choosen_paving tests/bpf_init_tests_uniformly_choosen_paving.cpp)
+if(TARGET bpf_init_tests_uniformly_choosen_paving)
+    target_link_libraries(bpf_init_tests_uniformly_choosen_paving
         ${catkin_LIBRARIES}
         /usr/local/lib/libibex.a
         /usr/local/lib/libprim.a

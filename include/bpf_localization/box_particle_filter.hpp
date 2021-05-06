@@ -136,6 +136,16 @@ class Particles: public std::vector<Particle>
         }
 
     public:
+        /*** Constructors ***/
+
+        Particles(std::vector<Particle> particles): std::vector<Particle>(particles)
+        {
+        }
+
+        Particles(): std::vector<Particle>()
+        {
+        }
+
         /*** Weight processing **/
 
         void resetWeightsUniformly()
