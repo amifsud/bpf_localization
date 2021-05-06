@@ -55,16 +55,16 @@ TEST(UniformPavingInitTest, testCase1)
     initial_box[5]= Interval(-2.0, 2.0);
 
     LocalizationBoxParticleFilter bpf(N, state_size, control_size, dt, initial_box);
-    std::vector<IntervalVector> boxes = bpf.getBoxes(); 
+    Particles particles = bpf.getParticles(); 
 
-    EXPECT_TRUE(bpf.wellPavedTest(initial_box, boxes))
+    EXPECT_TRUE(particles.wellPavedTest(initial_box))
         << "boxes not well pave initial box";
 
-    EXPECT_EQ(N, boxes.size()) << "In this test case we should have exactly N boxes";
+    EXPECT_EQ(N, particles.size()) << "In this test case we should have exactly N boxes";
 
     bool equal_volume = true;
-    for(unsigned int i = 1; i < boxes.size(); ++i)
-        if(boxes[0].volume() != boxes[i].volume()) equal_volume = false; 
+    for(unsigned int i = 1; i < particles.size(); ++i)
+        if(particles[0].box_.volume() != particles[i].box_.volume()) equal_volume = false; 
 
     EXPECT_TRUE(equal_volume) << "Volume of each box should be equal to the others";
 }
@@ -81,17 +81,17 @@ TEST(UniformPavingInitTest, testCase2)
     initial_box[1]= Interval(-2.0, 2.0);
 
     LocalizationBoxParticleFilter bpf(N, state_size, control_size, dt, initial_box);
-    std::vector<IntervalVector> boxes = bpf.getBoxes(); 
+    Particles particles = bpf.getParticles(); 
 
-    EXPECT_TRUE(bpf.wellPavedTest(initial_box, boxes))
+    EXPECT_TRUE(particles.wellPavedTest(initial_box))
         << "Boxes don't well pave initial box";
 
-    EXPECT_NE(boxes.size(), N);
-    EXPECT_EQ(boxes.size(), pow(pow(2,state_size),2));
+    EXPECT_NE(particles.size(), N);
+    EXPECT_EQ(particles.size(), pow(pow(2,state_size),2));
 
     bool equal_volume = true;
-    for(unsigned int i = 1; i < boxes.size(); ++i)
-        if(boxes[0].volume() != boxes[i].volume()) equal_volume = false; 
+    for(unsigned int i = 1; i < particles.size(); ++i)
+        if(particles[0].box_.volume() != particles[i].box_.volume()) equal_volume = false; 
 
     EXPECT_TRUE(equal_volume) << "Volume of each box should be equal to the others";
 }

@@ -5,172 +5,168 @@
 #include <numeric>
 #include <random>
 
+#ifdef UNIFORM_PAVING_INIT
+    #define SUBDIVISE_OVER_ALL_DIMENSIONS
+#endif
+
 using namespace ibex;
 
-class BoxParticleFilter
+enum BOXES_TYPE{PREDICTION, CORRECTION, RESAMPLING, DEFAULT};
+
+class Particle
 {
     protected:
-        unsigned int N_;                                // Number of particles
-        unsigned int state_size_;                       // size of the boxes aka stat size
-        float dt_;                                      // time step
-
-        std::vector<IntervalVector> boxes_;             // boxes
-        std::vector<float> weights_;                    // weightis
-
-        //Random
+        // Random
         std::uniform_real_distribution<double> uniform_distribution_;
 
-        // Dynamical model
-        Variable state_variable_;
-        IntervalVector* control_;
-        Function* dynamics_model_;
-        Function* measures_model_;
+        // For subdivisions
+        std::vector<Particle> boxes, boxes_tmp;
+        std::pair<IntervalVector, IntervalVector> pair;
+        unsigned int direction;
 
-        // Prediction
-        std::vector<IntervalVector> predicted_boxes_;
-        std::vector<float> predicted_weights_;       
-        Method integration_method_;
-        double precision_;
-        simulation* simu_;
-
-        // Correction
-        std::vector<IntervalVector> innovation_;
-        std::vector<IntervalVector> corrected_boxes_;
-        std::vector<float> corrected_weights_;
-
-        // Resampling
-        bool resampled_;
-        std::vector<IntervalVector> resampled_boxes_;
-        std::vector<float> resampled_weights_;
-
+    public:
+        IntervalVector box_;
+        float weight_;
+ 
     protected:
-        virtual void setDynamicalModel() = 0;
+        /*** Boxes processing ***/
 
-        #ifdef UNIFORM_PAVING_INIT
-        std::vector<IntervalVector> subdiviseOverAllDimensions(IntervalVector box, 
-                                                               unsigned int dim = 0)
+        #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
+        std::vector<Particle> subdiviseOverAllDimensions(unsigned int dim = 0)
         {
-            std::vector<IntervalVector> vector, vector_tmp;
-            std::pair<IntervalVector, IntervalVector> pair = box.bisect(dim); 
+            boxes.clear();
+            boxes_tmp.clear();
 
-            if(dim < state_size_ - 1)
+            //pair = this->box_.bisect(dim); 
+
+            if(dim < this->box_.size() - 1)
             {
-                vector     = subdiviseOverAllDimensions(std::get<0>(pair), dim+1);
-                vector_tmp = subdiviseOverAllDimensions(std::get<1>(pair), dim+1);
-                vector.insert(vector.end(), vector_tmp.begin(), vector_tmp.end()); 
+                boxes = Particle(std::get<0>(pair), this->weight_/2.)
+                    .subdiviseOverAllDimensions(dim+1);
+                boxes_tmp = Particle(std::get<1>(pair), this->weight_/2.)
+                    .subdiviseOverAllDimensions(dim+1);;
+                boxes.insert(boxes.end(), boxes_tmp.begin(), boxes_tmp.end()); 
             }
             else
             {
-                vector.push_back(std::get<0>(pair));
-                vector.push_back(std::get<1>(pair));
+                boxes.push_back(Particle(std::get<0>(pair), this->weight_/2.));
+                boxes.push_back(Particle(std::get<1>(pair), this->weight_/2.));
             }
-            return vector;
+            return boxes;
         }
         #endif
 
-        std::vector<IntervalVector> subdiviseOverRandomDimensions(  IntervalVector box, 
-                                                                    unsigned int N)
+        std::vector<Particle> subdiviseOverRandomDimensions(unsigned int N)
         {
-            std::vector<IntervalVector> boxes;
-            std::pair<IntervalVector, IntervalVector> pair = box.bisect(0);
-            unsigned int boxes_nb = 1;
-            unsigned int direction;
+            boxes.clear();
+            boxes.push_back(*this);
 
-            boxes.push_back(box);
-
-            while (boxes_nb < N)
+            while (boxes.size() < N)
             {
                 std::default_random_engine generator;
-                direction = int(uniform_distribution_(generator) * state_size_);
-                pair = boxes[0].bisect(direction); 
-                boxes.push_back(std::get<0>(pair));
-                boxes.push_back(std::get<1>(pair));
+                direction = int(uniform_distribution_(generator) * this->box_.size());
+                pair = boxes[0].box_.bisect(direction, 0.5); 
+                boxes.push_back(Particle(std::get<0>(pair), boxes[0].weight_/2.));
+                boxes.push_back(Particle(std::get<1>(pair), boxes[0].weight_/2.));
                 boxes.erase(boxes.begin());
-			    boxes_nb += 1;
             }
 
             return boxes;
         }
 
-        #ifdef UNIFORM_PAVING_INIT
-        void initializeBoxes(IntervalVector initial_box)
+    public:
+        Particle(IntervalVector box, const double weight): 
+            box_(box),
+            weight_(weight),
+            pair(box.bisect(0))
         {
-            ROS_DEBUG_STREAM("Uniform paving initialization begin");
+        }
 
-            boxes_.clear();
-            boxes_.push_back(initial_box);
-            unsigned int current_boxes_nb = 1;
-            std::vector<IntervalVector> vector_tmp;
+        std::vector<Particle> subdivise(unsigned int N = 0, bool force_random = false)
+        {
+            std::vector<Particle> particles;
 
-            while(current_boxes_nb*pow(2,state_size_) <= N_)
+            if(!force_random)
             {
-                for(unsigned int box_i = 0; box_i < current_boxes_nb; ++box_i)
-                {
-                    vector_tmp = subdiviseOverAllDimensions(boxes_[0]);
-                    boxes_.insert(boxes_.end(), vector_tmp.begin(), vector_tmp.end());
-                    boxes_.erase(boxes_.begin());
-                }
-                current_boxes_nb = boxes_.size();
+                #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
+                particles = subdiviseOverAllDimensions();
+                #else
+                particles = subdiviseOverRandomDimensions(N);
+                #endif
             }
-            ROS_DEBUG_STREAM("Uniform paving initialization end");
-        }
-        #endif
+            else
+            {
+                particles = subdiviseOverRandomDimensions(N);
+            }
 
-        #ifdef UNIFORMLY_CHOOSEN_PAVING_INIT
-        void initializeBoxes(IntervalVector initial_box)
+            return particles;
+        }
+};
+
+class Particles: public std::vector<Particle>
+{
+    protected:
+        /*** Weights processing ***/
+
+        float sumOfWeights()
         {
-            ROS_DEBUG_STREAM("Uniformly choosen paving initialization begin");
-            // We choose to subdvise the initial box with equal size boxes (1)
-
-            boxes_.clear();
-            boxes_ = subdiviseOverRandomDimensions(initial_box, N_);
-
-            ROS_DEBUG_STREAM("Uniformly choosen paving initialization end");
+            float sum = 0;
+            for(auto it= this->begin(); it != this->end(); it++)
+                sum += it->weight_;
+            return sum;
         }
-        #endif
 
     public:
-        BoxParticleFilter(  unsigned int N, unsigned int state_size, 
-                            unsigned int control_size,
-                            float dt, IntervalVector& initial_box): 
-            weights_(N, 1.0/N), 
-            state_variable_(state_size),
-            control_(new IntervalVector(control_size)),
-            uniform_distribution_(0.0,1.0)
+        /*** Weight processing **/
+
+        void resetWeightsUniformly()
         {
-            ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
-            ROS_ASSERT_MSG(state_size == initial_box.size(), 
-                    "State size and initial box size not consistent");
-
-            N_          = N;
-            state_size_ = state_size;
-
-            dt_         = dt;
-            integration_method_ = RK4;
-            precision_ = 1e-6;
-
-            initializeBoxes(initial_box);
+            for(auto it = this->begin(); it != this->end(); it++)
+                it->weight_ = 1./this->size();
         }
 
-        std::vector<IntervalVector> getBoxes()
+        std::vector<float> getCumulatedWeights()
         {
-            return boxes_;
+            std::vector<float> cumulated_weights;
+            cumulated_weights.push_back(this->begin()->weight_);
+            unsigned int i = 0;
+            for(auto it= this->begin()+1; it != this->end(); it++, ++i)
+                cumulated_weights.push_back(cumulated_weights[i]  
+                                            + it->weight_);
+            return cumulated_weights;
         }
- 
-        bool wellPavedTest(IntervalVector initial_box, std::vector<IntervalVector> boxes)
+
+        void weigthsNormalization()
+        {
+            float sum_of_weights = sumOfWeights();
+            for(auto it= this->begin(); it != this->end(); it++)
+                it->weight_ /= sum_of_weights;
+        }
+
+        /*** Boxes processing **/
+
+        void subdivise(unsigned int i, unsigned int N = 0, bool force_random = false)
+        {
+            this->append(this->operator[](i).subdivise(N, force_random));
+            this->erase(this->begin());
+        }
+
+        /*** Testing ***/
+
+        bool wellPavedTest(IntervalVector initial_box)
         {
             bool weak_disjoint = true;
             bool intersect;
             double intersect_volume;
 
-            for(unsigned int i = 0; i < boxes.size()-1; ++i)
+            for(auto it= this->begin(); it != this->end()-1; it++)
             {
-                for(unsigned int u = i+1; u < boxes.size(); ++u)
+                for(auto it1 = it+1; it1 != this->end(); it1++)
                 {
-                    intersect = boxes[i].intersects(boxes[u]);
-                    intersect_volume = (boxes[i] & boxes[u]).volume();
+                    intersect = it->box_.intersects(it1->box_);
+                    intersect_volume = (it->box_ & it1->box_).volume();
                     weak_disjoint = not intersect | intersect & intersect_volume == 0;
-                    // We could used overlaps function that should give the right side 
+                    // We could use overlaps function that should give the right side 
                     // of the OR operator condition, but it seems that it doesn't work
                     if(!weak_disjoint) break;
                 }
@@ -180,12 +176,12 @@ class BoxParticleFilter
             EXPECT_TRUE(weak_disjoint)
                 << "All couple of boxes don't have zero volume intersection";
 
-            IntervalVector reconstructed_initial_box(boxes[0]);
-            double total_volume = boxes[0].volume();
-            for(unsigned int i = 1; i < boxes.size(); ++i)
+            IntervalVector reconstructed_initial_box(this->begin()->box_);
+            double total_volume = this->begin()->box_.volume();
+            for(auto it = this->begin()+1; it != this->end(); it++)
             {
-                reconstructed_initial_box = reconstructed_initial_box | boxes[i];
-                total_volume += boxes[i].volume();
+                reconstructed_initial_box = reconstructed_initial_box | it->box_;
+                total_volume += it->box_.volume();
             }
             bool no_outsiders = reconstructed_initial_box == initial_box;
             bool volume_equality = std::abs(total_volume - initial_box.volume()) < 1e-10;
@@ -198,52 +194,129 @@ class BoxParticleFilter
             return (no_outsiders & weak_disjoint & volume_equality);
         }
 
-        void prediction(const IntervalVector control, bool ivp=false)
+        /*** Appending ***/
+
+        void append(std::vector<Particle> particles)
         {
-            ROS_DEBUG_STREAM("prediction begin");
-            predicted_boxes_.clear();
-            predicted_weights_.clear();
-
-            *control_ = control;
-
-            ivp_ode problem = ivp_ode(*dynamics_model_, 0.0, IntervalVector(state_size_));
-
-            IntervalVector predicted_box = IntervalVector(state_size_);
-
-            for(unsigned int i = 0; i < boxes_.size(); ++i)
-            {
-                if(ivp)
-                {
-                    problem.yinit = &boxes_[i];
-                    delete simu_;
-                    simu_ = new simulation(&problem, dt_, integration_method_, precision_);
-                    simu_->run_simulation();
-                    predicted_box = simu_->get_last();
-                }
-                else
-                {
-                    predicted_box = dynamics_model_->eval_vector(boxes_[i]);
-                }
-
-                predicted_boxes_.push_back(predicted_box);
-                predicted_weights_.push_back(weights_[i]);
-            }
-
-            if(ivp)
-            {
-                delete simu_;
-                problem.yinit = NULL;
-            }
-            ROS_DEBUG_STREAM("prediction end");
+            this->insert(this->end(), particles.begin(), particles.end());
         }
 
-        IntervalVector contract(IntervalVector innovation, IntervalVector& box)
+        void append(std::vector<IntervalVector> boxes, double weight)
+        {
+            append(boxes, std::vector<double>(boxes.size(), weight));
+        }
+
+        void append(std::vector<IntervalVector> boxes, std::vector<double> weights)
+        {
+            for(unsigned int i = 0; i < boxes.size(); ++i)
+                this->append(boxes[i], weights[i]);
+        }
+
+        void append(const IntervalVector box_in, const double weight_in)
+        {
+            this->insert(this->end(), Particle(box_in, weight_in));
+        }
+};
+
+class BoxParticleFilter
+{
+    protected:
+        unsigned int N_;                                // Number of particles
+        unsigned int state_size_;                       // size of the boxes aka stat size
+        float dt_;                                      // time step
+
+        Particles particles_;
+
+        //Random
+        std::uniform_real_distribution<double> uniform_distribution_;
+
+        // Dynamical model
+        Variable state_variable_;
+        IntervalVector* control_;
+        Function* dynamics_model_;
+        Function* measures_model_;
+
+        // Prediction
+        Particles predicted_particles_;
+        Method integration_method_;
+        double precision_;
+        simulation* simu_;
+
+        // Correction
+        Particles corrected_particles_;
+        std::vector<IntervalVector> innovation_;
+
+        // Resampling
+        Particles resampled_particles_;
+        bool resampled_;
+
+    protected:
+        virtual void setDynamicalModel() = 0;
+ 
+        Particles* getParticlesPtr(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT)
+        {
+            switch(boxes_type)
+            {
+                case DEFAULT:    return &particles_;           break;
+                case PREDICTION: return &predicted_particles_; break;
+                case CORRECTION: return &corrected_particles_; break;
+                case RESAMPLING: return &resampled_particles_; break;
+                default: ASSERT("Wrong specified boxes type");
+            }
+        }
+
+        /*** Paving ***/
+
+        #ifdef UNIFORM_PAVING_INIT
+        void initializeBoxes(IntervalVector initial_box)
+        {
+            ROS_DEBUG_STREAM("Uniform paving initialization begin");
+
+            Particles* particles = getParticlesPtr();
+            particles->clear();
+            particles->append(initial_box, 1.);
+
+            unsigned int current_particles_nb = 1;
+
+            while(current_particles_nb*pow(2,state_size_) <= N_)
+            {
+                for(unsigned int box_i = 0; box_i < current_particles_nb; ++box_i)
+                    particles->subdivise(0, state_size_);
+                current_particles_nb = particles->size();
+            }
+
+            particles->resetWeightsUniformly();
+
+            ROS_DEBUG_STREAM("Uniform paving initialization end");
+        }
+        #endif
+
+        #ifdef UNIFORMLY_CHOOSEN_PAVING_INIT
+        void initializeBoxes(IntervalVector initial_box)
+        {
+            ROS_DEBUG_STREAM("Uniformly choosen paving initialization begin");
+            // We choose to subdvise the initial box with equal size boxes (1)
+
+            Particles* particles = getParticlesPtr();
+            particles->clear();
+            particles->append(initial_box, 1.);
+            particles->subdivise(0, N_);
+            particles->resetWeightsUniformly();
+
+            ROS_DEBUG_STREAM("Uniformly choosen paving initialization end");
+        }
+        #endif
+
+        /*** Contraction ***/
+
+        IntervalVector contract(IntervalVector innovation, IntervalVector box)
         {
             // Use a contractor to found the box subset that give the innovation 
             // (i.e. (predicted measure)s & (measures)) by the measures dynamics
             return box;
         }
 
+        /*** Resampling ***/
 
         #ifdef MULTINOMIAL_RESAMPLING
         std::vector<unsigned int> 
@@ -291,83 +364,136 @@ class BoxParticleFilter
         }
         #endif
 
-        void resampling()
+        void resampling(BOXES_TYPE boxes_type = BOXES_TYPE::CORRECTION)
         {
             ROS_DEBUG_STREAM("Will we resample");
-            resampled_boxes_.clear();
-            resampled_weights_.clear();
+            Particles* particles = getParticlesPtr(boxes_type);
+            resampled_particles_.clear();
 
             // Check that we need to resample
             double Neff = 0;
-            for(unsigned int i = 0; i < boxes_.size(); ++i)
-                Neff += 1./pow(weights_[i], 2);
-            if(true)//Neff <= 10 * boxes_.size())
+            for(unsigned int i = 0; i < particles->size(); ++i)
+                Neff += 1./pow((*particles)[i].weight_, 2);
+            if(Neff <= 10 * particles->size())
             {
                 ROS_DEBUG_STREAM("We will resample");
 
-                // Compute cumulated weights
-                std::vector<float> cumulated_weights;
-                cumulated_weights.push_back(weights_[0]);
-                for(unsigned int i = 1; i < boxes_.size(); ++i)
-                    cumulated_weights.push_back(cumulated_weights[i-1]  
-                                                + weights_[i]);
-
                 // Compute number of subdivisions per boxes
-                std::vector<unsigned int> n = chooseSubdivisions(cumulated_weights);
+                std::vector<unsigned int> n 
+                    = chooseSubdivisions(particles->getCumulatedWeights());
 
                 // Subdivise boxes with ni boxes (delete box if ni=0) 
-                std::vector<IntervalVector> subdivided_box; 
-                for(unsigned int i = 0; i < boxes_.size(); i++)
-                {
-                    subdivided_box = subdiviseOverRandomDimensions( boxes_[i], 
-                                                                    n[i]); 
-                    resampled_boxes_.insert(resampled_boxes_.end(), subdivided_box.begin(), 
-                                            subdivided_box.end());
-                }
+                unsigned int i = 0;
+                for(auto it = particles->begin(); it == particles->end(); it++, i++)
+                    resampled_particles_.append(it->subdivise(n[i], true));
 
-                // Reset weights
-                resampled_weights_ = std::vector<float>(N_, 1.0/N_); 
- 
                 ROS_DEBUG_STREAM("End resampling");
             }
             else{ ROS_DEBUG_STREAM("We don't resample"); }
         }
 
-        void correction(const IntervalVector& measures)
+    public:
+        /*** Box particle filter steps ***/
+
+        BoxParticleFilter(  unsigned int N, unsigned int state_size, 
+                            unsigned int control_size,
+                            float dt, IntervalVector& initial_box): 
+            state_variable_(state_size),
+            control_(new IntervalVector(control_size)),
+            uniform_distribution_(0.0,1.0)
+        {
+            ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
+            ROS_ASSERT_MSG(state_size == initial_box.size(), 
+                    "State size and initial box size not consistent");
+
+            N_          = N;
+            state_size_ = state_size;
+
+            dt_         = dt;
+            integration_method_ = RK4;
+            precision_ = 1e-6;
+
+            initializeBoxes(initial_box);
+        }
+
+        void prediction(const IntervalVector control, 
+                        BOXES_TYPE input_boxes_type = BOXES_TYPE::DEFAULT, 
+                        bool ivp=false)
+        {
+            ROS_DEBUG_STREAM("prediction begin");
+            Particles* particles = getParticlesPtr(input_boxes_type);
+            predicted_particles_.clear();
+
+            *control_ = control;
+
+            ivp_ode problem = ivp_ode(*dynamics_model_, 0.0, IntervalVector(state_size_));
+
+            IntervalVector predicted_box = IntervalVector(state_size_);
+
+            for(auto it = particles->begin(); it == particles->end(); it++)
+            {
+                if(ivp)
+                {
+                    problem.yinit = &(it->box_);
+                    delete simu_;
+                    simu_ = new simulation(&problem, dt_, integration_method_, precision_);
+                    simu_->run_simulation();
+                    predicted_box = simu_->get_last();
+                }
+                else
+                {
+                    predicted_box = dynamics_model_->eval_vector(it->box_);
+                }
+
+                predicted_particles_.append(predicted_box, it->weight_);
+            }
+
+            if(ivp)
+            {
+                delete simu_;
+                problem.yinit = NULL;
+            }
+            ROS_DEBUG_STREAM("prediction end");
+        }
+
+        void correction(const IntervalVector& measures,
+                        BOXES_TYPE input_boxes_type = BOXES_TYPE::PREDICTION) 
         {   
             ROS_DEBUG_STREAM("Begin correction");
             innovation_.clear();
-            corrected_boxes_.clear();
-            corrected_weights_.clear();
+            Particles* particles = getParticlesPtr(BOXES_TYPE::RESAMPLING);
+            corrected_particles_.clear();
 
             IntervalVector predicted_measures = IntervalVector(measures.size());
             IntervalVector innovation         = IntervalVector(measures.size());
 
-            for(unsigned int i = 0; i < boxes_.size(); ++i)
+            for(unsigned int i = 0; i < particles->size(); ++i)
             {
-                predicted_measures  = measures_model_->eval_vector(predicted_boxes_[i]);
+                predicted_measures  = measures_model_->eval_vector((*particles)[i].box_);
                 innovation          = predicted_measures & measures;
 
                 if(innovation.volume() > 0)
                 {
                     innovation_.push_back(innovation);
 
-                    corrected_boxes_
-                        .push_back(contract(innovation_[i], predicted_boxes_[i]));
-
-                    corrected_weights_.push_back(predicted_weights_[i] 
-                            * (innovation.volume()/predicted_measures.volume())); 
-                                // Likelihood
+                    corrected_particles_.append(contract(innovation_[i], 
+                                                (*particles)[i].box_),
+                                                (*particles)[i].weight_ 
+                                                * (innovation.volume()/predicted_measures.volume())); 
+                                                // Likelihood
                 }
             }
 
-            // Weights normalization
-            double sum_of_weights = std::accumulate(corrected_weights_.begin(), 
-                                                    corrected_weights_.end(),
-                                                    decltype(corrected_weights_)
-                                                        ::value_type(0));
-            for(unsigned int i = 0; i < corrected_boxes_.size(); i++)
-                corrected_weights_[i] /= sum_of_weights;
+            // Resampling (if necessary)
+            resampling(BOXES_TYPE::CORRECTION);
+
             ROS_DEBUG_STREAM("End correction");
+        }
+
+        /***  Testing ***/
+
+        Particles getParticles(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT)
+        {
+           return *getParticlesPtr(boxes_type); 
         }
 };

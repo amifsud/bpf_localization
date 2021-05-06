@@ -53,12 +53,12 @@ TEST(UniformlyChoosenPavingInitTest, testCase1)
     initial_box[5]= Interval(-2.0, 2.0);
 
     LocalizationBoxParticleFilter bpf(N, state_size, control_size, dt, initial_box);
-    std::vector<IntervalVector> boxes = bpf.getBoxes(); 
+    Particles particles = bpf.getParticles(); 
 
-    EXPECT_TRUE(bpf.wellPavedTest(initial_box, boxes))
+    EXPECT_TRUE(particles.wellPavedTest(initial_box))
         << "boxes not well pave initial box";
 
-    EXPECT_EQ(boxes.size(), N) << "In this test case we should have exactly N boxes";
+    EXPECT_EQ(particles.size(), N) << "In this test case we should have exactly N boxes";
 }
 
 // Run all the tests that were declared with TEST()
