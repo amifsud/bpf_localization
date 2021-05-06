@@ -96,7 +96,8 @@ class Particle
         Particle(IntervalVector box, const double weight): 
             box_(box),
             weight_(weight),
-            pair(box.bisect(0))
+            pair(box.bisect(0)),
+            uniform_distribution_(0.0,1.0)
         {
         }
 
