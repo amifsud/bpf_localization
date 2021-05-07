@@ -223,6 +223,35 @@ class Particles: public std::vector<Particle>
             return (no_outsiders & weak_disjoint & volume_equality);
         }
 
+        #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
+        bool subdiviseOverAllDimensionsTest()
+        {
+            bool equal_volume = true;
+            bool hypercube = true;
+            bool good_particles_number = true;
+            for(unsigned int i = 0; i < this->size(); ++i)
+            {
+                if(this->operator[](0).box_.volume() != this->operator[](i).box_.volume()) 
+                    equal_volume = false;
+
+                for(unsigned int u = 0; u < this->operator[](i).box_.size(); ++u)
+                    if(this->operator[](0).box_[0].diam() 
+                        != this->operator[](i).box_[u].diam()) hypercube = false;
+            }
+
+            double i = std::log(this->size())
+                        /std::log(pow(2,this->operator[](0).box_.size()));
+            good_particles_number = std::fmod(i, double(1)) == 0;
+
+            EXPECT_TRUE(good_particles_number)
+                << "All dimensions of the initial box are not subdivised equitably";
+            EXPECT_TRUE(hypercube)    << "Each box should be an hypercube";
+            EXPECT_TRUE(equal_volume) << "Volume of each box should be equal to the others";
+
+            return good_particles_number & hypercube & equal_volume;
+        }
+        #endif
+
         /*** Appending ***/
 
         void append(std::vector<Particle> particles)
