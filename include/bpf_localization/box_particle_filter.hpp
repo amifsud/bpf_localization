@@ -230,20 +230,9 @@ class Particles: public std::vector<Particle>
             this->insert(this->end(), particles.begin(), particles.end());
         }
 
-        void append(std::vector<IntervalVector> boxes, double weight)
+        void append(Particle particle)
         {
-            append(boxes, std::vector<double>(boxes.size(), weight));
-        }
-
-        void append(std::vector<IntervalVector> boxes, std::vector<double> weights)
-        {
-            for(unsigned int i = 0; i < boxes.size(); ++i)
-                this->append(boxes[i], weights[i]);
-        }
-
-        void append(const IntervalVector box_in, const double weight_in)
-        {
-            this->insert(this->end(), Particle(box_in, weight_in));
+            this->insert(this->end(), particle);
         }
 };
 
@@ -304,7 +293,7 @@ class BoxParticleFilter
 
             Particles* particles = getParticlesPtr();
             particles->clear();
-            particles->append(initial_box, 1.);
+            particles->append(Particle(initial_box, 1.));
             particles->subdivise(0, N_);
             particles->resetWeightsUniformly();
 
@@ -319,7 +308,7 @@ class BoxParticleFilter
 
             Particles* particles = getParticlesPtr();
             particles->clear();
-            particles->append(initial_box, 1.);
+            particles->append(Particle(initial_box, 1.));
 
             unsigned int current_particles_nb = 1;
 
@@ -474,7 +463,7 @@ class BoxParticleFilter
                     predicted_box = dynamics_model_->eval_vector(it->box_);
                 }
 
-                predicted_particles_.append(predicted_box, it->weight_);
+                predicted_particles_.append(Particle(predicted_box, it->weight_));
             }
 
             if(ivp)
@@ -505,10 +494,10 @@ class BoxParticleFilter
                 {
                     innovation_.push_back(innovation);
 
-                    corrected_particles_.append(contract(innovation_[i], 
+                    corrected_particles_.append(Particle(contract(innovation_[i], 
                                                 (*particles)[i].box_),
                                                 (*particles)[i].weight_ 
-                                                * (innovation.volume()/predicted_measures.volume())); 
+                                                * (innovation.volume()/predicted_measures.volume()))); 
                                                 // Likelihood
                 }
             }
