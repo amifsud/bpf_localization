@@ -55,7 +55,7 @@ class Particle
             boxes.clear();
             boxes_tmp.clear();
 
-            //pair = this->box_.bisect(dim); 
+            pair = this->box_.bisect(dim); 
 
             if(dim < this->box_.size() - 1)
             {

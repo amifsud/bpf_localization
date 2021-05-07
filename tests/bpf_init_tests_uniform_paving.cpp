@@ -62,9 +62,16 @@ TEST(UniformPavingInitTest, testCase1)
     EXPECT_EQ(N, particles.size()) << "In this test case we should have exactly N boxes";
 
     bool equal_volume = true;
-    for(unsigned int i = 1; i < particles.size(); ++i)
-        if(particles[0].box_.volume() != particles[i].box_.volume()) equal_volume = false; 
+    bool hypercube = true;
+    for(unsigned int i = 0; i < particles.size(); ++i)
+    {
+        if(particles[0].box_.volume() != particles[i].box_.volume()) equal_volume = false;
+        for(unsigned int u = 0; u < particles[i].box_.size(); ++u)
+            if(particles[i].box_[0].diam() != particles[i].box_[u].diam()) hypercube 
+                = false;
+    }
 
+    EXPECT_TRUE(hypercube)    << "Each box should be an hypercube";
     EXPECT_TRUE(equal_volume) << "Volume of each box should be equal to the others";
 }
 
@@ -89,9 +96,16 @@ TEST(UniformPavingInitTest, testCase2)
     EXPECT_EQ(particles.size(), pow(pow(2,state_size),2));
 
     bool equal_volume = true;
-    for(unsigned int i = 1; i < particles.size(); ++i)
-        if(particles[0].box_.volume() != particles[i].box_.volume()) equal_volume = false; 
+    bool hypercube = true;
+    for(unsigned int i = 0; i < particles.size(); ++i)
+    {
+        if(particles[0].box_.volume() != particles[i].box_.volume()) equal_volume = false;
+        for(unsigned int u = 0; u < particles[i].box_.size(); ++u)
+            if(particles[i].box_[0].diam() != particles[i].box_[u].diam()) hypercube 
+                = false;
+    }
 
+    EXPECT_TRUE(hypercube)    << "Each box should be an hypercube";
     EXPECT_TRUE(equal_volume) << "Volume of each box should be equal to the others";
 }
 
