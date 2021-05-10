@@ -5,6 +5,14 @@
 #include <numeric>
 #include <random>
 
+/*** FIXME 
+ *
+ *  - Every test should test only code in the same class
+ *  - Each more genral test should call sub tests ?
+ *
+ */
+
+
 /*** Available algos ***/
 // Init
 //  * uniformly choosen : 0
@@ -394,10 +402,17 @@ class BoxParticleFilter
         {
             ROS_DEBUG_STREAM("Begin guaranted resampling");
             // Guaranted resampling
+            std::vector<unsigned int> n(cumulated_weights.size(), 1.0);
+            unsigned int M = 0;
+            for(unsigned int i = 0; n.size(); ++i)
+            {
+                if(this->operator[](i).weight_ == 0.0) n[i] = 0.0;
+                M++;
+            }
+
             double ui;
             unsigned int j;
-            std::vector<unsigned int> n(cumulated_weights.size(), 0.0);
-            for(unsigned int i = 0; i < N_; ++i)
+            for(unsigned int i = 0; i < M; ++i)
             {
                 std::default_random_engine generator;
                 ui = uniform_distribution_(generator);
