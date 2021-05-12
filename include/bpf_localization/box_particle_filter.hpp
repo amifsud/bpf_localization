@@ -60,6 +60,7 @@ class Particle
         #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
         std::vector<Particle> subdiviseOverAllDimensions(unsigned int dim = 0)
         {
+            ROS_DEBUG("Subdivise over all dimensions begin");
             boxes.clear();
             boxes_tmp.clear();
 
@@ -78,12 +79,14 @@ class Particle
                 boxes.push_back(Particle(std::get<0>(pair), this->weight_/2.));
                 boxes.push_back(Particle(std::get<1>(pair), this->weight_/2.));
             }
+            ROS_DEBUG("Subdivise over all dimensions end");
             return boxes;
         }
         #endif
 
         std::vector<Particle> subdiviseOverRandomDimensions(unsigned int N)
         {
+            ROS_DEBUG("Subdivise over random dimension begin");
             boxes.clear();
             boxes.push_back(*this);
 
@@ -97,6 +100,7 @@ class Particle
                 boxes.erase(boxes.begin());
             }
 
+            ROS_DEBUG("Subdivise over random dimension end");
             return boxes;
         }
 
