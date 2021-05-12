@@ -85,7 +85,25 @@ class Particle
         }
         #endif
 
-        std::vector<Particle> subdiviseOverRandomDimensions(unsigned int N)
+        std::vector<Particle> subdiviseOverGivenDirection
+            (const unsigned int i, const unsigned int N = 1)
+        {
+            ROS_DEBUG("Subdivise over given dimension begin");
+            boxes.clear();
+            boxes.push_back(*this);
+
+            while (boxes.size() < N)
+            {
+                pair = this->box_.bisect(i, 0.5); 
+                boxes.push_back(Particle(std::get<0>(pair), this->weight_/2.));
+                boxes.push_back(Particle(std::get<1>(pair), this->weight_/2.));
+            }
+
+            ROS_DEBUG("Subdivise over given dimension end");
+            return boxes;
+        }
+
+        std::vector<Particle> subdiviseOverRandomDimensions(unsigned int N = 1)
         {
             ROS_DEBUG("Subdivise over random dimension begin");
             boxes.clear();
