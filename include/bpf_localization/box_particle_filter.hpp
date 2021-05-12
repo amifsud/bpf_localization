@@ -379,10 +379,12 @@ class BoxParticleFilter
 
         #if RESAMPLING_METHOD == 0
         std::vector<unsigned int> 
-            chooseSubdivisions(const std::vector<float>& cumulated_weights)
+            chooseSubdivisions(Particles* particles)
         {
             ROS_DEBUG_STREAM("Begin multinomial resampling");
-            // Multinomial resampling
+
+            std::vector<float> cumulated_weights = particles->getCumulatedWeights();
+
             double ui;
             unsigned int j;
             std::vector<unsigned int> n(cumulated_weights.size(), 0.0);
@@ -402,15 +404,17 @@ class BoxParticleFilter
 
         #if RESAMPLING_METHOD == 1
         std::vector<unsigned int> 
-            chooseSubdivisions(const std::vector<float>& cumulated_weights)
+            chooseSubdivisions(Particles* particles)
         {
             ROS_DEBUG_STREAM("Begin guaranted resampling");
-            // Guaranted resampling
+
+            std::vector<float> cumulated_weights = particles->getCumulatedWeights();
+
             std::vector<unsigned int> n(cumulated_weights.size(), 1.0);
             unsigned int M = 0;
             for(unsigned int i = 0; n.size(); ++i)
             {
-                if(this->operator[](i).weight_ == 0.0) n[i] = 0.0;
+                if(particles->operator[](i).weight_ == 0.0) n[i] = 0.0;
                 M++;
             }
 
