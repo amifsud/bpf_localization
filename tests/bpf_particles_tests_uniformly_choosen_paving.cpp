@@ -19,7 +19,7 @@ TEST(UniformlyChoosenPavingParticlesTest, testCase1)
     initial_box[5]= Interval(-2.0, 2.0);
 
     Particle particle(initial_box, 1.);
-    Particles particles(particle.subdivise(N));
+    Particles particles(particle.subdivise(SUBDIVISION_TYPE::RANDOM, N));
 
 
     EXPECT_TRUE(particles.wellPavedTest(initial_box))

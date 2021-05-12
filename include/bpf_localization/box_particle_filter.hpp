@@ -38,6 +38,7 @@
 using namespace ibex;
 
 enum BOXES_TYPE{PREDICTION, CORRECTION, RESAMPLING, DEFAULT};
+enum SUBDIVISION_TYPE{GIVEN, ALL_DIMESIONS, RANDOM};
 
 class Particle
 {
@@ -113,21 +114,33 @@ class Particle
         {
         }
 
-        std::vector<Particle> subdivise(unsigned int N = 0, bool force_random = false)
+        std::vector<Particle> subdivise
+            (SUBDIVISION_TYPE sub_type = SUBDIVISION_TYPE::RANDOM,
+             unsigned int N = 1, unsigned int dim = 0)
         {
             std::vector<Particle> particles;
 
-            if(!force_random)
+            switch(sub_type)
             {
-                #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
-                particles = subdiviseOverAllDimensions();
-                #else
-                particles = subdiviseOverRandomDimensions(N);
-                #endif
-            }
-            else
-            {
-                particles = subdiviseOverRandomDimensions(N);
+                case SUBDIVISION_TYPE::RANDOM:
+                    particles = subdiviseOverRandomDimensions(N);
+                    break;
+                case SUBDIVISION_TYPE::ALL_DIMESIONS:
+                    #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
+                    particles = subdiviseOverAllDimensions();
+                    #else
+                    ROS_ERROR_STREAM("Not compiled method");
+                    #endif
+                    break;
+                case SUBDIVISION_TYPE::GIVEN:
+                    #ifdef SUBDIVISE_OVER_GIVEN_DIRECTION
+                    particles = subdiviseOverGivenDirection(dim, N);
+                    #else
+                    ROS_ERROR_STREAM("Not compiled method");
+                    #endif
+                    break;
+                default:
+                    ROS_ASSERT("Wrong subdivision type");
             }
 
             return particles;
@@ -186,9 +199,11 @@ class Particles: public std::vector<Particle>
 
         /*** Boxes processing **/
 
-        void subdivise(unsigned int i, unsigned int N = 0, bool force_random = false)
+        void subdivise( unsigned int i = 0, 
+                        SUBDIVISION_TYPE sub_type = SUBDIVISION_TYPE::RANDOM,
+                        unsigned int N = 1, unsigned int dim = 0)
         {
-            this->append(this->operator[](i).subdivise(N, force_random));
+            this->append(this->operator[](i).subdivise(sub_type, N, dim));
             this->erase(this->begin());
         }
 
@@ -335,7 +350,7 @@ class BoxParticleFilter
             Particles* particles = getParticlesPtr();
             particles->clear();
             particles->append(Particle(initial_box, 1.));
-            particles->subdivise(0, N_);
+            particles->subdivise(0, SUBDIVISION_TYPE::RANDOM, N_);
             particles->resetWeightsUniformly();
 
             ROS_DEBUG_STREAM("Uniformly choosen paving initialization end");
@@ -356,7 +371,7 @@ class BoxParticleFilter
             while(current_particles_nb*pow(2,state_size_) <= N_)
             {
                 for(unsigned int box_i = 0; box_i < current_particles_nb; ++box_i)
-                    particles->subdivise(0, state_size_);
+                    particles->subdivise(0, SUBDIVISION_TYPE::ALL_DIMESIONS, state_size_);
                 current_particles_nb = particles->size();
             }
 
@@ -455,7 +470,7 @@ class BoxParticleFilter
                 // Subdivise boxes with ni boxes (delete box if ni=0) 
                 unsigned int i = 0;
                 for(auto it = particles->begin(); it == particles->end(); it++, i++)
-                    resampled_particles_.append(it->subdivise(n[i], true));
+                    resampled_particles_.append(it->subdivise(N = n[i]));
 
                 ROS_DEBUG_STREAM("End resampling");
             }
