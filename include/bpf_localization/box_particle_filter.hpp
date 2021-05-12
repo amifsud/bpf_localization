@@ -20,19 +20,31 @@
 // Resampling
 //  * multinomial       : 0
 //  * guaranted         : 1
+// Resampling direction
+//  * random            : 0
+//  * geometrical       : 1
+//  * maximum likelihood: 2
 
 /*** Defaults algos versions ***/
-#ifndef RESAMPLING_METHOD
-    #define RESAMPLING_METHOD   0
+#ifndef INIT_METHOD
+    #define INIT_METHOD          0
 #endif
 
-#ifndef INIT_METHOD
-    #define INIT_METHOD         0
+#ifndef RESAMPLING_METHOD
+    #define RESAMPLING_METHOD    0
+#endif
+
+#ifndef RESAMPLING_DIRECTION
+    #define RESAMPLING_DIRECTION 0
 #endif
 
 /*** Algos dependencies ***/
 #if INIT_METHOD == 1
     #define SUBDIVISE_OVER_ALL_DIMENSIONS
+#endif
+
+#if RESAMPLING_DIRECTION == 1 | RESAMPLING_DIRECTION == 2
+    #define SUBDIVISE_OVER_GIVEN_DIRECTION
 #endif
 
 using namespace ibex;
@@ -85,6 +97,7 @@ class Particle
         }
         #endif
 
+        #ifdef SUBDIVISE_OVER_GIVEN_DIRECTION
         std::vector<Particle> subdiviseOverGivenDirection
             (const unsigned int i, const unsigned int N = 1)
         {
@@ -102,6 +115,7 @@ class Particle
             ROS_DEBUG("Subdivise over given dimension end");
             return boxes;
         }
+        #endif
 
         std::vector<Particle> subdiviseOverRandomDimensions(unsigned int N = 1)
         {
@@ -467,6 +481,31 @@ class BoxParticleFilter
         }
         #endif
 
+        #if RESAMPLING_DIRECTION == 0
+        // Random
+        unsigned int getDirection(IntervalVector box)
+        {
+            std::default_random_engine generator;
+            return int(uniform_distribution_(generator) * box.size());
+        }
+        #endif
+
+        #if RESAMPLING_DIRECTION == 1
+        // Geometrical
+        unsigned int getDirection(IntervalVector box)
+        {
+            return 0; 
+        }
+        #endif
+
+        #if RESAMPLING_DIRECTION == 2
+        // Maximum Likelihood
+        unsigned int getDirection(IntervalVector box)
+        {
+            return 0;
+        }
+        #endif
+
         void resampling(BOXES_TYPE boxes_type = BOXES_TYPE::CORRECTION)
         {
             ROS_DEBUG_STREAM("Will we resample");
@@ -483,12 +522,17 @@ class BoxParticleFilter
 
                 // Compute number of subdivisions per boxes
                 std::vector<unsigned int> n 
-                    = chooseSubdivisions(particles->getCumulatedWeights());
+                    = chooseSubdivisions(particles);
 
                 // Subdivise boxes with ni boxes (delete box if ni=0) 
                 unsigned int i = 0;
+                unsigned int dim;
                 for(auto it = particles->begin(); it == particles->end(); it++, i++)
-                    resampled_particles_.append(it->subdivise(N = n[i]));
+                {
+                    dim = getDirection(it->box_);
+                    resampled_particles_
+                        .append(it->subdivise(SUBDIVISION_TYPE::GIVEN, n[i], dim));
+                }
 
                 ROS_DEBUG_STREAM("End resampling");
             }
