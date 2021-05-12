@@ -354,6 +354,9 @@ class BoxParticleFilter
 
         // Resampling
         Particles resampled_particles_;
+        #if RESAMPLING_DIRECTION == 1
+        std::map<int, int> geometrical_subdivision_map;
+        #endif
         bool resampled_;
 
     protected:
@@ -494,7 +497,26 @@ class BoxParticleFilter
         // Geometrical
         unsigned int getDirection(IntervalVector box)
         {
-            return 0; 
+            std::map<int, int>::iterator it = geometrical_subdivision_map.begin();
+            double norm;
+            Vector diameters(box.size()), diam(1);
+            IntervalVector subvect(1);
+            unsigned int i = 0;
+            while(it != geometrical_subdivision_map.end())
+            {
+                subvect = box.subvector(it->first, it->second);
+                diam = subvect.diam();
+                norm = diam.norm();
+                diameters.put(i, (1./norm)*diam);
+                it++;
+                i += subvect.size();
+            }
+
+            unsigned int i_max = 0;
+            for(unsigned int i = 0; i < diameters.size(); ++i)
+                if(diameters[i] > diameters[i_max]) i_max = i;
+
+            return i_max; 
         }
         #endif
 
@@ -502,6 +524,7 @@ class BoxParticleFilter
         // Maximum Likelihood
         unsigned int getDirection(IntervalVector box)
         {
+            ROS_ERROR_STREAM("Not implemented yet");
             return 0;
         }
         #endif
@@ -534,6 +557,7 @@ class BoxParticleFilter
                         .append(it->subdivise(SUBDIVISION_TYPE::GIVEN, n[i], dim));
                 }
 
+                resampled_particles_.weigthsNormalization();
                 ROS_DEBUG_STREAM("End resampling");
             }
             else{ ROS_DEBUG_STREAM("We don't resample"); }

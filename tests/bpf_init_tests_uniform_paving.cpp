@@ -21,6 +21,8 @@ class LocalizationBoxParticleFilter: public BoxParticleFilter
             measures_model_ = new Function(state_variable_, Return( state_variable_[0],
                                                                     state_variable_[0]
                                                                     +state_variable_[0]));
+            
+
             ROS_DEBUG_STREAM("set dynamics end");
         }
 
@@ -33,6 +35,12 @@ class LocalizationBoxParticleFilter: public BoxParticleFilter
             // If ivp
             integration_method_ = RK4;
             precision_ = 1e-4;
+
+            #if RESAMPLING_DIRECTION == 1
+            geometrical_subdivision_map.insert(std::pair<int, int>(0, 2));
+            geometrical_subdivision_map.insert(std::pair<int, int>(2, 2));
+            geometrical_subdivision_map.insert(std::pair<int, int>(4, 2));
+            #endif
 
             setDynamicalModel();
         }
@@ -66,13 +74,17 @@ TEST(UniformPavingInitTest, testCase1)
 // Declare another test
 TEST(UniformPavingInitTest, testCase2)
 {
-    unsigned int state_size = 2;
+    unsigned int state_size = 6;
     unsigned int N = pow(pow(2,state_size),2) + 10;
     unsigned int control_size = 2;
     float dt = 1.;
     IntervalVector initial_box(state_size);
     initial_box[0]= Interval(-2.0, 2.0);
     initial_box[1]= Interval(-2.0, 2.0);
+    initial_box[2]= Interval(-2.0, 2.0);
+    initial_box[3]= Interval(-2.0, 2.0);
+    initial_box[4]= Interval(-2.0, 2.0);
+    initial_box[5]= Interval(-2.0, 2.0);
 
     LocalizationBoxParticleFilter bpf(N, state_size, control_size, dt, initial_box);
     Particles particles = bpf.getParticles(); 

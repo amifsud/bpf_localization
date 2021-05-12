@@ -32,6 +32,12 @@ class LocalizationBoxParticleFilter: public BoxParticleFilter
             integration_method_ = RK4;
             precision_ = 1e-4;
 
+            #if RESAMPLING_DIRECTION == 1
+            geometrical_subdivision_map.insert(std::pair<int, int>(0, 1));
+            geometrical_subdivision_map.insert(std::pair<int, int>(1, 1));
+            geometrical_subdivision_map.insert(std::pair<int, int>(2, 1));
+            #endif
+
             setDynamicalModel();
         }
 };
