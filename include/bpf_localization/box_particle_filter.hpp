@@ -488,7 +488,9 @@ class BoxParticleFilter
         // Random
         unsigned int getDirection(IntervalVector box)
         {
+            ROS_DEBUG_STREAM("Get random direction for resampling begin");
             std::default_random_engine generator;
+            ROS_DEBUG_STREAM("Get random direction for resampling end");
             return int(uniform_distribution_(generator) * box.size());
         }
         #endif
@@ -497,6 +499,7 @@ class BoxParticleFilter
         // Geometrical
         unsigned int getDirection(IntervalVector box)
         {
+            ROS_DEBUG_STREAM("Get geometrical direction for resampling begin");
             std::map<int, int>::iterator it = geometrical_subdivision_map.begin();
             double norm;
             Vector diameters(box.size()), diam(1);
@@ -516,6 +519,7 @@ class BoxParticleFilter
             for(unsigned int i = 0; i < diameters.size(); ++i)
                 if(diameters[i] > diameters[i_max]) i_max = i;
 
+            ROS_DEBUG_STREAM("Get geometrical direction for resampling end");
             return i_max; 
         }
         #endif
@@ -524,7 +528,9 @@ class BoxParticleFilter
         // Maximum Likelihood
         unsigned int getDirection(IntervalVector box)
         {
+            ROS_DEBUG_STREAM("Get maximum likelihood direction for resampling begin");
             ROS_ERROR_STREAM("Not implemented yet");
+            ROS_DEBUG_STREAM("Get maximum likelihood direction for resampling begin");
             return 0;
         }
         #endif
