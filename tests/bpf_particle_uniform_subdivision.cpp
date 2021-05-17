@@ -7,7 +7,7 @@
 #include <bpf_localization/box_particle_filter.hpp>
 
 // Declare a test
-TEST(UniformPavingParticlesTest, testCase1)
+TEST(UniformSubdivisionTest, testCase1)
 {
     unsigned int state_size = 6;
     unsigned int N = pow(2,state_size);
@@ -31,7 +31,7 @@ TEST(UniformPavingParticlesTest, testCase1)
 }
 
 // Declare another test
-TEST(UniformPavingParticlesTest, testCase2)
+TEST(UniformSubdivisionTest, testCase2)
 {
     unsigned int state_size = 2;
     unsigned int N = pow(2,state_size);
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
                 ros::console::levels::LOG_LEVEL) ) // LOG_LEVEL defined as macro 
        ros::console::notifyLoggerLevelsChanged();
     testing::InitGoogleTest(&argc, argv);
-    ros::init(argc, argv, "uniform_paving_particles_tester");
+    ros::init(argc, argv, "uniform_subdivision_tester");
     ros::NodeHandle nh;
     return RUN_ALL_TESTS();
 }

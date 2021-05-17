@@ -200,18 +200,18 @@ target_link_libraries(bpf_localization
 ## Testing ##
 #############
 
-catkin_add_gtest(bpf_particles_tests_uniform_paving tests/bpf_particles_tests_uniform_paving.cpp)
-if(TARGET bpf_particles_tests_uniform_paving)
-    target_link_libraries(bpf_particles_tests_uniform_paving
+catkin_add_gtest(bpf_particle_uniform_subdivision tests/bpf_particle_uniform_subdivision.cpp)
+if(TARGET bpf_particle_uniform_subdivision)
+    target_link_libraries(bpf_particle_uniform_subdivision
         ${catkin_LIBRARIES}
         /usr/local/lib/libibex.a
         /usr/local/lib/libprim.a
     )
 endif()
 
-catkin_add_gtest(bpf_particles_tests_uniformly_choosen_paving tests/bpf_particles_tests_uniformly_choosen_paving.cpp)
-if(TARGET bpf_particles_tests_uniformly_choosen_paving)
-    target_link_libraries(bpf_particles_tests_uniformly_choosen_paving
+catkin_add_gtest(bpf_particle_random_subdivision tests/bpf_particle_random_subdivision.cpp)
+if(TARGET bpf_particle_random_subdivision)
+    target_link_libraries(bpf_particle_random_subdivision
         ${catkin_LIBRARIES}
         /usr/local/lib/libibex.a
         /usr/local/lib/libprim.a
