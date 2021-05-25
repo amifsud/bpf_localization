@@ -98,17 +98,18 @@ class Particle
 
         #ifdef SUBDIVISE_OVER_GIVEN_DIRECTION
         std::deque<Particle> subdiviseOverGivenDirection
-            (const unsigned int i, const unsigned int N = 1)
+            (const unsigned int dim, const unsigned int N = 1)
         {
             ROS_DEBUG("Subdivise over given dimension begin");
             boxes.clear();
-            boxes.push_back(*this);
+            if(N > 0) boxes.push_back(*this);
 
-            while (boxes.size() < N)
+            for(unsigned int i = 0; i < N-1; ++i)
             {
-                pair = this->box_.bisect(i, 0.5); 
-                boxes.push_back(Particle(std::get<0>(pair), this->weight_/2.));
-                boxes.push_back(Particle(std::get<1>(pair), this->weight_/2.));
+                pair = boxes[0].box_.bisect(dim, 1.-1./(N-i)); 
+                boxes.erase(boxes.begin());
+                boxes.push_front(Particle(std::get<0>(pair), 1.));
+                boxes.push_back(Particle(std::get<1>(pair), this->weight_/N));
             }
 
             ROS_DEBUG("Subdivise over given dimension end");
