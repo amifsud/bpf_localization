@@ -200,6 +200,15 @@ target_link_libraries(bpf_localization
 ## Testing ##
 #############
 
+catkin_add_gtest(bpf_particle_given_dir_subdivision tests/bpf_particle_given_dir_subdivision.cpp)
+if(TARGET bpf_particle_given_dir_subdivision)
+    target_link_libraries(bpf_particle_given_dir_subdivision
+        ${catkin_LIBRARIES}
+        /usr/local/lib/libibex.a
+        /usr/local/lib/libprim.a
+    )
+endif()
+
 catkin_add_gtest(bpf_particle_uniform_subdivision tests/bpf_particle_uniform_subdivision.cpp)
 if(TARGET bpf_particle_uniform_subdivision)
     target_link_libraries(bpf_particle_uniform_subdivision

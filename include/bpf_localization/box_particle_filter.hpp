@@ -317,6 +317,45 @@ class Particles: public std::deque<Particle>
         }
         #endif
 
+        #ifdef SUBDIVISE_OVER_GIVEN_DIRECTION
+        bool subdiviseOverGivenDirectionTest(IntervalVector initial_box, unsigned int dir)
+        {
+            bool given_dir_well_subdivised, other_dirs_not_subdivised;
+            bool test_succeed = true;
+            unsigned int u = 0;
+            for(auto it= this->begin(); it != this->end(); it++, ++u)
+            {
+                for(unsigned int dim = 0; dim < initial_box.size(); ++dim)
+                {
+                    if(dim != dir)
+                    {
+                        other_dirs_not_subdivised 
+                            = std::abs(initial_box.diam()[dim] 
+                                    - it->box_.diam()[dim]) < 1e-7;
+                        if(!other_dirs_not_subdivised) test_succeed = false;
+                        EXPECT_TRUE(other_dirs_not_subdivised) 
+                            << "Another direction than " << dir 
+                            << " subdivised in particle " << u << " : " << dim;
+                    }
+                    else
+                    {
+                        given_dir_well_subdivised 
+                            = std::abs(it->box_.diam()[dim]
+                                    -initial_box.diam()[dim]/this->size()) < 1e-7;
+                        if(!given_dir_well_subdivised) test_succeed = false;
+                        EXPECT_TRUE(given_dir_well_subdivised) 
+                            << "subdivised direction " << dir 
+                            << " as wrong diameter : expect " 
+                            << initial_box.diam()[dim]/this->size() << " get " 
+                            << it->box_.diam()[dim];
+                    }
+                }
+            }
+
+            return test_succeed;
+        }
+        #endif
+
         /*** Appending ***/
 
         void append(std::deque<Particle> particles)
