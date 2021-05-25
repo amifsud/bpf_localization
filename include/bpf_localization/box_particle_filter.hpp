@@ -242,43 +242,49 @@ class Particles: public std::deque<Particle>
 
         bool wellPavedTest(IntervalVector initial_box)
         {
-            bool weak_disjoint = true;
-            bool intersect;
-            double intersect_volume;
-
-            for(auto it= this->begin(); it != this->end()-1; it++)
+            if(this->size() > 0)
             {
-                for(auto it1 = it+1; it1 != this->end(); it1++)
+                bool weak_disjoint = true;
+                bool intersect;
+                double intersect_volume;
+
+                for(auto it= this->begin(); it != this->end()-1; it++)
                 {
-                    intersect = it->box_.intersects(it1->box_);
-                    intersect_volume = (it->box_ & it1->box_).volume();
-                    weak_disjoint = not intersect | intersect & intersect_volume == 0;
-                    // We could use overlaps function that should give the right side 
-                    // of the OR operator condition, but it seems that it doesn't work
+                    for(auto it1 = it+1; it1 != this->end(); it1++)
+                    {
+                        intersect = it->box_.intersects(it1->box_);
+                        intersect_volume = (it->box_ & it1->box_).volume();
+                        weak_disjoint = not intersect | intersect & intersect_volume == 0;
+                        // We could use overlaps function that should give the right side 
+                        // of the OR operator condition, but it seems that it doesn't work
+                        if(!weak_disjoint) break;
+                    }
                     if(!weak_disjoint) break;
                 }
-                if(!weak_disjoint) break;
+                EXPECT_TRUE(weak_disjoint)
+                    << "All couple of boxes don't have zero volume intersection";
+
+                IntervalVector reconstructed_initial_box(this->begin()->box_);
+                double total_volume = this->begin()->box_.volume();
+                for(auto it = this->begin()+1; it != this->end(); it++)
+                {
+                    reconstructed_initial_box = reconstructed_initial_box | it->box_;
+                    total_volume += it->box_.volume();
+                }
+                bool no_outsiders = reconstructed_initial_box == initial_box;
+                bool volume_equality = std::abs(total_volume - initial_box.volume()) < 1e-10;
+
+                EXPECT_TRUE(no_outsiders)
+                    << "There is no sub-box outside the initial one";
+                EXPECT_TRUE(volume_equality) 
+                    << "Total reconstructed volume should be equal to the initial one";
+
+                return (no_outsiders & weak_disjoint & volume_equality);
             }
-
-            EXPECT_TRUE(weak_disjoint)
-                << "All couple of boxes don't have zero volume intersection";
-
-            IntervalVector reconstructed_initial_box(this->begin()->box_);
-            double total_volume = this->begin()->box_.volume();
-            for(auto it = this->begin()+1; it != this->end(); it++)
+            else
             {
-                reconstructed_initial_box = reconstructed_initial_box | it->box_;
-                total_volume += it->box_.volume();
+                return 0;
             }
-            bool no_outsiders = reconstructed_initial_box == initial_box;
-            bool volume_equality = std::abs(total_volume - initial_box.volume()) < 1e-10;
-
-            EXPECT_TRUE(no_outsiders)
-                << "There is no sub-box outside the initial one";
-            EXPECT_TRUE(volume_equality) 
-                << "Total reconstructed volume should be equal to the initial one";
-
-            return (no_outsiders & weak_disjoint & volume_equality);
         }
 
         #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
