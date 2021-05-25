@@ -122,10 +122,11 @@ class Particle
             ROS_DEBUG("Subdivise over random dimension begin");
             boxes.clear();
             if(N > 0) boxes.push_back(*this);
+            std::random_device rd;
+            std::default_random_engine generator(rd());
 
             while (boxes.size() < N)
             {
-                std::default_random_engine generator;
                 direction = int(uniform_distribution_(generator) * this->box_.size());
                 pair = boxes[0].box_.bisect(direction, 0.5); 
                 boxes.push_back(Particle(std::get<0>(pair), boxes[0].weight_/2.));
@@ -515,9 +516,10 @@ class BoxParticleFilter
 
             double ui;
             unsigned int j;
+            std::random_device rd;
+            std::default_random_engine generator(rd());
             for(unsigned int i = 0; i < M; ++i)
             {
-                std::default_random_engine generator;
                 ui = uniform_distribution_(generator);
                 j=0;
                 while(ui >= cumulated_weights[j]) j++;
