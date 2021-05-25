@@ -12,7 +12,6 @@
  *
  */
 
-
 /*** Available algos ***/
 // Init
 //  * uniformly choosen : 0
@@ -59,19 +58,19 @@ class Particle
         std::uniform_real_distribution<double> uniform_distribution_;
 
         // For subdivisions
-        std::vector<Particle> boxes, boxes_tmp;
+        std::deque<Particle> boxes, boxes_tmp;
         std::pair<IntervalVector, IntervalVector> pair;
         unsigned int direction;
 
     public:
         IntervalVector box_;
         float weight_;
- 
+
     protected:
         /*** Boxes processing ***/
 
         #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
-        std::vector<Particle> subdiviseOverAllDimensions(unsigned int dim = 0)
+        std::deque<Particle> subdiviseOverAllDimensions(unsigned int dim = 0)
         {
             ROS_DEBUG("Subdivise over all dimensions begin");
             boxes.clear();
@@ -98,7 +97,7 @@ class Particle
         #endif
 
         #ifdef SUBDIVISE_OVER_GIVEN_DIRECTION
-        std::vector<Particle> subdiviseOverGivenDirection
+        std::deque<Particle> subdiviseOverGivenDirection
             (const unsigned int i, const unsigned int N = 1)
         {
             ROS_DEBUG("Subdivise over given dimension begin");
@@ -117,7 +116,7 @@ class Particle
         }
         #endif
 
-        std::vector<Particle> subdiviseOverRandomDimensions(unsigned int N = 1)
+        std::deque<Particle> subdiviseOverRandomDimensions(unsigned int N = 1)
         {
             ROS_DEBUG("Subdivise over random dimension begin");
             boxes.clear();
@@ -146,11 +145,11 @@ class Particle
         {
         }
 
-        std::vector<Particle> subdivise
+        std::deque<Particle> subdivise
             (SUBDIVISION_TYPE sub_type = SUBDIVISION_TYPE::RANDOM,
              unsigned int N = 1, unsigned int dim = 0)
         {
-            std::vector<Particle> particles;
+            std::deque<Particle> particles;
 
             switch(sub_type)
             {
@@ -179,7 +178,7 @@ class Particle
         }
 };
 
-class Particles: public std::vector<Particle>
+class Particles: public std::deque<Particle>
 {
     protected:
         /*** Weights processing ***/
@@ -195,11 +194,11 @@ class Particles: public std::vector<Particle>
     public:
         /*** Constructors ***/
 
-        Particles(std::vector<Particle> particles): std::vector<Particle>(particles)
+        Particles(std::deque<Particle> particles): std::deque<Particle>(particles)
         {
         }
 
-        Particles(): std::vector<Particle>()
+        Particles(): std::deque<Particle>()
         {
         }
 
@@ -313,7 +312,7 @@ class Particles: public std::vector<Particle>
 
         /*** Appending ***/
 
-        void append(std::vector<Particle> particles)
+        void append(std::deque<Particle> particles)
         {
             this->insert(this->end(), particles.begin(), particles.end());
         }
