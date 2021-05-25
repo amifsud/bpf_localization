@@ -310,7 +310,7 @@ class Particles: public std::deque<Particle>
             good_particles_number = std::fmod(i, double(1)) == 0;
 
             EXPECT_TRUE(good_particles_number)
-                << "All dimensions of the initial box are not subdivised equitably";
+                << "Wrong number of particles";
             EXPECT_TRUE(hypercube)    << "Each box should be an hypercube";
             EXPECT_TRUE(equal_volume) << "Volume of each box should be equal to the others";
 
@@ -356,6 +356,44 @@ class Particles: public std::deque<Particle>
             return test_succeed;
         }
         #endif
+
+        bool subdiviseOverRandomDimensionsTest
+            (IntervalVector initial_box,
+             std::map<int, std::pair<int, double>> geometrical_subdivision_map)
+        {
+            ROS_INFO_STREAM("Enter random dimension test");
+            std::vector<std::vector<double>> normed_diameters;
+            std::vector<double> vector_tmp;
+            bool uniformly_subdivised = true;
+            bool test_succeed = true;
+            unsigned int u = 0;
+            unsigned int o = 0;
+            for(auto it = this->begin(); it != this->end(); it++, ++u)
+            {
+                vector_tmp.clear();
+                o = 0;
+                for(auto it1 = geometrical_subdivision_map.begin(); 
+                         it1 != geometrical_subdivision_map.end();
+                         ++it1)
+                {
+                    for(unsigned int i = 1; i < std::get<0>(it1->second); ++i)
+                    {
+                        uniformly_subdivised 
+                            = std::abs((it->box_.diam()[it1->first+i] \
+                                    - it->box_.diam()[(it1->first)]))\
+                                    /std::get<1>(it1->second) < 1;
+                        EXPECT_TRUE(uniformly_subdivised) 
+                            << "Particle " << u << ", dimension " << o
+                            << ": bad subdivision";
+                        if(!uniformly_subdivised) test_succeed = false;
+                        o++;
+                    }
+                }
+                normed_diameters.push_back(vector_tmp);
+            }
+            ROS_INFO_STREAM("Finnish random dimension test");
+            return test_succeed;
+        }
 
         /*** Appending ***/
 
@@ -592,7 +630,7 @@ class BoxParticleFilter
             double Neff = 0;
             for(unsigned int i = 0; i < particles->size(); ++i)
                 Neff += 1./pow((*particles)[i].weight_, 2);
-            if(Neff <= 10 * particles->size())
+            if(Neff <= 0.7 * particles->size())
             {
                 ROS_DEBUG_STREAM("We will resample");
 
@@ -602,12 +640,12 @@ class BoxParticleFilter
 
                 // Subdivise boxes with ni boxes (delete box if ni=0) 
                 unsigned int i = 0;
-                unsigned int dim;
+                unsigned int dir;
                 for(auto it = particles->begin(); it == particles->end(); it++, i++)
                 {
-                    dim = getDirection(it->box_);
+                    dir = getDirection(it->box_);
                     resampled_particles_
-                        .append(it->subdivise(SUBDIVISION_TYPE::GIVEN, n[i], dim));
+                        .append(it->subdivise(SUBDIVISION_TYPE::GIVEN, n[i], dir));
                 }
 
                 resampled_particles_.weigthsNormalization();
@@ -703,8 +741,8 @@ class BoxParticleFilter
                     corrected_particles_.append(Particle(contract(innovation_[i], 
                                                 (*particles)[i].box_),
                                                 (*particles)[i].weight_ 
-                                                * (innovation.volume()/predicted_measures.volume()))); 
-                                                // Likelihood
+                                                * (innovation.volume()
+                                                /predicted_measures.volume()))); 
                 }
             }
 

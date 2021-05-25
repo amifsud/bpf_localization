@@ -8,7 +8,7 @@
 TEST(RandomSubdivisionTest, testCase1)
 {
     unsigned int state_size = 2;
-    unsigned int N = 1234;
+    unsigned int N = 10000;
 
     IntervalVector initial_box(state_size);
     initial_box[0]= Interval(-2.0, 2.0);
@@ -23,6 +23,10 @@ TEST(RandomSubdivisionTest, testCase1)
 
     EXPECT_TRUE(particles.wellPavedTest(initial_box))
         << "boxes not well pave initial box";
+
+    EXPECT_TRUE(particles.subdiviseOverRandomDimensionsTest
+            (initial_box, 
+             geometrical_subdivision_map));
 
     EXPECT_EQ(particles.size(), N) << "In this test case we should have exactly N boxes";
 }
