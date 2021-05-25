@@ -361,7 +361,7 @@ class BoxParticleFilter
         // Resampling
         Particles resampled_particles_;
         #if RESAMPLING_DIRECTION == 1
-        std::map<int, int> geometrical_subdivision_map;
+        std::map<int, std::pair<int, double>> geometrical_subdivision_map;
         #endif
         bool resampled_;
 
@@ -513,7 +513,7 @@ class BoxParticleFilter
             unsigned int i = 0;
             while(it != geometrical_subdivision_map.end())
             {
-                subvect = box.subvector(it->first, it->second);
+                subvect = box.subvector(it->first, std::get<0>(it->second));
                 diam = subvect.diam();
                 norm = diam.norm();
                 diameters.put(i, (1./norm)*diam);

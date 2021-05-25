@@ -7,20 +7,19 @@
 // Declare a test
 TEST(RandomSubdivisionTest, testCase1)
 {
-    unsigned int state_size = 6;
+    unsigned int state_size = 2;
     unsigned int N = 1234;
 
     IntervalVector initial_box(state_size);
     initial_box[0]= Interval(-2.0, 2.0);
     initial_box[1]= Interval(-2.0, 2.0);
-    initial_box[2]= Interval(-2.0, 2.0);
-    initial_box[3]= Interval(-2.0, 2.0);
-    initial_box[4]= Interval(-2.0, 2.0);
-    initial_box[5]= Interval(-2.0, 2.0);
 
     Particle particle(initial_box, 1.);
     Particles particles(particle.subdivise(SUBDIVISION_TYPE::RANDOM, N));
 
+    std::map<int, std::pair<int, double>> geometrical_subdivision_map;
+    geometrical_subdivision_map[0] = std::pair<int, double>(1, 1);
+    geometrical_subdivision_map[1] = std::pair<int, double>(1, 1);
 
     EXPECT_TRUE(particles.wellPavedTest(initial_box))
         << "boxes not well pave initial box";

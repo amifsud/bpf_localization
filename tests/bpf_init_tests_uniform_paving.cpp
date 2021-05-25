@@ -37,9 +37,9 @@ class LocalizationBoxParticleFilter: public BoxParticleFilter
             precision_ = 1e-4;
 
             #if RESAMPLING_DIRECTION == 1
-            geometrical_subdivision_map.insert(std::pair<int, int>(0, 2));
-            geometrical_subdivision_map.insert(std::pair<int, int>(2, 2));
-            geometrical_subdivision_map.insert(std::pair<int, int>(4, 2));
+            geometrical_subdivision_map[0] = std::pair<int, double>(2, 1e-4);
+            geometrical_subdivision_map[2] = std::pair<int, double>(2, 1e-4);
+            geometrical_subdivision_map[4] = std::pair<int, double>(2, 1e-4);
             #endif
 
             setDynamicalModel();
