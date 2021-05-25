@@ -1,4 +1,3 @@
-
 bool wellPavedTest(Particles* particles, IntervalVector initial_box)
 {
     if(particles->size() > 0)
@@ -154,3 +153,42 @@ bool subdiviseOverRandomDimensionsTest
     return test_succeed;
 }
 
+class TestBoxParticleFilter: public BoxParticleFilter
+{
+    protected:
+        void setDynamicalModel()
+        {
+            ROS_DEBUG_STREAM("set dynamics begin");
+            dynamics_model_ 
+                = new Function(state_variable_, 
+                        Return( Interval(1.),
+                                Interval(1.),
+                                (*control_)[0]));
+
+            measures_model_ = new Function(state_variable_, Return( state_variable_[0],
+                                                                    state_variable_[0]
+                                                                    +state_variable_[0]));
+            
+
+            ROS_DEBUG_STREAM("set dynamics end");
+        }
+
+    public:
+        TestBoxParticleFilter(  unsigned int N, unsigned int state_size, 
+                                        unsigned int control_size, float dt, 
+                                        IntervalVector initial_box)
+            : BoxParticleFilter(N, state_size, control_size, dt, initial_box)
+        {
+            // If ivp
+            integration_method_ = RK4;
+            precision_ = 1e-4;
+
+            #if RESAMPLING_DIRECTION == 1
+            geometrical_subdivision_map[0] = std::pair<int, double>(2, 1e-4);
+            geometrical_subdivision_map[2] = std::pair<int, double>(2, 1e-4);
+            geometrical_subdivision_map[4] = std::pair<int, double>(2, 1e-4);
+            #endif
+
+            setDynamicalModel();
+        }
+};
