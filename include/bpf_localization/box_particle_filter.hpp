@@ -120,7 +120,7 @@ class Particle
         {
             ROS_DEBUG("Subdivise over random dimension begin");
             boxes.clear();
-            boxes.push_back(*this);
+            if(N > 0) boxes.push_back(*this);
 
             while (boxes.size() < N)
             {
@@ -129,7 +129,7 @@ class Particle
                 pair = boxes[0].box_.bisect(direction, 0.5); 
                 boxes.push_back(Particle(std::get<0>(pair), boxes[0].weight_/2.));
                 boxes.push_back(Particle(std::get<1>(pair), boxes[0].weight_/2.));
-                boxes.erase(boxes.begin());
+                boxes.pop_front();
             }
 
             ROS_DEBUG("Subdivise over random dimension end");
