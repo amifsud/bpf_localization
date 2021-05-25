@@ -5,6 +5,7 @@
 #include <ros/console.h>
 #include <gtest/gtest.h>
 #include <bpf_localization/box_particle_filter.hpp>
+#include <bpf_localization/tests.hpp>
 
 class LocalizationBoxParticleFilter: public BoxParticleFilter
 {
@@ -64,10 +65,10 @@ TEST(UniformPavingInitTest, testCase1)
     LocalizationBoxParticleFilter bpf(N, state_size, control_size, dt, initial_box);
     Particles particles = bpf.getParticles(); 
 
-    EXPECT_TRUE(particles.wellPavedTest(initial_box))
+    EXPECT_TRUE(wellPavedTest(&particles, initial_box))
         << "boxes not well pave initial box";
 
-    EXPECT_TRUE(particles.subdiviseOverAllDimensionsTest())
+    EXPECT_TRUE(subdiviseOverAllDimensionsTest(&particles))
         << "the paving is not uniform";
 }
 
@@ -89,12 +90,12 @@ TEST(UniformPavingInitTest, testCase2)
     LocalizationBoxParticleFilter bpf(N, state_size, control_size, dt, initial_box);
     Particles particles = bpf.getParticles(); 
 
-    EXPECT_TRUE(particles.wellPavedTest(initial_box))
+    EXPECT_TRUE(wellPavedTest(&particles, initial_box))
         << "Boxes don't well pave initial box";
 
     EXPECT_LT(particles.size(), N);
 
-    EXPECT_TRUE(particles.subdiviseOverAllDimensionsTest())
+    EXPECT_TRUE(subdiviseOverAllDimensionsTest(&particles))
         << "the paving is not uniform";
 }
 

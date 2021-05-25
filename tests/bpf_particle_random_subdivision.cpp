@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 #include <bpf_localization/box_particle_filter.hpp>
+#include <bpf_localization/tests.hpp>
 
 // Declare a test
 TEST(RandomSubdivisionTest, testCase1)
@@ -21,11 +22,11 @@ TEST(RandomSubdivisionTest, testCase1)
     geometrical_subdivision_map[0] = std::pair<int, double>(1, 1);
     geometrical_subdivision_map[1] = std::pair<int, double>(1, 1);
 
-    EXPECT_TRUE(particles.wellPavedTest(initial_box))
+    EXPECT_TRUE(wellPavedTest(&particles, initial_box))
         << "boxes not well pave initial box";
 
-    EXPECT_TRUE(particles.subdiviseOverRandomDimensionsTest
-            (initial_box, 
+    EXPECT_TRUE(subdiviseOverRandomDimensionsTest
+            (&particles, initial_box, 
              geometrical_subdivision_map));
 
     EXPECT_EQ(particles.size(), N) << "In this test case we should have exactly N boxes";

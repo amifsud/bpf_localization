@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 #include <bpf_localization/box_particle_filter.hpp>
+#include <bpf_localization/tests.hpp>
 
 // Declare a test
 TEST(GivenDirSubdivisionTest, testCase1)
@@ -22,10 +23,10 @@ TEST(GivenDirSubdivisionTest, testCase1)
     Particle particle(initial_box, 1.);
     Particles particles(particle.subdivise(SUBDIVISION_TYPE::GIVEN, N, subdivision_dir));
 
-    EXPECT_TRUE(particles.wellPavedTest(initial_box))
+    EXPECT_TRUE(wellPavedTest(&particles, initial_box))
         << "boxes don't well pave initial box";
 
-    EXPECT_TRUE(particles.subdiviseOverGivenDirectionTest(initial_box, subdivision_dir))
+    EXPECT_TRUE(subdiviseOverGivenDirectionTest(&particles, initial_box, subdivision_dir))
         << "test of the subdivision over given direction failed";
 
     EXPECT_EQ(particles.size(), N) << "In this test case we should have exactly N boxes";

@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 #include <bpf_localization/box_particle_filter.hpp>
+#include <bpf_localization/tests.hpp>
 
 class LocalizationBoxParticleFilter: public BoxParticleFilter
 {
@@ -60,7 +61,7 @@ TEST(UniformlyChoosenPavingInitTest, testCase1)
     LocalizationBoxParticleFilter bpf(N, state_size, control_size, dt, initial_box);
     Particles particles = bpf.getParticles(); 
 
-    EXPECT_TRUE(particles.wellPavedTest(initial_box))
+    EXPECT_TRUE(wellPavedTest(&particles, initial_box))
         << "boxes not well pave initial box";
 
     EXPECT_EQ(particles.size(), N) << "In this test case we should have exactly N boxes";

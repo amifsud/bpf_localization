@@ -5,6 +5,7 @@
 #include <ros/console.h>
 #include <gtest/gtest.h>
 #include <bpf_localization/box_particle_filter.hpp>
+#include <bpf_localization/tests.hpp>
 
 // Declare a test
 TEST(UniformSubdivisionTest, testCase1)
@@ -23,10 +24,10 @@ TEST(UniformSubdivisionTest, testCase1)
     Particle particle(initial_box, 1.);
     Particles particles(particle.subdivise(SUBDIVISION_TYPE::ALL_DIMESIONS));
 
-    EXPECT_TRUE(particles.wellPavedTest(initial_box))
+    EXPECT_TRUE(wellPavedTest(&particles, initial_box))
         << "boxes not well pave initial box";
 
-    EXPECT_TRUE(particles.subdiviseOverAllDimensionsTest())
+    EXPECT_TRUE(subdiviseOverAllDimensionsTest(&particles))
         << "the paving is not uniform";
 }
 
@@ -43,10 +44,10 @@ TEST(UniformSubdivisionTest, testCase2)
     Particle particle(initial_box, 1.);
     Particles particles(particle.subdivise(SUBDIVISION_TYPE::ALL_DIMESIONS));
 
-    EXPECT_TRUE(particles.wellPavedTest(initial_box))
+    EXPECT_TRUE(wellPavedTest(&particles, initial_box))
         << "Boxes don't well pave initial box";
 
-    EXPECT_TRUE(particles.subdiviseOverAllDimensionsTest())
+    EXPECT_TRUE(subdiviseOverAllDimensionsTest(&particles))
         << "the paving is not uniform";
 }
 
