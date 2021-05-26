@@ -59,9 +59,7 @@ int main(int argc, char **argv)
 
     LocalizationBoxParticleFilter bpf(N, state_size, control_size, dt, initial_box);
 
-    std::vector<IntervalVector> boxes = bpf.getBoxes();
-    for(unsigned int i = 0; i < boxes.size(); ++i)
-        ROS_INFO_STREAM("a=" << boxes[i]);
+    Particles particles = bpf.getParticles();
 
     IntervalVector control(control_size);
     control[0]= Interval(2.78, 2.79);
@@ -71,8 +69,6 @@ int main(int argc, char **argv)
     measures[0] = Interval(1., 2.);
     measures[1] = Interval(2., 3.);
     bpf.correction(measures);
-
-    bpf.resampling();
 
     ros::init(argc, argv, "bpf_localization");
     ros::NodeHandle nh;
