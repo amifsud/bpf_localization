@@ -258,7 +258,7 @@ class BoxParticleFilter
     protected:
         unsigned int N_;                                // Number of particles
         unsigned int state_size_;                       // size of the boxes aka stat size
-        float dt_;                                      // time step
+        double dt_;                                      // time step
 
         Particles particles_;
 
@@ -504,7 +504,7 @@ class BoxParticleFilter
 
         BoxParticleFilter(  unsigned int N, unsigned int state_size, 
                             unsigned int control_size,
-                            float dt, IntervalVector& initial_box): 
+                            double dt, IntervalVector& initial_box): 
             state_variable_(state_size),
             control_(new IntervalVector(control_size)),
             uniform_distribution_(0.0,1.0)

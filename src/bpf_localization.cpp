@@ -48,7 +48,7 @@ int main(int argc, char **argv)
     unsigned int state_size = 3;
     unsigned int control_size = 1;
     unsigned int measures_size = 2;
-    float dt = 1.0; // sampling time
+    double dt = 1.0; // sampling time
 
     IntervalVector initial_box(state_size);
     initial_box[0]= Interval(-10.0, 10.0);
