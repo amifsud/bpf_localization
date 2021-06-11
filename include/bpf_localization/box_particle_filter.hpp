@@ -279,7 +279,6 @@ class BoxParticleFilter
 
         // Correction
         Particles corrected_particles_;
-        std::vector<IntervalVector> innovation_;
 
         // Resampling
         Particles resampled_particles_;
@@ -567,7 +566,6 @@ class BoxParticleFilter
                         BOXES_TYPE input_boxes_type = BOXES_TYPE::PREDICTION) 
         {   
             ROS_DEBUG_STREAM("Begin correction");
-            innovation_.clear();
             Particles* particles = getParticlesPtr(BOXES_TYPE::RESAMPLING);
             corrected_particles_.clear();
 
@@ -581,9 +579,7 @@ class BoxParticleFilter
 
                 if(innovation.volume() > 0)
                 {
-                    innovation_.push_back(innovation);
-
-                    corrected_particles_.append(Particle(contract(innovation_[i], 
+                    corrected_particles_.append(Particle(contract(innovation, 
                                                 (*particles)[i].box_),
                                                 (*particles)[i].weight_ 
                                                 * (innovation.volume()
