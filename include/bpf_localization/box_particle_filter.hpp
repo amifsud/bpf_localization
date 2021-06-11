@@ -196,11 +196,13 @@ class Particles: public std::deque<Particle>
     public:
         /*** Constructors ***/
 
-        Particles(std::deque<Particle> particles): std::deque<Particle>(particles)
+        Particles(std::deque<Particle> particles): 
+            std::deque<Particle>(particles)
         {
         }
 
-        Particles(): std::deque<Particle>()
+        Particles(): 
+            std::deque<Particle>()
         {
         }
 
@@ -345,18 +347,6 @@ class BoxParticleFilter
         #endif
 
     protected:
-        Particles* getParticlesPtr(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT)
-        {
-            switch(boxes_type)
-            {
-                case DEFAULT:    return &particles_;           break;
-                case PREDICTION: return &predicted_particles_; break;
-                case CORRECTION: return &corrected_particles_; break;
-                case RESAMPLING: return &resampled_particles_; break;
-                default: ASSERT("Wrong specified boxes type");
-            }
-        }
-
         /*** Paving ***/
 
         #if INIT_METHOD == 0
@@ -554,6 +544,18 @@ class BoxParticleFilter
             else{ ROS_DEBUG_STREAM("We don't resample"); }
         }
 
+        Particles* getParticlesPtr(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT)
+        {
+            switch(boxes_type)
+            {
+                case DEFAULT:    return &particles_;           break;
+                case PREDICTION: return &predicted_particles_; break;
+                case CORRECTION: return &corrected_particles_; break;
+                case RESAMPLING: return &resampled_particles_; break;
+                default: ASSERT("Wrong specified boxes type");
+            }
+        }
+
     public:
         /*** Box particle filter steps ***/
 
@@ -592,17 +594,16 @@ class BoxParticleFilter
             IntervalVector predicted_measures = IntervalVector(measures.size());
             IntervalVector innovation         = IntervalVector(measures.size());
 
-            for(unsigned int i = 0; i < particles->size(); ++i)
+            for(auto it = particles->begin(); it == particles->end(); it++)
             {
                 predicted_measures  = dynamical_model_->apply_measures(*it);
                 innovation          = predicted_measures & measures;
 
                 if(innovation.volume() > 0)
                 {
-                    corrected_particles_.append(Particle(contract(innovation, 
-                                                (*particles)[i].box_),
-                                                (*particles)[i].weight_ 
-                                                * (innovation.volume()
+                    corrected_particles_.append(
+                            Particle(   contract(innovation, it->box_),
+                                        it->weight_ * (innovation.volume()
                                                 /predicted_measures.volume()))); 
                 }
             }
