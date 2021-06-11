@@ -153,42 +153,53 @@ bool subdiviseOverRandomDimensionsTest
     return test_succeed;
 }
 
-class TestBoxParticleFilter: public BoxParticleFilter
+class DynamicalModel: public AbstractDynamicalModel
 {
+    public:
+        DynamicalModel( unsigned int state_size, unsigned int control_size, 
+                        unsigned int measures_size, double dt,
+                        Vector measures_noise_diams, Vector process_noise_diams,
+                        Method method, double precision)
+            :AbstractDynamicalModel(state_size, control_size, measures_size, dt, 
+                                    measures_noise_diams, process_noise_diams,
+                                    method, precision)
+        {}
+
     protected:
-        void setDynamicalModel()
+        void setDynamicalModel(IntervalVector& control)
         {
-            ROS_DEBUG_STREAM("set dynamics begin");
-            dynamics_model_ 
+            ROS_DEBUG_STREAM("set dynamical model begin");
+            dynamical_model_             
                 = new Function(state_variable_, 
                         Return( Interval(1.),
                                 Interval(1.),
-                                (*control_)[0]));
-
-            measures_model_ = new Function(state_variable_, Return( state_variable_[0],
-                                                                    state_variable_[0]
-                                                                    +state_variable_[0]));
-            
-
-            ROS_DEBUG_STREAM("set dynamics end");
+                                control[0]));
+            ROS_DEBUG_STREAM("set dynamical model end");
         }
 
-    public:
-        TestBoxParticleFilter(  unsigned int N, unsigned int state_size, 
-                                        unsigned int control_size, float dt, 
-                                        IntervalVector initial_box)
-            : BoxParticleFilter(N, state_size, control_size, dt, initial_box)
+        void setMeasuresModel(IntervalVector& measures)
         {
-            // If ivp
-            integration_method_ = RK4;
-            precision_ = 1e-4;
+            ROS_DEBUG_STREAM("set dynamical model begin");
+            measures_model_ 
+                = new Function(state_variable_, Return( state_variable_[0],
+                                                        state_variable_[1]
+                                                        +state_variable_[2]));
+            ROS_DEBUG_STREAM("set dynamical model end");
+        }
+};
 
+
+class TestBoxParticleFilter: public BoxParticleFilter
+{
+    public:
+        TestBoxParticleFilter(  unsigned int N, IntervalVector initial_box,
+                                AbstractDynamicalModel* dynamical_model)
+            : BoxParticleFilter(N, initial_box, dynamical_model)
+        {
             #if RESAMPLING_DIRECTION == 1
-            geometrical_subdivision_map[0] = std::pair<int, double>(2, 1e-4);
-            geometrical_subdivision_map[2] = std::pair<int, double>(2, 1e-4);
-            geometrical_subdivision_map[4] = std::pair<int, double>(2, 1e-4);
+            geometrical_subdivision_map.insert(std::pair<int, int>(0, 1));
+            geometrical_subdivision_map.insert(std::pair<int, int>(1, 1));
+            geometrical_subdivision_map.insert(std::pair<int, int>(2, 1));
             #endif
-
-            setDynamicalModel();
         }
 };

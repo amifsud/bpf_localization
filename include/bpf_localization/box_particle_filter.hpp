@@ -253,43 +253,98 @@ class Particles: public std::deque<Particle>
         }
 };
 
+class AbstractDynamicalModel
+{
+    public:
+        double dt_; 
+        unsigned int state_size_;
+        unsigned int control_size_;
+        unsigned int measures_size_;
+
+    protected:
+        Function* dynamical_model_;
+        Function* measures_model_;
+        Variable  state_variable_;
+
+        simulation* simu_;
+        Method integration_method_;
+        double precision_;
+
+        // Noises
+        Vector measures_noise_diams_;
+        Vector process_noise_diams_;
+
+    public:
+        AbstractDynamicalModel( unsigned int state_size, unsigned int control_size, 
+                                unsigned int measures_size, double dt,
+                                Vector measures_noise_diams, Vector process_noise_diams,
+                                Method method, double precision)
+            :dt_(dt), state_size_(state_size), 
+             control_size_(control_size), measures_size_(measures_size), 
+             measures_noise_diams_(measures_noise_diams),
+             process_noise_diams_(process_noise_diams),
+             integration_method_(method), precision_(precision),
+             state_variable_(state_size)
+        {
+            ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
+        }
+ 
+        Particle apply_dynamics(Particle& particle, IntervalVector& control, bool ivp = false)
+        {
+            if(ivp)
+            {
+                ivp_ode problem 
+                    = ivp_ode(*dynamical_model_, 0.0, IntervalVector(particle.box_.size()));
+                problem.yinit = &(particle.box_);
+
+                simu_ = new simulation(&problem, dt_, integration_method_, precision_);
+                simu_->run_simulation();
+
+                return Particle(simu_->get_last(), particle.weight_);
+            }
+            else
+            {
+                return Particle(dynamical_model_->eval_vector(particle.box_), particle.weight_);
+            }
+        }
+
+        IntervalVector apply_measures(Particle& particle)
+        {
+            return measures_model_->eval_vector(particle.box_);
+        }
+
+
+    protected:
+        virtual void setDynamicalModel(IntervalVector& control) = 0;
+        virtual void setMeasuresModel (IntervalVector& control) = 0;
+
+};
+
 class BoxParticleFilter
 {
     protected:
         unsigned int N_;                                // Number of particles
-        unsigned int state_size_;                       // size of the boxes aka stat size
-        double dt_;                                      // time step
-
-        Particles particles_;
 
         //Random
         std::uniform_real_distribution<double> uniform_distribution_;
 
         // Dynamical model
         Variable state_variable_;
-        IntervalVector* control_;
-        Function* dynamics_model_;
-        Function* measures_model_;
+        AbstractDynamicalModel* dynamical_model_;
 
-        // Prediction
+        // Particles
+        Particles particles_;
         Particles predicted_particles_;
-        Method integration_method_;
-        double precision_;
-        simulation* simu_;
-
-        // Correction
         Particles corrected_particles_;
+        Particles resampled_particles_;
 
         // Resampling
-        Particles resampled_particles_;
+        bool resampled_;
         #if RESAMPLING_DIRECTION == 1
         std::map<int, std::pair<int, double>> geometrical_subdivision_map;
         #endif
-        bool resampled_;
 
     protected:
-        virtual void setDynamicalModel() = 0;
- 
         Particles* getParticlesPtr(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT)
         {
             switch(boxes_type)
@@ -331,10 +386,11 @@ class BoxParticleFilter
 
             unsigned int current_particles_nb = 1;
 
-            while(current_particles_nb*pow(2,state_size_) <= N_)
+            while(current_particles_nb*pow(2,dynamical_model_->state_size_) <= N_)
             {
                 for(unsigned int box_i = 0; box_i < current_particles_nb; ++box_i)
-                    particles->subdivise(0, SUBDIVISION_TYPE::ALL_DIMESIONS, state_size_);
+                    particles->subdivise
+                        (0, SUBDIVISION_TYPE::ALL_DIMESIONS, dynamical_model_->state_size_);
                 current_particles_nb = particles->size();
             }
 
@@ -501,28 +557,18 @@ class BoxParticleFilter
     public:
         /*** Box particle filter steps ***/
 
-        BoxParticleFilter(  unsigned int N, unsigned int state_size, 
-                            unsigned int control_size,
-                            double dt, IntervalVector& initial_box): 
-            state_variable_(state_size),
-            control_(new IntervalVector(control_size)),
-            uniform_distribution_(0.0,1.0)
+        BoxParticleFilter(  unsigned int N, IntervalVector& initial_box,
+                            AbstractDynamicalModel* dynamical_model)
+            : uniform_distribution_(0.0,1.0), dynamical_model_(dynamical_model)
         {
-            ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
-            ROS_ASSERT_MSG(state_size == initial_box.size(), 
+            ROS_ASSERT_MSG(dynamical_model->state_size_ == initial_box.size(), 
                     "State size and initial box size not consistent");
 
             N_          = N;
-            state_size_ = state_size;
-
-            dt_         = dt;
-            integration_method_ = RK4;
-            precision_ = 1e-6;
-
             initializeBoxes(initial_box);
         }
 
-        void prediction(const IntervalVector control, 
+        void prediction(IntervalVector& control, 
                         BOXES_TYPE input_boxes_type = BOXES_TYPE::DEFAULT, 
                         bool ivp=false)
         {
@@ -530,35 +576,9 @@ class BoxParticleFilter
             Particles* particles = getParticlesPtr(input_boxes_type);
             predicted_particles_.clear();
 
-            *control_ = control;
-
-            ivp_ode problem = ivp_ode(*dynamics_model_, 0.0, IntervalVector(state_size_));
-
-            IntervalVector predicted_box = IntervalVector(state_size_);
-
             for(auto it = particles->begin(); it == particles->end(); it++)
-            {
-                if(ivp)
-                {
-                    problem.yinit = &(it->box_);
-                    delete simu_;
-                    simu_ = new simulation(&problem, dt_, integration_method_, precision_);
-                    simu_->run_simulation();
-                    predicted_box = simu_->get_last();
-                }
-                else
-                {
-                    predicted_box = dynamics_model_->eval_vector(it->box_);
-                }
+                predicted_particles_.append(dynamical_model_->apply_dynamics(*it, control, ivp));
 
-                predicted_particles_.append(Particle(predicted_box, it->weight_));
-            }
-
-            if(ivp)
-            {
-                delete simu_;
-                problem.yinit = NULL;
-            }
             ROS_DEBUG_STREAM("prediction end");
         }
 
@@ -574,7 +594,7 @@ class BoxParticleFilter
 
             for(unsigned int i = 0; i < particles->size(); ++i)
             {
-                predicted_measures  = measures_model_->eval_vector((*particles)[i].box_);
+                predicted_measures  = dynamical_model_->apply_measures(*it);
                 innovation          = predicted_measures & measures;
 
                 if(innovation.volume() > 0)
