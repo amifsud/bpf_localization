@@ -1,3 +1,5 @@
+#include <bpf_localization/dynamical_systems.hpp>
+
 bool wellPavedTest(Particles* particles, IntervalVector initial_box)
 {
     if(particles->size() > 0)
@@ -153,47 +155,11 @@ bool subdiviseOverRandomDimensionsTest
     return test_succeed;
 }
 
-class DynamicalModel: public AbstractDynamicalModel
-{
-    public:
-        DynamicalModel( unsigned int state_size, unsigned int control_size, 
-                        unsigned int measures_size, double dt,
-                        Vector measures_noise_diams, Vector process_noise_diams,
-                        Method method, double precision)
-            :AbstractDynamicalModel(state_size, control_size, measures_size, dt, 
-                                    measures_noise_diams, process_noise_diams,
-                                    method, precision)
-        {}
-
-    protected:
-        void setDynamicalModel(IntervalVector& control)
-        {
-            ROS_DEBUG_STREAM("set dynamical model begin");
-            dynamical_model_             
-                = new Function(state_variable_, 
-                        Return( Interval(1.),
-                                Interval(1.),
-                                control[0]));
-            ROS_DEBUG_STREAM("set dynamical model end");
-        }
-
-        void setMeasuresModel(IntervalVector& measures)
-        {
-            ROS_DEBUG_STREAM("set dynamical model begin");
-            measures_model_ 
-                = new Function(state_variable_, Return( state_variable_[0],
-                                                        state_variable_[1]
-                                                        +state_variable_[2]));
-            ROS_DEBUG_STREAM("set dynamical model end");
-        }
-};
-
-
 class TestBoxParticleFilter: public BoxParticleFilter
 {
     public:
         TestBoxParticleFilter(  unsigned int N, IntervalVector initial_box,
-                                AbstractDynamicalModel* dynamical_model)
+                                DynamicalModel* dynamical_model)
             : BoxParticleFilter(N, initial_box, dynamical_model)
         {
             #if RESAMPLING_DIRECTION == 1
