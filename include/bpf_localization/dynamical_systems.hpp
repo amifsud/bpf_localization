@@ -2,7 +2,7 @@
 
 /** Turtlebot 2 **/
 
-class DynamicalModel: public AbstractDynamicalModel
+class TurtleBotDynamicalModel: public DynamicalModel
 {
     public:
         static const unsigned int state_size       = 3;         // state_size
@@ -13,16 +13,16 @@ class DynamicalModel: public AbstractDynamicalModel
         const double wheels_distance_;
  
     public:
-        DynamicalModel(Vector measures_noise_diams
-                                    = Vector(DynamicalModel::measures_size),
+        TurtleBotDynamicalModel(Vector measures_noise_diams
+                                    = Vector(TurtleBotDynamicalModel::measures_size),
                                 Vector process_noise_diams
-                                    = Vector(DynamicalModel::state_size),
+                                    = Vector(TurtleBotDynamicalModel::state_size),
                                 double dt              = 1,      // dt
                                 Method method          = RK4,    // method       
                                 double precision       = 1e-6,   // precision
                                 double wheels_radius   = 3.5e-2, // wheels radius
                                 double wheels_distance = 23e-2)  // wheels distance
-            :AbstractDynamicalModel(state_size,           
+            :DynamicalModel(state_size,           
                             control_size,         
                             measures_size,        
                             dt,                            

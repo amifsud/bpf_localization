@@ -8,7 +8,7 @@
 // Declare a test
 TEST(UniformlyChoosenPavingInitTest, testCase1)
 {
-    DynamicalModel* dynamical_model = new DynamicalModel();
+    TurtleBotDynamicalModel* dynamical_model = new TurtleBotDynamicalModel();
 
     unsigned int N = 1234;
 

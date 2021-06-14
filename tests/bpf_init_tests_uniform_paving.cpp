@@ -8,7 +8,7 @@
 // Declare a test
 TEST(UniformPavingInitTest, testCase1)
 {
-    DynamicalModel* dynamical_model = new DynamicalModel();
+    TurtleBotDynamicalModel* dynamical_model = new TurtleBotDynamicalModel();
 
     unsigned int N = pow(pow(2,dynamical_model->stateSize()),1);
 
@@ -30,7 +30,7 @@ TEST(UniformPavingInitTest, testCase1)
 // Declare another test
 TEST(UniformPavingInitTest, testCase2)
 {
-    DynamicalModel* dynamical_model = new DynamicalModel();
+    TurtleBotDynamicalModel* dynamical_model = new TurtleBotDynamicalModel();
 
     unsigned int N = pow(pow(2,dynamical_model->stateSize()),2) + 10;
 

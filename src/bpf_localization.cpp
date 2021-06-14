@@ -23,25 +23,25 @@ class LocalizationBoxParticleFilter: public BoxParticleFilter
 int main(int argc, char **argv) 
 {
 
-    IntervalVector initial_box(DynamicalModel::state_size);
+    IntervalVector initial_box(TurtleBotDynamicalModel::state_size);
     initial_box[0]= Interval(-10.0, 10.0);
     initial_box[1]= Interval(-10.0, 10.0);
     initial_box[2]= Interval(-10.0, 10.0);
 
     unsigned int N = 18; // number of boxes
 
-    DynamicalModel* dynamical_model = new DynamicalModel();
+    TurtleBotDynamicalModel* dynamical_model = new TurtleBotDynamicalModel();
 
     LocalizationBoxParticleFilter bpf(N, initial_box, dynamical_model);
 
     Particles particles = bpf.getParticles();
 
-    IntervalVector control(DynamicalModel::control_size);
+    IntervalVector control(TurtleBotDynamicalModel::control_size);
     control[0]= Interval(2.78, 2.79);
     control[1]= Interval(2.78, 2.79);
     bpf.prediction(control);
 
-    IntervalVector measures(DynamicalModel::measures_size);
+    IntervalVector measures(TurtleBotDynamicalModel::measures_size);
     measures[0] = Interval(1., 2.);
     measures[1] = Interval(2., 3.);
     bpf.correction(measures);

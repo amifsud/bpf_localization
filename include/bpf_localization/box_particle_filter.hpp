@@ -279,7 +279,7 @@ class Particles: public std::deque<Particle>
         }
 };
 
-class AbstractDynamicalModel
+class DynamicalModel
 {
     protected:
         double dt_; 
@@ -302,7 +302,7 @@ class AbstractDynamicalModel
         double precision_;
 
     public:
-        AbstractDynamicalModel( unsigned int state_size, unsigned int control_size, 
+        DynamicalModel( unsigned int state_size, unsigned int control_size, 
                                 unsigned int measures_size, double dt,
                                 Vector measures_noise_diams, Vector process_noise_diams,
                                 Method method, double precision)
@@ -387,7 +387,7 @@ class BoxParticleFilter
 
         // Dynamical model
         Variable state_variable_;
-        AbstractDynamicalModel* dynamical_model_;
+        DynamicalModel* dynamical_model_;
 
         // Particles
         Particles particles_;
@@ -615,7 +615,7 @@ class BoxParticleFilter
         /*** Box particle filter steps ***/
 
         BoxParticleFilter(  unsigned int N, IntervalVector& initial_box,
-                            AbstractDynamicalModel* dynamical_model)
+                            DynamicalModel* dynamical_model)
             : uniform_distribution_(0.0,1.0), dynamical_model_(dynamical_model)
         {
             ROS_ASSERT_MSG(dynamical_model->stateSize() == initial_box.size(), 
@@ -686,7 +686,7 @@ class BoxParticleFilter
             return N_;
         }
 
-        const AbstractDynamicalModel* dynamicalModel() const
+        const DynamicalModel* dynamicalModel() const
         {
             return dynamical_model_;
         }
