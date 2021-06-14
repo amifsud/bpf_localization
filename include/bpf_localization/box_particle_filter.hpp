@@ -37,6 +37,11 @@
     #define RESAMPLING_DIRECTION 0
 #endif
 
+/*** Available particles subdivision ***/
+// * random
+// * all dimensions
+// * given dimensions
+
 /*** Algos dependencies ***/
 #if INIT_METHOD == 1
     #define SUBDIVISE_OVER_ALL_DIMENSIONS
@@ -51,6 +56,10 @@ using namespace ibex;
 enum BOXES_TYPE{PREDICTION, CORRECTION, RESAMPLING, DEFAULT};
 enum SUBDIVISION_TYPE{GIVEN, ALL_DIMESIONS, RANDOM};
 
+class Kernel
+{
+};
+
 class Particle
 {
     protected:
@@ -62,9 +71,9 @@ class Particle
         std::pair<IntervalVector, IntervalVector> pair;
         unsigned int direction;
 
-    public:
-        IntervalVector box_;
-        float weight_;
+        IntervalVector  box_;
+        Kernel          kernel_;
+        double          weight_;
 
     protected:
         /*** Boxes processing ***/
@@ -178,6 +187,21 @@ class Particle
 
             return particles;
         }
+
+        const IntervalVector& box() const
+        {
+            return box_;
+        }
+
+        const Kernel& kernel() const
+        {
+            return kernel_;
+        }
+
+        double& weight()
+        {
+            return weight_;
+        }
 };
 
 class Particles: public std::deque<Particle>
@@ -189,7 +213,7 @@ class Particles: public std::deque<Particle>
         {
             float sum = 0;
             for(auto it= this->begin(); it != this->end(); it++)
-                sum += it->weight_;
+                sum += it->weight();
             return sum;
         }
 
@@ -211,17 +235,17 @@ class Particles: public std::deque<Particle>
         void resetWeightsUniformly()
         {
             for(auto it = this->begin(); it != this->end(); it++)
-                it->weight_ = 1./this->size();
+                it->weight() = 1./this->size();
         }
 
         std::vector<float> getCumulatedWeights()
         {
             std::vector<float> cumulated_weights;
-            cumulated_weights.push_back(this->begin()->weight_);
+            cumulated_weights.push_back(this->begin()->weight());
             unsigned int i = 0;
             for(auto it= this->begin()+1; it != this->end(); it++, ++i)
                 cumulated_weights.push_back(cumulated_weights[i]  
-                                            + it->weight_);
+                                            + it->weight());
             return cumulated_weights;
         }
 
@@ -229,7 +253,7 @@ class Particles: public std::deque<Particle>
         {
             float sum_of_weights = sumOfWeights();
             for(auto it= this->begin(); it != this->end(); it++)
-                it->weight_ /= sum_of_weights;
+                it->weight() /= sum_of_weights;
         }
 
         /*** Boxes processing **/
@@ -257,24 +281,25 @@ class Particles: public std::deque<Particle>
 
 class AbstractDynamicalModel
 {
-    public:
+    protected:
         double dt_; 
+
+        // Process
+        Function* dynamical_model_;
+        Vector process_noise_diams_;
         unsigned int state_size_;
         unsigned int control_size_;
+ 
+        // Measures
+        Function* measures_model_;
+        Vector measures_noise_diams_;
         unsigned int measures_size_;
 
-    protected:
-        Function* dynamical_model_;
-        Function* measures_model_;
-        Variable  state_variable_;
-
+        // Simulation with dynibex
         simulation* simu_;
         Method integration_method_;
+        Variable  state_variable_;
         double precision_;
-
-        // Noises
-        Vector measures_noise_diams_;
-        Vector process_noise_diams_;
 
     public:
         AbstractDynamicalModel( unsigned int state_size, unsigned int control_size, 
@@ -291,30 +316,60 @@ class AbstractDynamicalModel
             ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
         }
  
-        Particle apply_dynamics(Particle& particle, IntervalVector& control, bool ivp = false)
+        Particle applyDynamics(Particle& particle, IntervalVector& control, bool ivp = false)
         {
             if(ivp)
             {
                 ivp_ode problem 
-                    = ivp_ode(*dynamical_model_, 0.0, IntervalVector(particle.box_.size()));
-                problem.yinit = &(particle.box_);
+                    = ivp_ode(*dynamical_model_, 0.0, IntervalVector(particle.box().size()));
+                IntervalVector box(particle.box());
+                problem.yinit = &box;
 
                 simu_ = new simulation(&problem, dt_, integration_method_, precision_);
                 simu_->run_simulation();
 
-                return Particle(simu_->get_last(), particle.weight_);
+                return Particle(simu_->get_last(), particle.weight());
             }
             else
             {
-                return Particle(dynamical_model_->eval_vector(particle.box_), particle.weight_);
+                return Particle(dynamical_model_->eval_vector(particle.box()), particle.weight());
             }
         }
 
-        IntervalVector apply_measures(Particle& particle)
+        IntervalVector applyMeasures(Particle& particle)
         {
-            return measures_model_->eval_vector(particle.box_);
+            return measures_model_->eval_vector(particle.box());
         }
 
+        const double& dt() const
+        {
+            return dt_;
+        }
+
+        const unsigned int& stateSize() const
+        {
+            return state_size_;
+        }
+
+        const unsigned int& controlSize() const
+        {
+            return control_size_;
+        }
+
+        const unsigned int& measuresSize() const
+        {
+            return measures_size_;
+        }
+
+        const Vector& processNoiseDiams() const
+        {
+            return process_noise_diams_;
+        }
+
+        const Vector& measuresNoiseDiams() const
+        {
+            return measures_noise_diams_;
+        }
 
     protected:
         virtual void setDynamicalModel(IntervalVector& control) = 0;
@@ -376,11 +431,11 @@ class BoxParticleFilter
 
             unsigned int current_particles_nb = 1;
 
-            while(current_particles_nb*pow(2,dynamical_model_->state_size_) <= N_)
+            while(current_particles_nb*pow(2,dynamical_model_->stateSize()) <= N_)
             {
                 for(unsigned int box_i = 0; box_i < current_particles_nb; ++box_i)
                     particles->subdivise
-                        (0, SUBDIVISION_TYPE::ALL_DIMESIONS, dynamical_model_->state_size_);
+                        (0, SUBDIVISION_TYPE::ALL_DIMESIONS, dynamical_model_->stateSize());
                 current_particles_nb = particles->size();
             }
 
@@ -519,7 +574,7 @@ class BoxParticleFilter
             // Check that we need to resample
             double Neff = 0;
             for(unsigned int i = 0; i < particles->size(); ++i)
-                Neff += 1./pow((*particles)[i].weight_, 2);
+                Neff += 1./pow((*particles)[i].weight(), 2);
             if(Neff <= 0.7 * particles->size())
             {
                 ROS_DEBUG_STREAM("We will resample");
@@ -533,7 +588,7 @@ class BoxParticleFilter
                 unsigned int dir;
                 for(auto it = particles->begin(); it == particles->end(); it++, i++)
                 {
-                    dir = getDirection(it->box_);
+                    dir = getDirection(it->box());
                     resampled_particles_
                         .append(it->subdivise(SUBDIVISION_TYPE::GIVEN, n[i], dir));
                 }
@@ -563,7 +618,7 @@ class BoxParticleFilter
                             AbstractDynamicalModel* dynamical_model)
             : uniform_distribution_(0.0,1.0), dynamical_model_(dynamical_model)
         {
-            ROS_ASSERT_MSG(dynamical_model->state_size_ == initial_box.size(), 
+            ROS_ASSERT_MSG(dynamical_model->stateSize() == initial_box.size(), 
                     "State size and initial box size not consistent");
 
             N_          = N;
@@ -579,7 +634,7 @@ class BoxParticleFilter
             predicted_particles_.clear();
 
             for(auto it = particles->begin(); it == particles->end(); it++)
-                predicted_particles_.append(dynamical_model_->apply_dynamics(*it, control, ivp));
+                predicted_particles_.append(dynamical_model_->applyDynamics(*it, control, ivp));
 
             ROS_DEBUG_STREAM("prediction end");
         }
@@ -596,14 +651,14 @@ class BoxParticleFilter
 
             for(auto it = particles->begin(); it == particles->end(); it++)
             {
-                predicted_measures  = dynamical_model_->apply_measures(*it);
+                predicted_measures  = dynamical_model_->applyMeasures(*it);
                 innovation          = predicted_measures & measures;
 
                 if(innovation.volume() > 0)
                 {
                     corrected_particles_.append(
-                            Particle(   contract(innovation, it->box_),
-                                        it->weight_ * (innovation.volume()
+                            Particle(   contract(innovation, it->box()),
+                                        it->weight() * (innovation.volume()
                                                 /predicted_measures.volume()))); 
                 }
             }
@@ -614,8 +669,25 @@ class BoxParticleFilter
             ROS_DEBUG_STREAM("End correction");
         }
 
-        Particles getParticles(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT)
+        const Particles& getParticles(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT) const
         {
-           return *getParticlesPtr(boxes_type); 
+            switch(boxes_type)
+            {
+                case DEFAULT:    return particles_;           break;
+                case PREDICTION: return predicted_particles_; break;
+                case CORRECTION: return corrected_particles_; break;
+                case RESAMPLING: return resampled_particles_; break;
+                default: ASSERT("Wrong specified boxes type");
+            }
+        }
+
+        const unsigned int& N() const
+        {
+            return N_;
+        }
+
+        const AbstractDynamicalModel* dynamicalModel() const
+        {
+            return dynamical_model_;
         }
 };
