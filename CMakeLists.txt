@@ -245,5 +245,14 @@ if(TARGET bpf_init_tests_uniformly_choosen_paving)
     )
 endif()
 
+catkin_add_gtest(turtlebot_tests tests/turtlebot/turtlebot_tests.cpp)
+if(TARGET turtlebot_tests)
+    target_link_libraries(turtlebot_tests
+        ${catkin_LIBRARIES}
+        /usr/local/lib/libibex.a
+        /usr/local/lib/libprim.a
+    )
+endif()
+
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
