@@ -1,3 +1,4 @@
+#include "bpf_localization/dynamical_systems.hpp"
 #include "ibex/ibex.h"
 #include <ros/ros.h>
 #include <vector>
@@ -7,8 +8,8 @@
 
 /*** FIXME 
  *
- *  - Every test should test only code in the same class
- *  - Each more genral test should call sub tests ?
+ *  - making dynamical model independant of particles
+ *  - specific dynamcal models witht there tests and examples are plugins ?
  *
  */
 
@@ -279,104 +280,6 @@ class Particles: public std::deque<Particle>
         }
 };
 
-class DynamicalModel
-{
-    protected:
-        double dt_; 
-
-        // Process
-        Function* dynamical_model_;
-        Vector process_noise_diams_;
-        unsigned int state_size_;
-        unsigned int control_size_;
- 
-        // Measures
-        Function* measures_model_;
-        Vector measures_noise_diams_;
-        unsigned int measures_size_;
-
-        // Simulation with dynibex
-        simulation* simu_;
-        Method integration_method_;
-        Variable  state;
-        double precision_;
-
-    public:
-        DynamicalModel( unsigned int state_size, unsigned int control_size, 
-                                unsigned int measures_size, double dt,
-                                Vector measures_noise_diams, Vector process_noise_diams,
-                                Method method, double precision)
-            :dt_(dt), state_size_(state_size), 
-             control_size_(control_size), measures_size_(measures_size), 
-             measures_noise_diams_(measures_noise_diams),
-             process_noise_diams_(process_noise_diams),
-             integration_method_(method), precision_(precision),
-             state(state_size)
-        {
-            ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
-        }
- 
-        Particle applyDynamics(Particle& particle, IntervalVector& control, bool ivp = false)
-        {
-            if(ivp)
-            {
-                ivp_ode problem 
-                    = ivp_ode(*dynamical_model_, 0.0, IntervalVector(particle.box().size()));
-                IntervalVector box(particle.box());
-                problem.yinit = &box;
-
-                simu_ = new simulation(&problem, dt_, integration_method_, precision_);
-                simu_->run_simulation();
-
-                return Particle(simu_->get_last(), particle.weight());
-            }
-            else
-            {
-                return Particle(dynamical_model_->eval_vector(particle.box()), particle.weight());
-            }
-        }
-
-        IntervalVector applyMeasures(Particle& particle)
-        {
-            return measures_model_->eval_vector(particle.box());
-        }
-
-        const double& dt() const
-        {
-            return dt_;
-        }
-
-        const unsigned int& stateSize() const
-        {
-            return state_size_;
-        }
-
-        const unsigned int& controlSize() const
-        {
-            return control_size_;
-        }
-
-        const unsigned int& measuresSize() const
-        {
-            return measures_size_;
-        }
-
-        const Vector& processNoiseDiams() const
-        {
-            return process_noise_diams_;
-        }
-
-        const Vector& measuresNoiseDiams() const
-        {
-            return measures_noise_diams_;
-        }
-
-    protected:
-        virtual void setDynamicalModel(IntervalVector& control) = 0;
-        virtual void setMeasuresModel (IntervalVector& control) = 0;
-
-};
-
 class BoxParticleFilter
 {
     protected:
@@ -634,7 +537,9 @@ class BoxParticleFilter
             predicted_particles_.clear();
 
             for(auto it = particles->begin(); it == particles->end(); it++)
-                predicted_particles_.append(dynamical_model_->applyDynamics(*it, control, ivp));
+                predicted_particles_.append(
+                        Particle(dynamical_model_->applyDynamics(it->box(), control, ivp),
+                                 it->weight()));
 
             ROS_DEBUG_STREAM("prediction end");
         }
@@ -651,7 +556,7 @@ class BoxParticleFilter
 
             for(auto it = particles->begin(); it == particles->end(); it++)
             {
-                predicted_measures  = dynamical_model_->applyMeasures(*it);
+                predicted_measures  = dynamical_model_->applyMeasures(it->box());
                 innovation          = predicted_measures & measures;
 
                 if(innovation.volume() > 0)
