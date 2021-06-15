@@ -104,8 +104,19 @@ class DynamicalModel
         }
 
     protected:
-        virtual void setDynamicalModel(const IntervalVector& control) = 0;
-        virtual void setMeasuresModel (const IntervalVector& control) = 0;
+        virtual void setIVPDynamicalModel(const IntervalVector& control)
+        {
+            ROS_ASSERT_MSG(false, 
+                    "IVP dynamical model not set, initialize it or use not IVP version");
+        }
+
+        virtual void setDynamicalModel   (const IntervalVector& control)
+        {
+            ROS_ASSERT_MSG(false, 
+                    "dynamical model not set, initialize it or use IVP version");
+        }
+
+        virtual void setMeasuresModel    (const IntervalVector& control) = 0;
 
 };
 
@@ -158,7 +169,7 @@ class TurtleBotDynamicalModel: public DynamicalModel
         }
 
     protected:
-        void setDynamicalModel(const IntervalVector& control)
+        void setIVPDynamicalModel(const IntervalVector& control)
         {
             ROS_DEBUG_STREAM("set dynamical model begin");
             dynamical_model_             
@@ -166,6 +177,18 @@ class TurtleBotDynamicalModel: public DynamicalModel
                         Return( wheels_radius_/2*(control[0]+control[1])*cos(state[2]),
                                 wheels_radius_/2*(control[0]+control[1])*sin(state[2]),
                                 wheels_radius_/wheels_distance_*(control[0]-control[1])));
+            ROS_DEBUG_STREAM("set dynamical model end");
+        }
+
+        void setDynamicalModel(const IntervalVector& control)
+        {
+            ROS_DEBUG_STREAM("set dynamical model begin");
+            dynamical_model_             
+                = new Function(state, 
+                        Return(dt_*wheels_radius_/2*(control[0]+control[1])*cos(state[2])+state[0],
+                               dt_*wheels_radius_/2*(control[0]+control[1])*sin(state[2])+state[1],
+                               dt_*wheels_radius_/wheels_distance_*(control[0]-control[1]+state[2])
+                              ));
             ROS_DEBUG_STREAM("set dynamical model end");
         }
 
