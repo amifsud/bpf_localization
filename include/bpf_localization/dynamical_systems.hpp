@@ -1,4 +1,7 @@
 #include <ros/ros.h>
+#include <math.h>
+
+#define NaN std::numeric_limits<double>::quiet_NaN()
 
 /** Turtlebot 2 **/
 
@@ -14,9 +17,9 @@ class TurtleBotDynamicalModel: public DynamicalModel
  
     public:
         TurtleBotDynamicalModel(Vector measures_noise_diams
-                                    = Vector(TurtleBotDynamicalModel::measures_size),
+                                    = Vector(TurtleBotDynamicalModel::measures_size, NaN),
                                 Vector process_noise_diams
-                                    = Vector(TurtleBotDynamicalModel::state_size),
+                                    = Vector(TurtleBotDynamicalModel::state_size, NaN),
                                 double dt              = 1,      // dt
                                 Method method          = RK4,    // method       
                                 double precision       = 1e-6,   // precision
