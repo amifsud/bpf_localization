@@ -30,26 +30,27 @@ class DynamicalModel
         Method integration_method_;
         Variable  state;
         double precision_;
+        bool ivp_;
 
     public:
         DynamicalModel( unsigned int state_size, unsigned int control_size, 
                                 unsigned int measures_size, double dt,
                                 Vector measures_noise_diams, Vector process_noise_diams,
-                                Method method, double precision)
+                                Method method, double precision, bool ivp)
             :dt_(dt), state_size_(state_size), 
              control_size_(control_size), measures_size_(measures_size), 
              measures_noise_diams_(measures_noise_diams),
              process_noise_diams_(process_noise_diams),
              integration_method_(method), precision_(precision),
-             state(state_size)
+             state(state_size),
+             ivp_(ivp)
         {
             ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
         }
  
-        IntervalVector applyDynamics(const IntervalVector& box, 
-                                     IntervalVector& control, bool ivp = false)
+        IntervalVector applyDynamics(const IntervalVector& box, const IntervalVector& control)
         {
-            if(ivp)
+            if(ivp_)
             {
                 ivp_ode problem 
                     = ivp_ode(*dynamical_model_, 0.0, IntervalVector(box.size()));
@@ -137,7 +138,8 @@ class TurtleBotDynamicalModel: public DynamicalModel
                             measures_noise_diams, 
                             process_noise_diams,  
                             method,                  
-                            precision),
+                            precision,
+                            false),                                    // IVP or not
             wheels_radius_(wheels_radius),
             wheels_distance_(wheels_distance)
         {

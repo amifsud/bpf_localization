@@ -531,8 +531,7 @@ class BoxParticleFilter
         }
 
         void prediction(IntervalVector& control, 
-                        BOXES_TYPE input_boxes_type = BOXES_TYPE::DEFAULT, 
-                        bool ivp=false)
+                        BOXES_TYPE input_boxes_type = BOXES_TYPE::DEFAULT)
         {
             ROS_DEBUG_STREAM("prediction begin");
             Particles* particles = getParticlesPtr(input_boxes_type);
@@ -540,7 +539,7 @@ class BoxParticleFilter
 
             for(auto it = particles->begin(); it == particles->end(); it++)
                 predicted_particles_.append(
-                        Particle(dynamical_model_->applyDynamics(it->box(), control, ivp),
+                        Particle(dynamical_model_->applyDynamics(it->box(), control),
                                  it->weight()));
 
             ROS_DEBUG_STREAM("prediction end");
