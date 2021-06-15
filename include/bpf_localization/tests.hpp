@@ -1,3 +1,4 @@
+#include <bpf_localization/box_particle_filter.hpp>
 #include <bpf_localization/dynamical_systems.hpp>
 
 #ifndef TESTS

@@ -2,7 +2,6 @@
 #define SUBDIVISE_OVER_GIVEN_DIRECTION
 
 #include <gtest/gtest.h>
-#include <bpf_localization/box_particle_filter.hpp>
 #include <bpf_localization/tests.hpp>
 
 // Declare a test

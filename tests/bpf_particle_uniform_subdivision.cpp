@@ -1,10 +1,7 @@
 #define LOG_LEVEL Info
 #define INIT_METHOD   1
 
-#include <stdlib.h>
-#include <ros/console.h>
 #include <gtest/gtest.h>
-#include <bpf_localization/box_particle_filter.hpp>
 #include <bpf_localization/tests.hpp>
 
 // Declare a test

@@ -2,7 +2,6 @@
 #define INIT_METHOD     1
 
 #include <gtest/gtest.h>
-#include <bpf_localization/box_particle_filter.hpp>
 #include <bpf_localization/tests.hpp>
 
 // Declare a test
