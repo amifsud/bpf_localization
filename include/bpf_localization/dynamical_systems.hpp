@@ -56,9 +56,9 @@ class TurtleBotDynamicalModel: public DynamicalModel
             ROS_DEBUG_STREAM("set dynamical model begin");
             dynamical_model_             
                 = new Function(state, 
-                        Return( Interval(1.),
-                                Interval(1.),
-                                control[0]));
+                        Return( wheels_radius_/2*(control[0]+control[1])*cos(state[2]),
+                                wheels_radius_/2*(control[0]+control[1])*sin(state[2]),
+                                wheels_radius_/wheels_distance_*(control[0]-control[1])));
             ROS_DEBUG_STREAM("set dynamical model end");
         }
 
