@@ -1,5 +1,8 @@
 #include <bpf_localization/dynamical_systems.hpp>
 
+#ifndef TESTS
+#define TESTS
+
 bool wellPavedTest(Particles* particles, IntervalVector initial_box)
 {
     if(particles->size() > 0)
@@ -169,3 +172,5 @@ class TestBoxParticleFilter: public BoxParticleFilter
             #endif
         }
 };
+
+#endif

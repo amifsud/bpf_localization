@@ -8,10 +8,12 @@
 
 /*** FIXME 
  *
- *  - making dynamical model independant of particles
  *  - specific dynamcal models witht there tests and examples are plugins ?
  *
  */
+
+#ifndef BOX_PARTICLE_FILTER
+#define BOX_PARTICLE_FILTER
 
 /*** Available algos ***/
 // Init
@@ -596,3 +598,5 @@ class BoxParticleFilter
             return dynamical_model_;
         }
 };
+
+#endif
