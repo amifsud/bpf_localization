@@ -103,8 +103,8 @@ class DynamicalModel
         }
 
     protected:
-        virtual void setDynamicalModel(IntervalVector& control) = 0;
-        virtual void setMeasuresModel (IntervalVector& control) = 0;
+        virtual void setDynamicalModel(const IntervalVector& control) = 0;
+        virtual void setMeasuresModel (const IntervalVector& control) = 0;
 
 };
 
@@ -125,11 +125,11 @@ class TurtleBotDynamicalModel: public DynamicalModel
                                     = Vector(TurtleBotDynamicalModel::measures_size, NaN),
                                 Vector process_noise_diams
                                     = Vector(TurtleBotDynamicalModel::state_size, NaN),
-                                double dt              = 1,      // dt
-                                Method method          = RK4,    // method       
-                                double precision       = 1e-6,   // precision
-                                double wheels_radius   = 3.5e-2, // wheels radius
-                                double wheels_distance = 23e-2)  // wheels distance
+                                const double dt              = 1,      // dt
+                                const Method method          = RK4,    // method       
+                                const double precision       = 1e-6,   // precision
+                                const double wheels_radius   = 3.5e-2, // wheels radius
+                                const double wheels_distance = 23e-2)  // wheels distance
             :DynamicalModel(state_size,           
                             control_size,         
                             measures_size,        
@@ -156,7 +156,7 @@ class TurtleBotDynamicalModel: public DynamicalModel
         }
 
     protected:
-        void setDynamicalModel(IntervalVector& control)
+        void setDynamicalModel(const IntervalVector& control)
         {
             ROS_DEBUG_STREAM("set dynamical model begin");
             dynamical_model_             
@@ -167,7 +167,7 @@ class TurtleBotDynamicalModel: public DynamicalModel
             ROS_DEBUG_STREAM("set dynamical model end");
         }
 
-        void setMeasuresModel(IntervalVector& measures)
+        void setMeasuresModel(const IntervalVector& measures)
         {
             ROS_DEBUG_STREAM("set dynamical model begin");
             measures_model_ 
