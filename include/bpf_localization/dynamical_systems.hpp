@@ -36,14 +36,14 @@ class TurtleBotDynamicalModel: public DynamicalModel
             wheels_radius_(wheels_radius),
             wheels_distance_(wheels_distance)
         {
-            if(process_noise_diams == Vector(state_size_, 0.0))      // process noise diameters
+            if(process_noise_diams == Vector(state_size_, NaN))      // process noise diameters
             {
                 process_noise_diams[0] = 1e-2;
                 process_noise_diams[1] = 1e-2;
                 process_noise_diams[2] = 1e-2;
             }
 
-            if(measures_noise_diams == Vector(measures_size_, 0.0)) // measures noise diameters
+            if(measures_noise_diams == Vector(measures_size_, NaN)) // measures noise diameters
             {
                 measures_noise_diams[0] = 1e-2;
                 measures_noise_diams[1] = 1e-2;
