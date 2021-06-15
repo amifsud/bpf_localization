@@ -298,7 +298,7 @@ class DynamicalModel
         // Simulation with dynibex
         simulation* simu_;
         Method integration_method_;
-        Variable  state_variable_;
+        Variable  state;
         double precision_;
 
     public:
@@ -311,7 +311,7 @@ class DynamicalModel
              measures_noise_diams_(measures_noise_diams),
              process_noise_diams_(process_noise_diams),
              integration_method_(method), precision_(precision),
-             state_variable_(state_size)
+             state(state_size)
         {
             ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
         }

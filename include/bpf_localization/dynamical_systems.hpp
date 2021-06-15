@@ -52,7 +52,7 @@ class TurtleBotDynamicalModel: public DynamicalModel
         {
             ROS_DEBUG_STREAM("set dynamical model begin");
             dynamical_model_             
-                = new Function(state_variable_, 
+                = new Function(state, 
                         Return( Interval(1.),
                                 Interval(1.),
                                 control[0]));
@@ -63,9 +63,8 @@ class TurtleBotDynamicalModel: public DynamicalModel
         {
             ROS_DEBUG_STREAM("set dynamical model begin");
             measures_model_ 
-                = new Function(state_variable_, Return( state_variable_[0],
-                                                        state_variable_[1]
-                                                        +state_variable_[2]));
+                = new Function(state, Return( state[0],
+                                              state[1]+state[2]));
             ROS_DEBUG_STREAM("set dynamical model end");
         }
 };
