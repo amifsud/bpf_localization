@@ -52,6 +52,7 @@ class DynamicalModel
         {
             if(ivp_)
             {
+                setIVPDynamicalModel(control);
                 ivp_ode problem 
                     = ivp_ode(*dynamical_model_, 0.0, IntervalVector(box.size()));
                 IntervalVector box_tmp(box);
@@ -64,6 +65,7 @@ class DynamicalModel
             }
             else
             {
+                setDynamicalModel(control);
                 return dynamical_model_->eval_vector(box);
             }
         }
