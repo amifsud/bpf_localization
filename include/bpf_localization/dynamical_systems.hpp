@@ -34,9 +34,9 @@ class DynamicalModel
 
     public:
         DynamicalModel( unsigned int state_size, unsigned int control_size, 
-                                unsigned int measures_size, double dt,
-                                Vector measures_noise_diams, Vector process_noise_diams,
-                                Method method, double precision, bool ivp)
+                        unsigned int measures_size, double dt,
+                        Vector measures_noise_diams, Vector process_noise_diams,
+                        Method method, double precision, bool ivp)
             :dt_(dt), state_size_(state_size), 
              control_size_(control_size), measures_size_(measures_size),
              dynamical_model_(NULL),
@@ -78,35 +78,12 @@ class DynamicalModel
             return measures_model_->eval_vector(box);
         }
 
-        const double& dt() const
-        {
-            return dt_;
-        }
-
-        const unsigned int& stateSize() const
-        {
-            return state_size_;
-        }
-
-        const unsigned int& controlSize() const
-        {
-            return control_size_;
-        }
-
-        const unsigned int& measuresSize() const
-        {
-            return measures_size_;
-        }
-
-        const Vector& processNoiseDiams() const
-        {
-            return process_noise_diams_;
-        }
-
-        const Vector& measuresNoiseDiams() const
-        {
-            return measures_noise_diams_;
-        }
+        const double& dt()                 const { return dt_; }
+        const unsigned int& stateSize()    const { return state_size_; }
+        const unsigned int& controlSize()  const { return control_size_; }
+        const unsigned int& measuresSize() const { return measures_size_; }
+        const Vector& processNoiseDiams()  const { return process_noise_diams_; }
+        const Vector& measuresNoiseDiams() const { return measures_noise_diams_; }
 
     protected:
         virtual void setIVPDynamicalModel(const IntervalVector& control)
@@ -167,14 +144,14 @@ class TurtleBotDynamicalModel: public DynamicalModel
             wheels_radius_(wheels_radius),
             wheels_distance_(wheels_distance)
         {
-            if(process_noise_diams == Vector(state_size_, NaN))      // process noise diameters
+            if(process_noise_diams == Vector(state_size_, NaN))        // process noise diameters
             {
                 process_noise_diams[0] = 1e-2;
                 process_noise_diams[1] = 1e-2;
                 process_noise_diams[2] = 1e-2;
             }
 
-            if(measures_noise_diams == Vector(measures_size_, NaN)) // measures noise diameters
+            if(measures_noise_diams == Vector(measures_size_, NaN))    // measures noise diameters
             {
                 measures_noise_diams[0] = 1e-2;
                 measures_noise_diams[1] = 1e-2;
