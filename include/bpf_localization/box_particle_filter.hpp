@@ -1,3 +1,9 @@
+/*** FIXME 
+ *
+ *  - implement maximum likelihood resqmpling direction choice
+ *
+ */
+
 #include "bpf_localization/dynamical_systems.hpp"
 #include "ibex/ibex.h"
 #include <ros/ros.h>
@@ -5,12 +11,6 @@
 #include <utility>
 #include <numeric>
 #include <random>
-
-/*** FIXME 
- *
- *  - specific dynamcal models witht there tests and examples are plugins ?
- *
- */
 
 #ifndef BOX_PARTICLE_FILTER
 #define BOX_PARTICLE_FILTER

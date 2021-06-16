@@ -2,6 +2,13 @@
 #include <ros/ros.h>
 #include <math.h>
 
+/** FIXME
+ *
+ *  - control in state to not reconstruct objects ?
+ *  - specific dynamcal models witht there tests and examples are plugins ?
+ *
+ */
+
 #ifndef DYNAMICAL_SYSTEMS
 #define DYNAMICAL_SYSTEMS
 
