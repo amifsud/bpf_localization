@@ -191,20 +191,9 @@ class Particle
             return particles;
         }
 
-        const IntervalVector& box() const
-        {
-            return box_;
-        }
-
-        const Kernel& kernel() const
-        {
-            return kernel_;
-        }
-
-        double& weight()
-        {
-            return weight_;
-        }
+        const IntervalVector& box() const { return box_; }
+        const Kernel& kernel() const { return kernel_; }
+        double& weight() { return weight_; }
 };
 
 class Particles: public std::deque<Particle>
@@ -587,15 +576,8 @@ class BoxParticleFilter
             }
         }
 
-        const unsigned int& N() const
-        {
-            return N_;
-        }
-
-        const DynamicalModel* dynamicalModel() const
-        {
-            return dynamical_model_;
-        }
+        const unsigned int& N() const { return N_; }
+        const DynamicalModel* dynamicalModel() const { return dynamical_model_; }
 };
 
 #endif
