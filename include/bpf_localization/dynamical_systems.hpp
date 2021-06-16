@@ -123,15 +123,15 @@ class TurtleBotDynamicalModel: public DynamicalModel
         const double wheels_distance_;
  
     public:
-        TurtleBotDynamicalModel(Vector measures_noise_diams
+        TurtleBotDynamicalModel(const double dt              = 0.01,   // dt
+                                const double wheels_radius   = 3.5e-2, // wheels radius
+                                const double wheels_distance = 23e-2,  // wheels distance
+                                const Method method          = RK4,    // method       
+                                const double precision       = 1e-2,   // precision
+                                Vector measures_noise_diams
                                     = Vector(TurtleBotDynamicalModel::measures_size, NaN),
                                 Vector process_noise_diams
-                                    = Vector(TurtleBotDynamicalModel::state_size, NaN),
-                                const double dt              = 1,      // dt
-                                const Method method          = RK4,    // method       
-                                const double precision       = 1e-6,   // precision
-                                const double wheels_radius   = 3.5e-2, // wheels radius
-                                const double wheels_distance = 23e-2)  // wheels distance
+                                    = Vector(TurtleBotDynamicalModel::state_size, NaN))
             :DynamicalModel(state_size,           
                             control_size,         
                             measures_size,        
