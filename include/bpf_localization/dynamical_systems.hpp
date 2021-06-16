@@ -38,7 +38,9 @@ class DynamicalModel
                                 Vector measures_noise_diams, Vector process_noise_diams,
                                 Method method, double precision, bool ivp)
             :dt_(dt), state_size_(state_size), 
-             control_size_(control_size), measures_size_(measures_size), 
+             control_size_(control_size), measures_size_(measures_size),
+             dynamical_model_(NULL),
+             measures_model_(NULL),
              measures_noise_diams_(measures_noise_diams),
              process_noise_diams_(process_noise_diams),
              integration_method_(method), precision_(precision),
@@ -72,6 +74,7 @@ class DynamicalModel
 
         IntervalVector applyMeasures(const IntervalVector& box)
         {
+            setParentMeasuresModel();
             return measures_model_->eval_vector(box);
         }
 
@@ -118,7 +121,15 @@ class DynamicalModel
                     "dynamical model not set, initialize it or use IVP version");
         }
 
-        virtual void setMeasuresModel    (const IntervalVector& control) = 0;
+        virtual void setMeasuresModel()
+        {
+            ROS_ASSERT_MSG(false, "measures model not set");
+        }
+
+        void setParentMeasuresModel()
+        {
+            if(measures_model_ == NULL) setMeasuresModel();
+        }
 
 };
 
@@ -173,13 +184,13 @@ class TurtleBotDynamicalModel: public DynamicalModel
     protected:
         void setIVPDynamicalModel(const IntervalVector& control)
         {
-            ROS_DEBUG_STREAM("set dynamical model begin");
+            ROS_DEBUG_STREAM("set IVP dynamical model begin");
             dynamical_model_             
                 = new Function(state, 
                         Return( wheels_radius_/2*(control[0]+control[1])*cos(state[2]),
                                 wheels_radius_/2*(control[0]+control[1])*sin(state[2]),
                                 wheels_radius_/wheels_distance_*(control[0]-control[1])));
-            ROS_DEBUG_STREAM("set dynamical model end");
+            ROS_DEBUG_STREAM("set IVP dynamical model end");
         }
 
         void setDynamicalModel(const IntervalVector& control)
@@ -194,13 +205,13 @@ class TurtleBotDynamicalModel: public DynamicalModel
             ROS_DEBUG_STREAM("set dynamical model end");
         }
 
-        void setMeasuresModel(const IntervalVector& measures)
+        void setMeasuresModel()
         {
-            ROS_DEBUG_STREAM("set dynamical model begin");
+            ROS_DEBUG_STREAM("set measures model begin");
             measures_model_ 
                 = new Function(state, Return( state[0],
                                               state[1]+state[2]));
-            ROS_DEBUG_STREAM("set dynamical model end");
+            ROS_DEBUG_STREAM("set measures model end");
         }
 };
 
