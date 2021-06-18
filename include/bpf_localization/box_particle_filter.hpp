@@ -529,7 +529,7 @@ class BoxParticleFilter
             Particles* particles = getParticlesPtr(input_boxes_type);
             predicted_particles_.clear();
 
-            for(auto it = particles->begin(); it == particles->end(); it++)
+            for(auto it = particles->begin(); it < particles->end(); it++)
                 predicted_particles_.append(
                         Particle(dynamical_model_->applyDynamics(it->box(), control),
                                  it->weight()));
@@ -547,7 +547,7 @@ class BoxParticleFilter
             IntervalVector predicted_measures = IntervalVector(measures.size());
             IntervalVector innovation         = IntervalVector(measures.size());
 
-            for(auto it = particles->begin(); it == particles->end(); it++)
+            for(auto it = particles->begin(); it < particles->end(); it++)
             {
                 predicted_measures  = dynamical_model_->applyMeasures(it->box());
                 innovation          = predicted_measures & measures;
@@ -555,8 +555,8 @@ class BoxParticleFilter
                 if(innovation.volume() > 0)
                 {
                     corrected_particles_.append(
-                            Particle(   contract(innovation, it->box()),
-                                        it->weight() * (innovation.volume()
+                            Particle(contract(innovation, it->box()),
+                                     it->weight() * (innovation.volume()
                                                 /predicted_measures.volume()))); 
                 }
             }
