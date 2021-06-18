@@ -151,12 +151,15 @@ class Particle
         }
 
     public:
-        Particle(IntervalVector box, const double weight): 
-            box_(box),
-            weight_(weight),
-            pair(box.bisect(0)),
-            uniform_distribution_(0.0,1.0)
+        Particle(const IntervalVector& box, const double weight): 
+                box_(box),
+                pair(std::pair<IntervalVector, IntervalVector>(box, box)),
+                weight_(weight),
+                uniform_distribution_(0.0,1.0)
         {
+            ROS_ASSERT_MSG(box[0].diam() != 0 && box[1].diam() != 0 && box[2].diam() != 0,
+                "One of the initial box diameter is null");
+            pair = std::pair<IntervalVector, IntervalVector>(box.bisect(0));
         }
 
         std::deque<Particle> subdivise
