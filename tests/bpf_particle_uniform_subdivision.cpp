@@ -19,7 +19,7 @@ TEST(UniformSubdivisionTest, testCase1)
     initial_box[5]= Interval(-2.0, 2.0);
 
     Particle particle(initial_box, 1.);
-    Particles particles(particle.subdivise(SUBDIVISION_TYPE::ALL_DIMESIONS));
+    Particles particles(particle.subdivise(SUBDIVISION_TYPE::ALL_DIMENSIONS));
 
     EXPECT_TRUE(wellPavedTest(&particles, initial_box))
         << "boxes not well pave initial box";
@@ -39,7 +39,7 @@ TEST(UniformSubdivisionTest, testCase2)
     initial_box[1]= Interval(-2.0, 2.0);
 
     Particle particle(initial_box, 1.);
-    Particles particles(particle.subdivise(SUBDIVISION_TYPE::ALL_DIMESIONS));
+    Particles particles(particle.subdivise(SUBDIVISION_TYPE::ALL_DIMENSIONS));
 
     EXPECT_TRUE(wellPavedTest(&particles, initial_box))
         << "Boxes don't well pave initial box";

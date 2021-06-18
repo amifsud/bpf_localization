@@ -57,7 +57,7 @@
 using namespace ibex;
 
 enum BOXES_TYPE{PREDICTION, CORRECTION, RESAMPLING, DEFAULT};
-enum SUBDIVISION_TYPE{GIVEN, ALL_DIMESIONS, RANDOM};
+enum SUBDIVISION_TYPE{GIVEN, ALL_DIMENSIONS, RANDOM};
 
 class Kernel
 {
@@ -170,7 +170,7 @@ class Particle
                 case SUBDIVISION_TYPE::RANDOM:
                     particles = subdiviseOverRandomDimensions(N);
                     break;
-                case SUBDIVISION_TYPE::ALL_DIMESIONS:
+                case SUBDIVISION_TYPE::ALL_DIMENSIONS:
                     #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
                     particles = subdiviseOverAllDimensions();
                     #else
@@ -329,7 +329,7 @@ class BoxParticleFilter
             {
                 for(unsigned int box_i = 0; box_i < current_particles_nb; ++box_i)
                     particles->subdivise
-                        (0, SUBDIVISION_TYPE::ALL_DIMESIONS, dynamical_model_->stateSize());
+                        (0, SUBDIVISION_TYPE::ALL_DIMENSIONS, dynamical_model_->stateSize());
                 current_particles_nb = particles->size();
             }
 
