@@ -63,9 +63,7 @@ class DynamicalModel
             {
                 setIVPDynamicalModel(control);
                 ivp_ode problem 
-                    = ivp_ode(*dynamical_model_, 0.0, IntervalVector(box.size()));
-                IntervalVector box_tmp(box);
-                problem.yinit = &box_tmp;
+                    = ivp_ode(*dynamical_model_, 0.0, box);
 
                 simu_ = new simulation(&problem, dt_, integration_method_, precision_);
                 simu_->run_simulation();
