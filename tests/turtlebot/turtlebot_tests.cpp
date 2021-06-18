@@ -9,6 +9,7 @@ TEST(TurtlebotTest, testDynamics)
     double dt              = 0.1;
     double wheels_distance = 23e-2;
     double wheels_radius   = 3.5e-2;
+    bool   ivp             = false;
 
     IntervalVector initial_box(TurtleBotDynamicalModel::state_size);
     initial_box[0]= Interval(0.0, 0.0);
@@ -31,9 +32,10 @@ TEST(TurtlebotTest, testDynamics)
     IntervalVector function_box = dynamical_model.eval_vector(initial_box);
 
     TurtleBotDynamicalModel turtlebot
-        = TurtleBotDynamicalModel(  dt              = dt,
-                                    wheels_radius   = wheels_radius,
-                                    wheels_distance = wheels_distance);
+        = TurtleBotDynamicalModel(  dt,
+                                    wheels_radius,
+                                    wheels_distance,
+                                    ivp);
 
     IntervalVector turtlebot_box = turtlebot.applyDynamics(initial_box, control);
 
