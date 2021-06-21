@@ -4,17 +4,6 @@
  *
  */
 
-#include "bpf_localization/dynamical_systems.hpp"
-#include "ibex/ibex.h"
-#include <ros/ros.h>
-#include <vector>
-#include <utility>
-#include <numeric>
-#include <random>
-
-#ifndef BOX_PARTICLE_FILTER
-#define BOX_PARTICLE_FILTER
-
 /*** Available algos ***/
 // Init
 //  * uniformly choosen : 0
@@ -53,6 +42,17 @@
 #if RESAMPLING_DIRECTION == 1 | RESAMPLING_DIRECTION == 2
     #define SUBDIVISE_OVER_GIVEN_DIRECTION
 #endif
+
+#include "bpf_localization/dynamical_systems.hpp"
+#include "ibex/ibex.h"
+#include <ros/ros.h>
+#include <vector>
+#include <utility>
+#include <numeric>
+#include <random>
+
+#ifndef BOX_PARTICLE_FILTER
+#define BOX_PARTICLE_FILTER
 
 using namespace ibex;
 
