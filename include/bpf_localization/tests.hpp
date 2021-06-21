@@ -159,14 +159,4 @@ bool subdiviseOverRandomDimensionsTest
     return test_succeed;
 }
 
-class TestBoxParticleFilter: public BoxParticleFilter
-{
-    public:
-        TestBoxParticleFilter(  unsigned int N, IntervalVector initial_box,
-                                DynamicalModel* dynamical_model)
-            : BoxParticleFilter(N, initial_box, dynamical_model)
-        {
-        }
-};
-
 #endif

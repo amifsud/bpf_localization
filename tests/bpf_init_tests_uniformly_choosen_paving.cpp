@@ -16,7 +16,7 @@ TEST(UniformlyChoosenPavingInitTest, testCase1)
     initial_box[1]= Interval(-2.0, 2.0);
     initial_box[2]= Interval(-2.0, 2.0);
 
-    TestBoxParticleFilter bpf(N, initial_box, dynamical_model);
+    BoxParticleFilter bpf(N, initial_box, dynamical_model);
     Particles particles = bpf.getParticles(); 
 
     EXPECT_TRUE(wellPavedTest(&particles, initial_box))

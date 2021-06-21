@@ -38,7 +38,7 @@ TEST(GenericTests, testCase1)
         turtlebot_boxes.push_back(turtlebot->applyDynamics(it->box(), control));
     }
 
-    TestBoxParticleFilter bpf(N, initial_box, turtlebot);
+    BoxParticleFilter bpf(N, initial_box, turtlebot);
 
     bpf.prediction(control);
     Particles particles = bpf.getParticles(BOXES_TYPE::PREDICTION);

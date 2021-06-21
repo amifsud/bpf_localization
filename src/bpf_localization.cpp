@@ -5,16 +5,6 @@
 #include <bpf_localization/dynamical_systems.hpp>
 #include <ros/ros.h>
 
-class LocalizationBoxParticleFilter: public BoxParticleFilter
-{
-    public:
-        LocalizationBoxParticleFilter(  unsigned int N, IntervalVector initial_box,
-                                        DynamicalModel* dynamical_model)
-            : BoxParticleFilter(N, initial_box, dynamical_model)
-        {
-        }
-};
-
 int main(int argc, char **argv) 
 {
 
@@ -27,7 +17,7 @@ int main(int argc, char **argv)
 
     TurtleBotDynamicalModel* dynamical_model = new TurtleBotDynamicalModel();
 
-    LocalizationBoxParticleFilter bpf(N, initial_box, dynamical_model);
+    BoxParticleFilter bpf(N, initial_box, dynamical_model);
 
     Particles particles = bpf.getParticles();
 
