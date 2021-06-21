@@ -39,6 +39,11 @@ class DynamicalModel
         double precision_;
         bool ivp_;
 
+    #if RESAMPLING_DIRECTION == 1
+    public:
+        std::vector<std::tuple<int, int, double>> normalization_values_;
+    #endif
+
     public:
         DynamicalModel( unsigned int state_size, unsigned int control_size, 
                         unsigned int measures_size, double dt,
@@ -162,6 +167,12 @@ class TurtleBotDynamicalModel: public DynamicalModel
                 measures_noise_diams[0] = 1e-2;
                 measures_noise_diams[1] = 1e-2;
             }
+
+            #if RESAMPLING_DIRECTION == 1
+            normalization_values_.push_back(std::make_tuple(0, 1, 1.));
+            normalization_values_.push_back(std::make_tuple(1, 1, 1.));
+            normalization_values_.push_back(std::make_tuple(2, 1, 1.));
+            #endif
         }
 
     protected:

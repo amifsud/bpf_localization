@@ -166,11 +166,6 @@ class TestBoxParticleFilter: public BoxParticleFilter
                                 DynamicalModel* dynamical_model)
             : BoxParticleFilter(N, initial_box, dynamical_model)
         {
-            #if RESAMPLING_DIRECTION == 1
-            geometrical_subdivision_map.insert(std::pair<int, int>(0, 1));
-            geometrical_subdivision_map.insert(std::pair<int, int>(1, 1));
-            geometrical_subdivision_map.insert(std::pair<int, int>(2, 1));
-            #endif
         }
 };
 

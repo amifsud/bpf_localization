@@ -294,9 +294,6 @@ class BoxParticleFilter
 
         // Resampling
         bool resampled_;
-        #if RESAMPLING_DIRECTION == 1
-        std::map<int, std::pair<int, double>> geometrical_subdivision_map;
-        #endif
 
     protected:
         /*** Paving ***/
@@ -427,18 +424,16 @@ class BoxParticleFilter
         unsigned int getDirection(IntervalVector box)
         {
             ROS_DEBUG_STREAM("Get geometrical direction for resampling begin");
-            std::map<int, int>::iterator it = geometrical_subdivision_map.begin();
             double norm;
             Vector diameters(box.size()), diam(1);
             IntervalVector subvect(1);
             unsigned int i = 0;
-            while(it != geometrical_subdivision_map.end())
+            for(auto& it : dynamical_model_->normalization_values_)
             {
-                subvect = box.subvector(it->first, std::get<0>(it->second));
+                subvect = box.subvector(std::get<0>(it), std::get<1>(it));
                 diam = subvect.diam();
                 norm = diam.norm();
                 diameters.put(i, (1./norm)*diam);
-                it++;
                 i += subvect.size();
             }
 
