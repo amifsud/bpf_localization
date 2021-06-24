@@ -50,6 +50,8 @@
 #include <utility>
 #include <numeric>
 #include <random>
+#include <Eigen/Core>
+#include <Eigen/Cholesky>
 
 #ifndef BOX_PARTICLE_FILTER
 #define BOX_PARTICLE_FILTER

@@ -10,7 +10,9 @@ project(bpf_localization)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
-find_package(GTest REQUIRED)
+
+find_package(GTest  REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -119,6 +121,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${GTEST_INCLUDE_DIRS}
   #  /usr/local/include/ibex
+  ${EIGEN3_INCLUDE_DIR}
 )
 
 ## Declare a C++ library
