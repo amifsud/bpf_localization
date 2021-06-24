@@ -1,6 +1,7 @@
 /*** FIXME 
  *
  *  - implement maximum likelihood resqmpling direction choice
+ *  - particles are composed of AND/OR(IntervalVector, kerneli, maps, ...) and weights
  *
  */
 
@@ -241,7 +242,7 @@ class Particles: public std::deque<Particle>
         void weigthsNormalization()
         {
             float sum_of_weights = sumOfWeights();
-            for(auto it= this->begin(); it != this->end(); it++)
+            for(auto it = this->begin(); it != this->end(); it++)
                 it->weight() /= sum_of_weights;
         }
 
