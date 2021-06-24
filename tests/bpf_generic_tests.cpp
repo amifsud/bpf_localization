@@ -22,6 +22,7 @@ TEST(GenericTests, testCase1)
     initial_box[2] = Interval(0.0, 1.0);
 
     Particle particle(initial_box, 1.0);
+
     Particles turtlebot_particles_in 
         = particle.subdivise(SUBDIVISION_TYPE::ALL_DIMENSIONS);
     deque<IntervalVector> turtlebot_boxes;
@@ -35,7 +36,7 @@ TEST(GenericTests, testCase1)
     for(auto it = turtlebot_particles_in.begin();
         it != turtlebot_particles_in.end(); ++it, ++i)
     {
-        turtlebot_boxes.push_back(turtlebot->applyDynamics(it->box(), control));
+        turtlebot_boxes.push_back(turtlebot->applyDynamics(*it, control));
     }
 
     BoxParticleFilter bpf(N, initial_box, turtlebot);
@@ -47,13 +48,13 @@ TEST(GenericTests, testCase1)
 
     for(unsigned int i = 0; i < particles.size(); ++i)
     {
-        if(turtlebot_boxes[i] != particles[i].box())
+        if(turtlebot_boxes[i] != particles[i])
         {
             ROS_INFO_STREAM(i);
             ROS_INFO_STREAM(turtlebot_boxes[i]);
-            ROS_INFO_STREAM(particles[i].box());
+            ROS_INFO_STREAM(particles[i]);
         }
-        EXPECT_TRUE(turtlebot_boxes[i] == particles[i].box())
+        EXPECT_TRUE(turtlebot_boxes[i] == particles[i])
                         << "Error in the turtlebot dynamical system";
     }
 }

@@ -59,11 +59,7 @@ using namespace ibex;
 enum BOXES_TYPE{PREDICTION, CORRECTION, RESAMPLING, DEFAULT};
 enum SUBDIVISION_TYPE{GIVEN, ALL_DIMENSIONS, RANDOM};
 
-class Kernel
-{
-};
-
-class Particle
+class Particle : public IntervalVector
 {
     protected:
         // Random
@@ -74,8 +70,6 @@ class Particle
         std::pair<IntervalVector, IntervalVector> pair;
         unsigned int direction;
 
-        IntervalVector  box_;
-        Kernel          kernel_;
         double          weight_;
 
     protected:
@@ -88,9 +82,9 @@ class Particle
             boxes.clear();
             boxes_tmp.clear();
 
-            pair = this->box_.bisect(dim); 
+            pair = this->bisect(dim); 
 
-            if(dim < this->box_.size() - 1)
+            if(dim < this->size() - 1)
             {
                 boxes = Particle(std::get<0>(pair), this->weight_/2.)
                     .subdiviseOverAllDimensions(dim+1);
@@ -118,7 +112,7 @@ class Particle
 
             for(unsigned int i = 0; i < N-1; ++i)
             {
-                pair = boxes[0].box_.bisect(dim, 1.-1./(N-i)); 
+                pair = boxes[0].bisect(dim, 1.-1./(N-i)); 
                 boxes.erase(boxes.begin());
                 boxes.push_front(Particle(std::get<0>(pair), 1.));
                 boxes.push_back(Particle(std::get<1>(pair), this->weight_/N));
@@ -139,8 +133,8 @@ class Particle
 
             while (boxes.size() < N)
             {
-                direction = int(uniform_distribution_(generator) * this->box_.size());
-                pair = boxes[0].box_.bisect(direction, 0.5); 
+                direction = int(uniform_distribution_(generator) * this->size());
+                pair = boxes[0].bisect(direction, 0.5); 
                 boxes.push_back(Particle(std::get<0>(pair), boxes[0].weight_/2.));
                 boxes.push_back(Particle(std::get<1>(pair), boxes[0].weight_/2.));
                 boxes.pop_front();
@@ -152,7 +146,7 @@ class Particle
 
     public:
         Particle(const IntervalVector& box, const double weight): 
-                box_(box),
+                IntervalVector(box),
                 pair(std::pair<IntervalVector, IntervalVector>(box, box)),
                 weight_(weight),
                 uniform_distribution_(0.0,1.0)
@@ -194,8 +188,6 @@ class Particle
             return particles;
         }
 
-        const IntervalVector& box() const { return box_; }
-        const Kernel& kernel() const { return kernel_; }
         double& weight() { return weight_; }
 };
 
@@ -258,7 +250,7 @@ class Particles: public std::deque<Particle>
                         unsigned int N = 1, unsigned int dim = 0)
         {
             this->append(this->operator[](i).subdivise(sub_type, N, dim));
-            this->erase(this->begin());
+            this->erase (this->begin());
         }
 
         /*** Appending ***/
@@ -432,7 +424,7 @@ class BoxParticleFilter
             {
                 subvect = box.subvector(std::get<0>(it), std::get<1>(it));
                 diam = subvect.diam();
-                norm = diam.norm();
+                norm = diam.norm();// or std::get<2>(it)
                 diameters.put(i, (1./norm)*diam);
                 i += subvect.size();
             }
@@ -478,9 +470,9 @@ class BoxParticleFilter
                 // Subdivise boxes with ni boxes (delete box if ni=0) 
                 unsigned int i = 0;
                 unsigned int dir;
-                for(auto it = particles->begin(); it == particles->end(); it++, i++)
+                for(auto it = particles->begin(); it < particles->end(); it++, i++)
                 {
-                    dir = getDirection(it->box());
+                    dir = getDirection(*it);
                     resampled_particles_
                         .append(it->subdivise(SUBDIVISION_TYPE::GIVEN, n[i], dir));
                 }
@@ -526,7 +518,7 @@ class BoxParticleFilter
 
             for(auto it = particles->begin(); it < particles->end(); it++)
                 predicted_particles_.append(
-                        Particle(dynamical_model_->applyDynamics(it->box(), control),
+                        Particle(dynamical_model_->applyDynamics(*it, control),
                                  it->weight()));
 
             ROS_DEBUG_STREAM("prediction end");
@@ -544,13 +536,13 @@ class BoxParticleFilter
 
             for(auto it = particles->begin(); it < particles->end(); it++)
             {
-                predicted_measures  = dynamical_model_->applyMeasures(it->box());
+                predicted_measures  = dynamical_model_->applyMeasures(*it);
                 innovation          = predicted_measures & measures;
 
                 if(innovation.volume() > 0)
                 {
                     corrected_particles_.append(
-                            Particle(contract(innovation, it->box()),
+                            Particle(contract(innovation, *it),
                                      it->weight() * (innovation.volume()
                                                 /predicted_measures.volume()))); 
                 }

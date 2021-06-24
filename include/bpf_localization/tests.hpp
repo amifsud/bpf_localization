@@ -16,8 +16,8 @@ bool wellPavedTest(Particles* particles, IntervalVector initial_box)
         {
             for(auto it1 = it+1; it1 != particles->end(); it1++)
             {
-                intersect = it->box().intersects(it1->box());
-                intersect_volume = (it->box() & it1->box()).volume();
+                intersect = it->intersects(*it1);
+                intersect_volume = (*it & *it1).volume();
                 weak_disjoint = not intersect | intersect & intersect_volume == 0;
                 // We could use overlaps function that should give the right side 
                 // of the OR operator condition, but it seems that it doesn't work
@@ -28,12 +28,12 @@ bool wellPavedTest(Particles* particles, IntervalVector initial_box)
         EXPECT_TRUE(weak_disjoint)
             << "All couple of boxes don't have zero volume intersection";
 
-        IntervalVector reconstructed_initial_box(particles->begin()->box());
-        double total_volume = particles->begin()->box().volume();
+        IntervalVector reconstructed_initial_box(*(particles->begin()));
+        double total_volume = particles->begin()->volume();
         for(auto it = particles->begin()+1; it != particles->end(); it++)
         {
-            reconstructed_initial_box = reconstructed_initial_box | it->box();
-            total_volume += it->box().volume();
+            reconstructed_initial_box = reconstructed_initial_box | *it;
+            total_volume += it->volume();
         }
         bool no_outsiders = reconstructed_initial_box == initial_box;
         bool volume_equality = std::abs(total_volume - initial_box.volume()) < 1e-10;
@@ -59,16 +59,16 @@ bool subdiviseOverAllDimensionsTest(Particles* particles)
     bool good_particles_number = true;
     for(unsigned int i = 0; i < particles->size(); ++i)
     {
-        if(particles->operator[](0).box().volume() != particles->operator[](i).box().volume()) 
+        if(particles->operator[](0).volume() != particles->operator[](i).volume()) 
             equal_volume = false;
 
-        for(unsigned int u = 0; u < particles->operator[](i).box().size(); ++u)
-            if(particles->operator[](0).box()[0].diam() 
-                != particles->operator[](i).box()[u].diam()) hypercube = false;
+        for(unsigned int u = 0; u < particles->operator[](i).size(); ++u)
+            if(particles->operator[](0)[0].diam() 
+                != particles->operator[](i)[u].diam()) hypercube = false;
     }
 
     double i = std::log(particles->size())
-                /std::log(pow(2,particles->operator[](0).box().size()));
+                /std::log(pow(2,particles->operator[](0).size()));
     good_particles_number = std::fmod(i, double(1)) == 0;
 
     EXPECT_TRUE(good_particles_number)
@@ -96,7 +96,7 @@ bool subdiviseOverGivenDirectionTest(Particles* particles,
             {
                 other_dirs_not_subdivised 
                     = std::abs(initial_box.diam()[dim] 
-                            - it->box().diam()[dim]) < 1e-7;
+                            - it->diam()[dim]) < 1e-7;
                 if(!other_dirs_not_subdivised) test_succeed = false;
                 EXPECT_TRUE(other_dirs_not_subdivised) 
                     << "Another direction than " << dir 
@@ -105,14 +105,14 @@ bool subdiviseOverGivenDirectionTest(Particles* particles,
             else
             {
                 given_dir_well_subdivised 
-                    = std::abs(it->box().diam()[dim]
+                    = std::abs(it->diam()[dim]
                             -initial_box.diam()[dim]/particles->size()) < 1e-7;
                 if(!given_dir_well_subdivised) test_succeed = false;
                 EXPECT_TRUE(given_dir_well_subdivised) 
                     << "subdivised direction " << dir 
                     << " as wrong diameter : expect " 
                     << initial_box.diam()[dim]/particles->size() << " get " 
-                    << it->box().diam()[dim];
+                    << it->diam()[dim];
             }
         }
     }
@@ -143,8 +143,8 @@ bool subdiviseOverRandomDimensionsTest
             for(unsigned int i = 1; i < std::get<0>(it1->second); ++i)
             {
                 uniformly_subdivised 
-                    = std::abs((it->box().diam()[it1->first+i] \
-                            - it->box().diam()[(it1->first)]))\
+                    = std::abs((it->diam()[it1->first+i] \
+                            - it->diam()[(it1->first)]))\
                             /std::get<1>(it1->second) < 1;
                 EXPECT_TRUE(uniformly_subdivised) 
                     << "Particle " << u << ", dimension " << o

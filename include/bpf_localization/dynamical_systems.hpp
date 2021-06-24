@@ -6,6 +6,7 @@
  *
  *  - control in state to not reconstruct objects ?
  *  - specific dynamcal models witht there tests and examples are plugins ?
+ *  - integration from IVP to define dynamical model by default (ibex finctions composition)
  *
  */
 
@@ -62,7 +63,8 @@ class DynamicalModel
             ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
         }
  
-        IntervalVector applyDynamics(const IntervalVector& box, const IntervalVector& control)
+        IntervalVector applyDynamics(const IntervalVector& box, 
+                                     const IntervalVector& control)
         {
             if(ivp_)
             {
@@ -155,14 +157,16 @@ class TurtleBotDynamicalModel: public DynamicalModel
             wheels_radius_(wheels_radius),
             wheels_distance_(wheels_distance)
         {
-            if(process_noise_diams == Vector(state_size_, NaN))        // process noise diameters
+            if(process_noise_diams == Vector(state_size_, NaN))
+                // process noise diameters
             {
                 process_noise_diams[0] = 1e-2;
                 process_noise_diams[1] = 1e-2;
                 process_noise_diams[2] = 1e-2;
             }
 
-            if(measures_noise_diams == Vector(measures_size_, NaN))    // measures noise diameters
+            if(measures_noise_diams == Vector(measures_size_, NaN))
+                // measures noise diameters
             {
                 measures_noise_diams[0] = 1e-2;
                 measures_noise_diams[1] = 1e-2;
