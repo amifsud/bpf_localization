@@ -294,7 +294,7 @@ class BoxParticleFilter
         /*** Paving ***/
 
         #if INIT_METHOD == 0
-        void initializeBoxes(IntervalVector initial_box)
+        void initializeBoxes(IntervalVector& initial_box)
         {
             ROS_DEBUG_STREAM("Uniformly choosen paving initialization begin");
             // We choose to subdvise the initial box with equal size boxes (1)
@@ -310,7 +310,7 @@ class BoxParticleFilter
         #endif
 
         #if INIT_METHOD == 1
-        void initializeBoxes(IntervalVector initial_box)
+        void initializeBoxes(IntervalVector& initial_box)
         {
             ROS_DEBUG_STREAM("Uniform paving initialization begin");
 
@@ -336,7 +336,7 @@ class BoxParticleFilter
 
         /*** Contraction ***/
 
-        IntervalVector contract(IntervalVector innovation, IntervalVector box)
+        IntervalVector contract(IntervalVector innovation, IntervalVector& box)
         {
             // Use a contractor to found the box subset that give the innovation 
             // (i.e. (predicted measure)s & (measures)) by the measures dynamics
@@ -405,7 +405,7 @@ class BoxParticleFilter
 
         #if RESAMPLING_DIRECTION == 0
         // Random
-        unsigned int getDirection(IntervalVector box)
+        unsigned int getDirection(IntervalVector& box)
         {
             ROS_DEBUG_STREAM("Get random direction for resampling begin");
             std::default_random_engine generator;
@@ -416,7 +416,7 @@ class BoxParticleFilter
 
         #if RESAMPLING_DIRECTION == 1
         // Geometrical
-        unsigned int getDirection(IntervalVector box)
+        unsigned int getDirection(IntervalVector& box)
         {
             ROS_DEBUG_STREAM("Get geometrical direction for resampling begin");
             double norm;
@@ -443,7 +443,7 @@ class BoxParticleFilter
 
         #if RESAMPLING_DIRECTION == 2
         // Maximum Likelihood
-        unsigned int getDirection(IntervalVector box)
+        unsigned int getDirection(IntervalVector& box)
         {
             ROS_DEBUG_STREAM("Get maximum likelihood direction for resampling begin");
             ROS_ERROR_STREAM("Not implemented yet");
