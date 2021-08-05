@@ -264,5 +264,14 @@ if(TARGET turtlebot_tests)
     )
 endif()
 
+catkin_add_gtest(imu_dynamical_model_tests tests/imu_dynamical_model_tests.cpp)
+if(TARGET imu_dynamical_model_tests)
+    target_link_libraries(imu_dynamical_model_tests
+        ${catkin_LIBRARIES}
+        /usr/local/lib/libibex.a
+        /usr/local/lib/libprim.a
+    )
+endif()
+
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

@@ -213,4 +213,103 @@ class TurtleBotDynamicalModel: public DynamicalModel
         }
 };
 
+class IMUDynamicalModel: public DynamicalModel
+{
+    public:
+        static const unsigned int state_size       = 3*3+1;         // state_size
+        static const unsigned int control_size     = 2*3;         // control_size 
+        static const unsigned int measures_size    = control_size;         // measures_size
+ 
+    public:
+        IMUDynamicalModel(const double dt              = NaN,   // dt
+                                const bool   ivp             = true,  // IVP or not
+                                const Method method          = RK4,    // method       
+                                const double precision       = 1e-6,   // precision
+                                Vector measures_noise_diams
+                                    = Vector(TurtleBotDynamicalModel::measures_size, NaN),
+                                Vector process_noise_diams
+                                    = Vector(TurtleBotDynamicalModel::state_size, NaN))
+            :DynamicalModel(state_size,           
+                            control_size,         
+                            measures_size,        
+                            dt,                            
+                            measures_noise_diams, 
+                            process_noise_diams,  
+                            method,                  
+                            precision,
+                            ivp)
+        {
+            if(process_noise_diams == Vector(state_size_, NaN))
+                // process noise diameters
+            {
+                process_noise_diams[0] = 1e-2;
+                process_noise_diams[1] = 1e-2;
+                process_noise_diams[2] = 1e-2;
+            }
+
+            if(measures_noise_diams == Vector(measures_size_, NaN))
+                // measures noise diameters
+            {
+                measures_noise_diams[0] = 1e-2;
+                measures_noise_diams[1] = 1e-2;
+            }
+
+            #if RESAMPLING_DIRECTION == 1
+            normalization_values_.push_back(std::make_tuple(0, 1, 1.));
+            normalization_values_.push_back(std::make_tuple(1, 1, 1.));
+            normalization_values_.push_back(std::make_tuple(2, 1, 1.));
+            #endif
+        }
+
+    protected:
+        void setIVPDynamicalModel(const IntervalVector& control)
+        {
+            ROS_DEBUG_STREAM("set IVP dynamical model begin");
+
+            /*Variable  quaternion(4);
+
+            Function t2 = Function(quaternion, quaternion[3]*quaternion[0]);
+            Function t3 = Function(quaternion, quaternion[3]*quaternion[1]);
+            Function t4 = Function(quaternion, quaternion[3]*quaternion[2]);
+            Function t5 = Function(quaternion, -quaternion[0]*quaternion[0]);
+            Function t6 = Function(quaternion, quaternion[0]*quaternion[1]);
+            Function t7 = Function(quaternion, quaternion[0]*quaternion[2]);
+            Function t8 = Function(quaternion, -quaternion[1]*quaternion[1]);
+            Function t9 = Function(quaternion, quaternion[1]*quaternion[2]);
+            Function t10 = Function(quaternion, -quaternion[2]*quaternion[2]);
+
+            Function rotate(quaternion, Return( 2*( (t8(quaternion) + t10(quaternion))
+                                                        *vector_in[0] 
+                                                  + (t6(quaternion) -  t4(quaternion))
+                                                        *vector_in[1] 
+                                                  + (t3(quaternion) + t7(quaternion))
+                                                        *vector_in[2] ) + vector_in[0],
+                                                2*( (t4(quaternion) +  t6(quaternion))
+                                                        *vector_in[0] 
+                                                  + (t5(quaternion) + t10(quaternion))
+                                                        *vector_in[1] 
+                                                  + (t9(quaternion) - t2(quaternion))
+                                                        *vector_in[2] ) + vector_in[1],
+                                                2*( (t7(quaternion) -  t3(quaternion))
+                                                        *vector_in[0] 
+                                                  + (t2(quaternion) +  t9(quaternion))
+                                                        *vector_in[1] 
+                                                  + (t5(quaternion) + t8(quaternion))
+                                                        *vector_in[2] ) + vector_in[2]));
+            
+            Function select_quaternion(state, Return(state[0], state[1], state[2], state[3]));
+            Function rotated_accelero = rotate(select_quaternion, control.subvector(3,5));
+            Function rotated_gyro = rotate(select_quaternion, control.subvector(0,2));
+            
+            double _guz[3]={0.,0., -9.81};
+	        Vector guz(3,_guz);
+            dynamical_model_             
+                = new Function(state, 
+                        Return(state[1], 
+                               rotated_accelero-guz, 
+                               rotated_gyro);*/
+            ROS_DEBUG_STREAM("set IVP dynamical model end");
+        }
+};
+
 #endif
