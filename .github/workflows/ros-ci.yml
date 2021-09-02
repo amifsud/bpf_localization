@@ -24,7 +24,8 @@ jobs:
       - run: sudo apt-get install libboost-all-dev
       - run: sudo apt-get install -y python2.7 flex bison gcc g++ make pkg-config
       - run: wget https://perso.ensta-paris.fr/~chapoutot/dynibex//distrib/dynibex-2.2.tar.gz && tar xvfz dynibex-2.2.tar.gz && cd dynibex-2.2 && ./waf configure && sudo ./waf install
-      - run: export CMAKE_MODULE_PATH=/usr/local/share/eigen3/cmake
+
+      - run: export PKG_CONFIG_PATH=/usr/local/share/eigen3/cmake
       - uses: actions/cache@v2
         with:
           path: ${{ env.CCACHE_DIR }}
