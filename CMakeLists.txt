@@ -273,5 +273,14 @@ if(TARGET imu_dynamical_model_tests)
     )
 endif()
 
+catkin_add_gtest(boat_bpf_localization_tests tests/boat_bpf_localization_tests.cpp)
+if(TARGET boat_bpf_localization_tests)
+    target_link_libraries(boat_bpf_localization_tests
+        ${catkin_LIBRARIES}
+        /usr/local/lib/libibex.a
+        /usr/local/lib/libprim.a
+    )
+endif()
+
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

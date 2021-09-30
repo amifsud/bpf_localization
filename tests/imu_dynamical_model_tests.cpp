@@ -183,7 +183,6 @@ TEST(IMUDynamicalModelTest, testDynamicsRotationY)
     IntervalVector state_k(IMUDynamicalModel::state_size);
     IntervalVector control(IMUDynamicalModel::control_size);
 
-
     // Linear acceleration Y axis
     control[0] = Interval(0., 0.); // gyrometer
     control[1] = Interval(10., 10.);
