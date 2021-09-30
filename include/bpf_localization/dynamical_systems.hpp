@@ -216,19 +216,22 @@ class TurtleBotDynamicalModel: public DynamicalModel
 class IMUDynamicalModel: public DynamicalModel
 {
     public:
-        static const unsigned int state_size       = 3*3+1;         // state_size
-        static const unsigned int control_size     = 2*3;         // control_size 
-        static const unsigned int measures_size    = control_size;         // measures_size
- 
+        static const unsigned int state_size       = 3*3+1;          // state_size
+        static const unsigned int control_size     = 2*3;            // control_size 
+        static const unsigned int measures_size    = control_size;   // measures_size
+
+        double guz[3]={0.,0., -9.81};
+	    Vector guz_;
+
     public:
-        IMUDynamicalModel(const double dt              = NaN,   // dt
-                                const bool   ivp             = true,  // IVP or not
-                                const Method method          = RK4,    // method       
-                                const double precision       = 1e-6,   // precision
-                                Vector measures_noise_diams
-                                    = Vector(TurtleBotDynamicalModel::measures_size, NaN),
-                                Vector process_noise_diams
-                                    = Vector(TurtleBotDynamicalModel::state_size, NaN))
+        IMUDynamicalModel(  const double dt              = NaN,        // dt
+                            const bool   ivp             = true, // IVP or not
+                            const Method method          = RK4,  // method       
+                            const double precision       = 1e-6, // precision
+                            Vector measures_noise_diams
+                                = Vector(TurtleBotDynamicalModel::measures_size, NaN),
+                            Vector process_noise_diams
+                                = Vector(TurtleBotDynamicalModel::state_size, NaN))
             :DynamicalModel(state_size,           
                             control_size,         
                             measures_size,        
@@ -237,7 +240,8 @@ class IMUDynamicalModel: public DynamicalModel
                             process_noise_diams,  
                             method,                  
                             precision,
-                            ivp)
+                            ivp),
+            guz_(3, guz)
         {
             if(process_noise_diams == Vector(state_size_, NaN))
                 // process noise diameters
@@ -266,50 +270,30 @@ class IMUDynamicalModel: public DynamicalModel
         {
             ROS_DEBUG_STREAM("set IVP dynamical model begin");
 
-            /*Variable  quaternion(4);
+            dynamical_model_ = 
+                new Function(state, 
+                    Return( 0.5*(-state[1]*control[0]-state[2]*control[1]-state[3]*control[2]),
+                            0.5*( state[0]*control[0]-state[3]*control[1]+state[2]*control[2]),
+                            0.5*( state[3]*control[0]+state[0]*control[1]-state[1]*control[2]),
+                            0.5*(-state[2]*control[0]+state[1]*control[1]+state[0]*control[2]),
+                            state[7],
+                            state[8],
+                            state[9],
+                            2*( (-state[2]*state[2] - state[3]*state[3])*control[3] 
+                              + ( state[1]*state[2] - state[0]*state[3])*control[4] 
+                              + ( state[0]*state[2] + state[1]*state[3])*control[5] ) 
+                                    + control[3] ,
+                            2*( ( state[0]*state[3] + state[1]*state[2])*control[3] 
+                              + (-state[1]*state[1] - state[3]*state[3])*control[4] 
+                              + ( state[2]*state[3] - state[0]*state[1])*control[5] ) 
+                                    + control[4] ,
+                            2*( ( state[1]*state[3] - state[0]*state[2])*control[3] 
+                              + ( state[0]*state[1] + state[2]*state[3])*control[4] 
+                              + (-state[1]*state[1] - state[2]*state[2])*control[5] ) 
+                                    + control[5] - guz[2]));
 
-            Function t2 = Function(quaternion, quaternion[3]*quaternion[0]);
-            Function t3 = Function(quaternion, quaternion[3]*quaternion[1]);
-            Function t4 = Function(quaternion, quaternion[3]*quaternion[2]);
-            Function t5 = Function(quaternion, -quaternion[0]*quaternion[0]);
-            Function t6 = Function(quaternion, quaternion[0]*quaternion[1]);
-            Function t7 = Function(quaternion, quaternion[0]*quaternion[2]);
-            Function t8 = Function(quaternion, -quaternion[1]*quaternion[1]);
-            Function t9 = Function(quaternion, quaternion[1]*quaternion[2]);
-            Function t10 = Function(quaternion, -quaternion[2]*quaternion[2]);
-
-            Function rotate(quaternion, Return( 2*( (t8(quaternion) + t10(quaternion))
-                                                        *vector_in[0] 
-                                                  + (t6(quaternion) -  t4(quaternion))
-                                                        *vector_in[1] 
-                                                  + (t3(quaternion) + t7(quaternion))
-                                                        *vector_in[2] ) + vector_in[0],
-                                                2*( (t4(quaternion) +  t6(quaternion))
-                                                        *vector_in[0] 
-                                                  + (t5(quaternion) + t10(quaternion))
-                                                        *vector_in[1] 
-                                                  + (t9(quaternion) - t2(quaternion))
-                                                        *vector_in[2] ) + vector_in[1],
-                                                2*( (t7(quaternion) -  t3(quaternion))
-                                                        *vector_in[0] 
-                                                  + (t2(quaternion) +  t9(quaternion))
-                                                        *vector_in[1] 
-                                                  + (t5(quaternion) + t8(quaternion))
-                                                        *vector_in[2] ) + vector_in[2]));
-            
-            Function select_quaternion(state, Return(state[0], state[1], state[2], state[3]));
-            Function rotated_accelero = rotate(select_quaternion, control.subvector(3,5));
-            Function rotated_gyro = rotate(select_quaternion, control.subvector(0,2));
-            
-            double _guz[3]={0.,0., -9.81};
-	        Vector guz(3,_guz);
-            dynamical_model_             
-                = new Function(state, 
-                        Return(state[1], 
-                               rotated_accelero-guz, 
-                               rotated_gyro);*/
-            ROS_DEBUG_STREAM("set IVP dynamical model end");
-        }
-};
+                ROS_DEBUG_STREAM("set IVP dynamical model end");
+            }
+    };
 
 #endif

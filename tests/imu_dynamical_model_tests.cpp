@@ -2,81 +2,261 @@
 #define INIT_METHOD     1
 
 #include <gtest/gtest.h>
+#include <bpf_localization/utils.hpp>
 #include <bpf_localization/tests.hpp>
 
-TEST(IMUDynamicalModelTest, testDynamics1)
+TEST(IMUDynamicalModelTest, testDynamicsTranslationZ)
 {
-    Variable  quaternion(4);
-    Function t2 = Function(quaternion, quaternion[3]*quaternion[0]);
-    Function t3 = Function(quaternion, quaternion[3]*quaternion[1]);
-    Function t4 = Function(quaternion, quaternion[3]*quaternion[2]);
-    Function t5 = Function(quaternion, -quaternion[0]*quaternion[0]);
-    Function t6 = Function(quaternion, quaternion[0]*quaternion[1]);
-    Function t7 = Function(quaternion, quaternion[0]*quaternion[2]);
-    Function t8 = Function(quaternion, -quaternion[1]*quaternion[1]);
-    Function t9 = Function(quaternion, quaternion[1]*quaternion[2]);
-    Function t10 = Function(quaternion, -quaternion[2]*quaternion[2]);
+    double dt = 1e-0;
+    IMUDynamicalModel imu(dt = dt);
+    IntervalVector state1(IMUDynamicalModel::state_size);
+    IntervalVector state_0(IMUDynamicalModel::state_size);
+    IntervalVector state_k(IMUDynamicalModel::state_size);
+    IntervalVector control(IMUDynamicalModel::control_size);
 
-    Variable control(3);
-    Function rotate(quaternion, control, Return( 2*( (t8(quaternion) + t10(quaternion))
-                                                *control[0] 
-                                          + (t6(quaternion) -  t4(quaternion))
-                                                *control[1] 
-                                          + (t3(quaternion) + t7(quaternion))
-                                                *control[2] ) + control[0],
-                                        2*( (t4(quaternion) +  t6(quaternion))
-                                                *control[0] 
-                                          + (t5(quaternion) + t10(quaternion))
-                                                *control[1] 
-                                          + (t9(quaternion) - t2(quaternion))
-                                                *control[2] ) + control[1],
-                                        2*( (t7(quaternion) -  t3(quaternion))
-                                                *control[0] 
-                                          + (t2(quaternion) +  t9(quaternion))
-                                                *control[1] 
-                                          + (t5(quaternion) + t8(quaternion))
-                                                *control[2] ) + control[2]));
+    // Linear acceleration Z axis
+    control[0] = Interval(0., 0.); // gyrometer
+    control[1] = Interval(0., 0.);
+    control[2] = Interval(0., 0.);
+    control[3] = Interval(0., 0.); // accelerometer
+    control[4] = Interval(0., 0.);
+    control[5] = Interval(-100.81, -100.81);
 
-    Variable stat(4);
-    Variable control1(6);
-    Function select_quaternion(stat, Return(stat[0], stat[1], stat[2], stat[3]));
-    Function select_gyro(control1, Return(control1[0], control1[1], control1[2]));
-    Function select_accelero(control1, Return(control1[3], control1[4], control1[5]));
+    state_0[0] = Interval(0., 0.); // quaternion
+    state_0[1] = Interval(0., 0.);
+    state_0[2] = Interval(0., 0.);
+    state_0[3] = Interval(1., 1.);
+    state_0[4] = Interval(0., 0.); // position
+    state_0[5] = Interval(0., 0.);
+    state_0[6] = Interval(0., 0.);
+    state_0[7] = Interval(0., 0.); // linear velocity
+    state_0[8] = Interval(0., 0.);
+    state_0[9] = Interval(0., 0.);
 
-    Variable stat1(4);
-    Variable control2(6);
-    Function rotated_accelero(stat1, control2, rotate(select_quaternion(stat1), select_accelero(control2)));
-    Function rotated_gyro    (stat1, control2, rotate(select_quaternion(stat1), select_gyro(control2)));
+    state_k = imu.applyDynamics(state_0, control);
+    state1[0] = Interval(0., 0.);
+    state1[1] = Interval(0., 0.);
+    state1[2] = Interval(0., 0.);
+    state1[3] = Interval(1., 1.);
+    state1[4] = Interval(0., 0.);
+    state1[5] = Interval(0., 0.);
+    state1[6] = Interval(-45.5, -45.5);
+    state1[7] = Interval(0., 0.);
+    state1[8] = Interval(0., 0.);
+    state1[9] = Interval(-91., -91.);
+    EXPECT_TRUE(eps_equals(state_k, state1)) << "Error in IMU model";
+}
 
-    Vector quat(4);
-    quat[0] = 1;
-    quat[1] = 2;
-    quat[2] = 3;
-    quat[3] = 4;
+TEST(IMUDynamicalModelTest, testDynamicsTranslationY)
+{
+    double dt = 1e-0;
+    IMUDynamicalModel imu(dt = dt);
+    IntervalVector state1(IMUDynamicalModel::state_size);
+    IntervalVector state_0(IMUDynamicalModel::state_size);
+    IntervalVector state_k(IMUDynamicalModel::state_size);
+    IntervalVector control(IMUDynamicalModel::control_size);
 
-    Vector cont(6);
-    cont[0] = 1;
-    cont[1] = 4;
-    cont[2] = 3;
-    cont[3] = 4;
-    cont[4] = 5;
-    cont[5] = 6;
+    // Linear acceleration Y axis
+    control[0] = Interval(0., 0.); // gyrometer
+    control[1] = Interval(0., 0.);
+    control[2] = Interval(0., 0.);
+    control[3] = Interval(0., 0.); // accelerometer
+    control[4] = Interval(-100.81, -100.81);
+    control[5] = Interval(-9.81, -9.81);
 
-    IntervalVector state(1);
-    IntervalVector state1(3);
-    state = t2.eval_vector(quat);
-    ROS_INFO_STREAM(state);
-    state = t3.eval_vector(quat);
-    ROS_INFO_STREAM(state);
+    state_0[0] = Interval(0., 0.); // quaternion
+    state_0[1] = Interval(0., 0.);
+    state_0[2] = Interval(0., 0.);
+    state_0[3] = Interval(1., 1.);
+    state_0[4] = Interval(0., 0.); // position
+    state_0[5] = Interval(0., 0.);
+    state_0[6] = Interval(0., 0.);
+    state_0[7] = Interval(0., 0.); // linear velocity
+    state_0[8] = Interval(0., 0.);
+    state_0[9] = Interval(0., 0.);
 
-    Variable stat2(4);
-    Function set_control_accelero(stat2, rotated_accelero(stat2, cont));
-    Function set_control_gyroo(stat2, rotated_gyro(stat2, cont));
+    state_k = imu.applyDynamics(state_0, control);
+    state1[0] = Interval(0., 0.);
+    state1[1] = Interval(0., 0.);
+    state1[2] = Interval(0., 0.);
+    state1[3] = Interval(1., 1.);
+    state1[4] = Interval(0., 0.);
+    state1[5] = Interval(50.405, 50.405);
+    state1[6] = Interval(0., 0.);
+    state1[7] = Interval(0., 0.);
+    state1[8] = Interval(100.81, 100.81);
+    state1[9] = Interval(0., 0.);
+    EXPECT_TRUE(eps_equals(state_k, state1)) << "Error in IMU model";
+}
 
-    state1 = set_control_accelero.eval_vector(quat);
-    ROS_INFO_STREAM(state1);
+TEST(IMUDynamicalModelTest, testDynamicsTranslationX)
+{
+    double dt = 1e-0;
+    IMUDynamicalModel imu(dt = dt);
+    IntervalVector state1(IMUDynamicalModel::state_size);
+    IntervalVector state_0(IMUDynamicalModel::state_size);
+    IntervalVector state_k(IMUDynamicalModel::state_size);
+    IntervalVector control(IMUDynamicalModel::control_size);
 
-    IMUDynamicalModel imu = IMUDynamicalModel();
+    // Linear acceleration X axis
+    control[0] = Interval(0., 0.); // gyrometer
+    control[1] = Interval(0., 0.);
+    control[2] = Interval(0., 0.);
+    control[3] = Interval(-100.81, -100.81); // accelerometer
+    control[4] = Interval(0., 0.);
+    control[5] = Interval(-9.81, -9.81);
+
+    state_0[0] = Interval(0., 0.); // quaternion
+    state_0[1] = Interval(0., 0.);
+    state_0[2] = Interval(0., 0.);
+    state_0[3] = Interval(1., 1.);
+    state_0[4] = Interval(0., 0.); // position
+    state_0[5] = Interval(0., 0.);
+    state_0[6] = Interval(0., 0.);
+    state_0[7] = Interval(0., 0.); // linear velocity
+    state_0[8] = Interval(0., 0.);
+    state_0[9] = Interval(0., 0.);
+
+    state_k = imu.applyDynamics(state_0, control);
+    state1[0] = Interval(0., 0.);
+    state1[1] = Interval(0., 0.);
+    state1[2] = Interval(0., 0.);
+    state1[3] = Interval(1., 1.);
+    state1[4] = Interval(50.405, 50.405);
+    state1[5] = Interval(0., 0.);
+    state1[6] = Interval(0., 0.);
+    state1[7] = Interval(100.81, 100.81);
+    state1[8] = Interval(0., 0.);
+    state1[9] = Interval(0., 0.);
+    EXPECT_TRUE(eps_equals(state_k, state1)) << "Error in IMU model";
+}
+
+TEST(IMUDynamicalModelTest, testDynamicsRotationZ)
+{
+    double dt = 1e-3;
+    IMUDynamicalModel imu(dt);
+    IntervalVector state1(IMUDynamicalModel::state_size);
+    IntervalVector state_0(IMUDynamicalModel::state_size);
+    IntervalVector state_k(IMUDynamicalModel::state_size);
+    IntervalVector control(IMUDynamicalModel::control_size);
+
+    // Linear acceleration Z axis
+    control[0] = Interval(0., 0.); // gyrometer
+    control[1] = Interval(0., 0.);
+    control[2] = Interval(10., 10.);
+    control[3] = Interval(0., 0.); // accelerometer
+    control[4] = Interval(0., 0.);
+    control[5] = Interval(-9.81, -9.81);
+
+    state_0[0] = Interval(1., 1.); // quaternion
+    state_0[1] = Interval(0., 0.);
+    state_0[2] = Interval(0., 0.);
+    state_0[3] = Interval(1., 1.);
+    state_0[4] = Interval(0., 0.); // position
+    state_0[5] = Interval(0., 0.);
+    state_0[6] = Interval(0., 0.);
+    state_0[7] = Interval(0., 0.); // linear velocity
+    state_0[8] = Interval(0., 0.);
+    state_0[9] = Interval(0., 0.);
+
+    state_k = imu.applyDynamics(state_0, control);
+    state1[0] = Interval(0.994988, 0.994988);
+    state1[1] = Interval(0., 0.);
+    state1[2] = Interval(0., 0.);
+    state1[3] = Interval(1.00499, 1.00499);
+    state1[4] = Interval(0., 0.);
+    state1[5] = Interval(0., 0.);
+    state1[6] = Interval(0., 0.);
+    state1[7] = Interval(0., 0.);
+    state1[8] = Interval(0., 0.);
+    state1[9] = Interval(0., 0.);
+    EXPECT_TRUE(eps_equals(state_k, state1, 1e-4)) << "Error in IMU model";
+
+}
+
+TEST(IMUDynamicalModelTest, testDynamicsRotationY)
+{
+    double dt = 1e-3;
+    IMUDynamicalModel imu(dt);
+    IntervalVector state1(IMUDynamicalModel::state_size);
+    IntervalVector state_0(IMUDynamicalModel::state_size);
+    IntervalVector state_k(IMUDynamicalModel::state_size);
+    IntervalVector control(IMUDynamicalModel::control_size);
+
+
+    // Linear acceleration Y axis
+    control[0] = Interval(0., 0.); // gyrometer
+    control[1] = Interval(10., 10.);
+    control[2] = Interval(0., 0.);
+    control[3] = Interval(0., 0.); // accelerometer
+    control[4] = Interval(0., 0.);
+    control[5] = Interval(-9.81, -9.81);
+
+    state_0[0] = Interval(1., 1.); // quaternion
+    state_0[1] = Interval(0., 0.);
+    state_0[2] = Interval(0., 0.);
+    state_0[3] = Interval(0., 0.);
+    state_0[4] = Interval(0., 0.); // position
+    state_0[5] = Interval(0., 0.);
+    state_0[6] = Interval(0., 0.);
+    state_0[7] = Interval(0., 0.); // linear velocity
+    state_0[8] = Interval(0., 0.);
+    state_0[9] = Interval(0., 0.);
+
+    state_k = imu.applyDynamics(state_0, control);
+    state1[0] = Interval(0.999988, 0.999988);
+    state1[1] = Interval(0., 0.);
+    state1[2] = Interval(0.00499998, 0.00499998);
+    state1[3] = Interval(0., 0.);
+    state1[4] = Interval(0., 0.);
+    state1[5] = Interval(0., 0.);
+    state1[6] = Interval(0., 0.);
+    state1[7] = Interval(0., 0.);
+    state1[8] = Interval(0., 0.);
+    state1[9] = Interval(0., 0.);
+    EXPECT_TRUE(eps_equals(state_k, state1, 1e-4)) << "Error in IMU model";
+}
+
+TEST(IMUDynamicalModelTest, testDynamicsRotationX)
+{
+    double dt = 1e-3;
+    IMUDynamicalModel imu(dt);
+    IntervalVector state1(IMUDynamicalModel::state_size);
+    IntervalVector state_0(IMUDynamicalModel::state_size);
+    IntervalVector state_k(IMUDynamicalModel::state_size);
+    IntervalVector control(IMUDynamicalModel::control_size);
+
+    // Linear acceleration X axis
+    control[0] = Interval(-10., -10.); // gyrometer
+    control[1] = Interval(0., 0.);
+    control[2] = Interval(0., 0.);
+    control[3] = Interval(0., 0.); // accelerometer
+    control[4] = Interval(0., 0.);
+    control[5] = Interval(-9.81, -9.81);
+
+    state_0[0] = Interval(1., 1.); // quaternion
+    state_0[1] = Interval(0., 0.);
+    state_0[2] = Interval(0., 0.);
+    state_0[3] = Interval(0., 0.);
+    state_0[4] = Interval(0., 0.); // position
+    state_0[5] = Interval(0., 0.);
+    state_0[6] = Interval(0., 0.);
+    state_0[7] = Interval(0., 0.); // linear velocity
+    state_0[8] = Interval(0., 0.);
+    state_0[9] = Interval(0., 0.);
+
+    state_k = imu.applyDynamics(state_0, control);
+    state1[0] = Interval(0.999988, 0.999988);
+    state1[1] = Interval(-0.00499998, -0.00499998);
+    state1[2] = Interval(0., 0.);
+    state1[3] = Interval(0., 0.);
+    state1[4] = Interval(0., 0.);
+    state1[5] = Interval(0., 0.);
+    state1[6] = Interval(0., 0.);
+    state1[7] = Interval(0., 0.);
+    state1[8] = Interval(0., 0.);
+    state1[9] = Interval(0., 0.);
+    EXPECT_TRUE(eps_equals(state_k, state1, 1e-4)) << "Error in IMU model";
 }
 
 // Run all the tests that were declared with TEST()
