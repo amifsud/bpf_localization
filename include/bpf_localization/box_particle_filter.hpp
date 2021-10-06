@@ -539,10 +539,15 @@ class BoxParticleFilter
             Particles* particles = getParticlesPtr(input_boxes_type);
             predicted_particles_.clear();
 
+            unsigned int i = 0;
             for(auto it = particles->begin(); it < particles->end(); it++)
+            {
+                ROS_INFO_STREAM("Particle : " << i);
+                i++;
                 predicted_particles_.append(
                         Particle(dynamical_model_->applyDynamics(*it, control),
                                  it->weight()));
+            }
 
             ROS_DEBUG_STREAM("prediction end");
         }
