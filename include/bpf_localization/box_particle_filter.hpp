@@ -335,7 +335,7 @@ class BoxParticleFilter
 
         /*** Contraction ***/
 
-        IntervalVector contract(IntervalVector innovation, IntervalVector& box)
+        virtual IntervalVector contract(IntervalVector& innovation, IntervalVector& box)
         {
             // Use a contractor to found the box subset that give the innovation 
             // (i.e. (predicted measures) & (measures)) by the measures dynamics
