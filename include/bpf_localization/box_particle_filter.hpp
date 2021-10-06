@@ -339,7 +339,8 @@ class BoxParticleFilter
         IntervalVector contract(IntervalVector innovation, IntervalVector& box)
         {
             // Use a contractor to found the box subset that give the innovation 
-            // (i.e. (predicted measure)s & (measures)) by the measures dynamics
+            // (i.e. (predicted measures) & (measures)) by the measures dynamics
+            ROS_ASSERT_MSG(false, "Contraction with respect to innovation not set");
             return box;
         }
 
