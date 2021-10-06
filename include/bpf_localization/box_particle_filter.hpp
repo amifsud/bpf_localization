@@ -499,6 +499,14 @@ class BoxParticleFilter
             }
         }
 
+        void assert_ready()
+        {
+            assert(dynamical_model_ != NULL && "Dynamical model not set");
+            assert(N_ > 0                    
+                    && "Number of particles not set (should be in constrctor");
+            assert(particles_.size() > 0    && "There is no particles");
+        }
+
     public:
         /*** Box particle filter steps ***/
 
@@ -517,6 +525,8 @@ class BoxParticleFilter
                         BOXES_TYPE input_boxes_type = BOXES_TYPE::DEFAULT)
         {
             ROS_DEBUG_STREAM("prediction begin");
+            assert_ready();
+
             Particles* particles = getParticlesPtr(input_boxes_type);
             predicted_particles_.clear();
 
@@ -532,6 +542,8 @@ class BoxParticleFilter
                         BOXES_TYPE input_boxes_type = BOXES_TYPE::PREDICTION) 
         {   
             ROS_DEBUG_STREAM("Begin correction");
+            assert_ready();
+
             Particles* particles = getParticlesPtr(BOXES_TYPE::RESAMPLING);
             corrected_particles_.clear();
 

@@ -66,6 +66,7 @@ class DynamicalModel
         IntervalVector applyDynamics(const IntervalVector& box, 
                                      const IntervalVector& control)
         {
+            assert_ready();
             if(ivp_)
             {
                 setIVPDynamicalModel(control);
@@ -86,6 +87,7 @@ class DynamicalModel
 
         IntervalVector applyMeasures(const IntervalVector& box)
         {
+            assert_ready();
             setParentMeasuresModel();
             return measures_model_->eval_vector(box);
         }
@@ -118,6 +120,26 @@ class DynamicalModel
         void setParentMeasuresModel()
         {
             if(measures_model_ == NULL) setMeasuresModel();
+        }
+
+        void assert_ready()
+        {
+            if(ivp_)
+            {
+                setIVPDynamicalModel(IntervalVector(state_size_, Interval(0.,0.)));
+            }
+            else
+            {
+                setDynamicalModel(IntervalVector(state_size_, Interval(0., 0.)));
+            }
+            assert(dynamical_model_ != NULL && "dynamical_model_ not sert");
+
+            setParentMeasuresModel(); 
+            assert(measures_model_ != NULL  && "measures_model_ not set");
+            
+            assert(state_size_ != 0         && "state_size not set");
+            assert(control_size_ != 0       && "control_size not set");
+            assert(measures_size_ != 0      && "measures_size not set");
         }
 
 };
