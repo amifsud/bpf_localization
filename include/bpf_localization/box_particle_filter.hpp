@@ -452,10 +452,10 @@ class BoxParticleFilter
         }
         #endif
 
-        void resampling(BOXES_TYPE boxes_type = BOXES_TYPE::CORRECTION)
+        void resampling(BOXES_TYPE input_boxes_type = BOXES_TYPE::CORRECTION)
         {
             ROS_DEBUG_STREAM("Will we resample");
-            Particles* particles = getParticlesPtr(boxes_type);
+            Particles* particles = getParticlesPtr(input_boxes_type);
             resampled_particles_.clear();
 
             // Check that we need to resample
@@ -558,7 +558,7 @@ class BoxParticleFilter
             ROS_DEBUG_STREAM("Begin correction");
             assert_ready();
 
-            Particles* particles = getParticlesPtr(BOXES_TYPE::RESAMPLING);
+            Particles* particles = getParticlesPtr(input_boxes_type);
             corrected_particles_.clear();
 
             IntervalVector predicted_measures = IntervalVector(measures.size());
