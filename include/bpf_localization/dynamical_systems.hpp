@@ -318,7 +318,19 @@ class IMUDynamicalModel: public DynamicalModel
                                     + control[5] - guz[2])));
 
                 ROS_DEBUG_STREAM("set IVP dynamical model end");
-            }
+        }
+
+        void setMeasuresModel()
+        {
+            ROS_DEBUG_STREAM("set measures model begin");
+
+            measures_model_ = std::shared_ptr<Function>(
+                    new Function(state, Return( state[4],
+                                                state[5],
+                                                state[6])));
+
+            ROS_DEBUG_STREAM("set measures model end");
+        }
     };
 
 #endif
