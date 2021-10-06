@@ -5,6 +5,29 @@
 
 TEST(BoatBPFLocalizationTest, testBoatBPFLocalization)
 {
+    IntervalVector initial_box(IMUDynamicalModel::state_size);
+    initial_box[0] = Interval(-2., 2.);
+    initial_box[1] = Interval(-2., 2.);
+    initial_box[2] = Interval(-2., 2.);
+    initial_box[3] = Interval(-2., 2.);
+    initial_box[4] = Interval(-2., 2.);
+    initial_box[5] = Interval(-2., 2.);
+    initial_box[6] = Interval(-2., 2.);
+    initial_box[7] = Interval(-2., 2.);
+    initial_box[8] = Interval(-2., 2.);
+    initial_box[9] = Interval(-2., 2.);
+
+    BoatBPFLocalization* boat = new BoatBPFLocalization(initial_box);
+ 
+    IntervalVector imu(IMUDynamicalModel::control_size);
+    imu[0] = Interval(0., 0.); // gyrometer
+    imu[1] = Interval(0., 0.);
+    imu[2] = Interval(0., 0.);
+    imu[3] = Interval(0., 0.); // accelerometer
+    imu[4] = Interval(0., 0.);
+    imu[5] = Interval(-100.81, -100.81);
+
+    boat->IMUCallback(imu);
 }
 
 // Run all the tests that were declared with TEST()
