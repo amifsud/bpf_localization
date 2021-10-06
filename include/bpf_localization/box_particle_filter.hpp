@@ -512,12 +512,21 @@ class BoxParticleFilter
         BoxParticleFilter(  unsigned int N, 
                             IntervalVector& initial_box,
                             std::shared_ptr<DynamicalModel> dynamical_model)
-            : uniform_distribution_(0.0, 1.0), dynamical_model_(dynamical_model)
+            : uniform_distribution_(0.0, 1.0)
         {
             ROS_ASSERT_MSG(dynamical_model->stateSize() == initial_box.size(), 
                     "State size and initial box size not consistent");
+ 
+            dynamical_model_ = dynamical_model;            
+            N_ = N;
+            initializeBoxes(initial_box);
+        }
 
-            N_          = N;
+        BoxParticleFilter(  unsigned int N, 
+                            IntervalVector& initial_box)
+            : uniform_distribution_(0.0, 1.0)
+        {
+            N_ = N;
             initializeBoxes(initial_box);
         }
 
