@@ -382,7 +382,7 @@ class BoxParticleFilter
             unsigned int M = 0;
             for(unsigned int i = 0; n.size(); ++i)
             {
-                if(particles->operator[](i).weight_ == 0.0) n[i] = 0.0;
+                if(particles->operator[](i).weight() == 0.0) n[i] = 0.0;
                 M++;
             }
 
