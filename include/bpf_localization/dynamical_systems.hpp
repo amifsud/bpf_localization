@@ -241,9 +241,9 @@ class TurtleBotDynamicalModel: public DynamicalModel
 class IMUDynamicalModel: public DynamicalModel
 {
     public:
-        static const unsigned int state_size       = 3*3+1;          // state_size
-        static const unsigned int control_size     = 2*3;            // control_size 
-        static const unsigned int measures_size    = control_size;   // measures_size
+        static const unsigned int state_size       = 3*3+1; // state_size
+        static const unsigned int control_size     = 2*3;   // control_size 
+        static const unsigned int measures_size    = 3;     // measures_size
 
         double guz[3]={0.,0., -9.81};
 	    Vector guz_;

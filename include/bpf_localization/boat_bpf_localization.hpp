@@ -15,7 +15,8 @@ class BoatBPFLocalization : public BoxParticleFilter
                             unsigned int N = 10,
                             double dt = 1e-3)
             :BoxParticleFilter(N, initial_box),
-             imu_measures_(6), gps_measures_(3)
+             imu_measures_(IMUDynamicalModel::control_size), 
+             gps_measures_(IMUDynamicalModel::measures_size)
         {
             dynamical_model_ = std::shared_ptr<DynamicalModel>(new IMUDynamicalModel(dt));
         }
