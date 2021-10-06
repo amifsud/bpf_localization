@@ -15,7 +15,8 @@ int main(int argc, char **argv)
 
     unsigned int N = 18; // number of boxes
 
-    TurtleBotDynamicalModel* dynamical_model = new TurtleBotDynamicalModel();
+    auto dynamical_model = std::shared_ptr<TurtleBotDynamicalModel>(
+            new TurtleBotDynamicalModel());
 
     BoxParticleFilter bpf(N, initial_box, dynamical_model);
 

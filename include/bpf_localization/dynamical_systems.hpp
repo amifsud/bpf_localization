@@ -1,4 +1,5 @@
 #include "ibex/ibex.h"
+#include <memory>
 #include <ros/ros.h>
 #include <math.h>
 
@@ -23,13 +24,13 @@ class DynamicalModel
         double dt_; 
 
         // Process
-        Function* dynamical_model_;
+        std::shared_ptr<Function> dynamical_model_;
         Vector process_noise_diams_;
         unsigned int state_size_;
         unsigned int control_size_;
  
         // Measures
-        Function* measures_model_;
+        std::shared_ptr<Function> measures_model_;
         Vector measures_noise_diams_;
         unsigned int measures_size_;
 
@@ -207,32 +208,32 @@ class TurtleBotDynamicalModel: public DynamicalModel
         void setIVPDynamicalModel(const IntervalVector& control)
         {
             ROS_DEBUG_STREAM("set IVP dynamical model begin");
-            dynamical_model_             
-                = new Function(state, 
+            dynamical_model_ = std::shared_ptr<Function>(           
+                  new Function(state, 
                         Return( wheels_radius_/2*(control[0]+control[1])*cos(state[2]),
                                 wheels_radius_/2*(control[0]+control[1])*sin(state[2]),
-                                wheels_radius_/wheels_distance_*(control[0]-control[1])));
+                                wheels_radius_/wheels_distance_*(control[0]-control[1]))));
             ROS_DEBUG_STREAM("set IVP dynamical model end");
         }
 
         void setDynamicalModel(const IntervalVector& control)
         {
             ROS_DEBUG_STREAM("set dynamical model begin");
-            dynamical_model_             
-                = new Function(state, 
+            dynamical_model_  = std::shared_ptr<Function>(           
+                  new Function(state, 
                         Return(dt_*wheels_radius_/2*(control[0]+control[1])*cos(state[2])+state[0],
                                dt_*wheels_radius_/2*(control[0]+control[1])*sin(state[2])+state[1],
                                dt_*wheels_radius_/wheels_distance_*(control[0]-control[1])+state[2]
-                               ));
+                               )));
             ROS_DEBUG_STREAM("set dynamical model end");
         }
 
         void setMeasuresModel()
         {
             ROS_DEBUG_STREAM("set measures model begin");
-            measures_model_ 
-                = new Function(state, Return( state[0],
-                                              state[1]+state[2]));
+            measures_model_ = std::shared_ptr<Function>( 
+                  new Function(state, Return( state[0],
+                                              state[1]+state[2])));
             ROS_DEBUG_STREAM("set measures model end");
         }
 };
@@ -294,7 +295,7 @@ class IMUDynamicalModel: public DynamicalModel
         {
             ROS_DEBUG_STREAM("set IVP dynamical model begin");
 
-            dynamical_model_ = 
+            dynamical_model_ = std::shared_ptr<Function>( 
                 new Function(state, 
                     Return( 0.5*(-state[1]*control[0]-state[2]*control[1]-state[3]*control[2]),
                             0.5*( state[0]*control[0]-state[3]*control[1]+state[2]*control[2]),
@@ -314,7 +315,7 @@ class IMUDynamicalModel: public DynamicalModel
                             2*( ( state[1]*state[3] - state[0]*state[2])*control[3] 
                               + ( state[0]*state[1] + state[2]*state[3])*control[4] 
                               + (-state[1]*state[1] - state[2]*state[2])*control[5] ) 
-                                    + control[5] - guz[2]));
+                                    + control[5] - guz[2])));
 
                 ROS_DEBUG_STREAM("set IVP dynamical model end");
             }

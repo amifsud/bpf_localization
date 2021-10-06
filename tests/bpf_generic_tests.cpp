@@ -27,10 +27,10 @@ TEST(GenericTests, testCase1)
         = particle.subdivise(SUBDIVISION_TYPE::ALL_DIMENSIONS);
     deque<IntervalVector> turtlebot_boxes;
 
-    TurtleBotDynamicalModel* turtlebot
-        = new TurtleBotDynamicalModel(  dt              = dt,
+    auto turtlebot = std::shared_ptr<TurtleBotDynamicalModel>(
+            new TurtleBotDynamicalModel(  dt              = dt,
                                         wheels_radius   = wheels_radius,
-                                        wheels_distance = wheels_distance);
+                                        wheels_distance = wheels_distance));
 
     unsigned int i = 0;
     for(auto it = turtlebot_particles_in.begin();

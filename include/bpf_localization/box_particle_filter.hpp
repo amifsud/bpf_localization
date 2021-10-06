@@ -278,8 +278,7 @@ class BoxParticleFilter
         std::uniform_real_distribution<double> uniform_distribution_;
 
         // Dynamical model
-        Variable state_variable_;
-        DynamicalModel* dynamical_model_;
+        std::shared_ptr<DynamicalModel> dynamical_model_;
 
         // Particles
         Particles particles_;
@@ -510,9 +509,10 @@ class BoxParticleFilter
     public:
         /*** Box particle filter steps ***/
 
-        BoxParticleFilter(  unsigned int N, IntervalVector& initial_box,
-                            DynamicalModel* dynamical_model)
-            : uniform_distribution_(0.0,1.0), dynamical_model_(dynamical_model)
+        BoxParticleFilter(  unsigned int N, 
+                            IntervalVector& initial_box,
+                            std::shared_ptr<DynamicalModel> dynamical_model)
+            : uniform_distribution_(0.0, 1.0), dynamical_model_(dynamical_model)
         {
             ROS_ASSERT_MSG(dynamical_model->stateSize() == initial_box.size(), 
                     "State size and initial box size not consistent");
@@ -583,7 +583,7 @@ class BoxParticleFilter
         }
 
         const unsigned int& N() const { return N_; }
-        const DynamicalModel* dynamicalModel() const { return dynamical_model_; }
+        std::shared_ptr<DynamicalModel> dynamicalModel() const { return dynamical_model_; }
 };
 
 #endif
