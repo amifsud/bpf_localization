@@ -34,7 +34,6 @@ class DynamicalModel
         unsigned int measures_size_;
 
         // Simulation with dynibex
-        simulation* simu_;
         Method integration_method_;
         Variable  state;
         double precision_;
@@ -67,22 +66,25 @@ class DynamicalModel
                                      const IntervalVector& control)
         {
             assert_ready();
+            IntervalVector result(state_size_, Interval(0., 0.));
             if(ivp_)
             {
+                simulation* simu;
                 setIVPDynamicalModel(control);
                 ivp_ode problem 
                     = ivp_ode(*dynamical_model_, 0.0, box);
 
-                simu_ = new simulation(&problem, dt_, integration_method_, precision_);
-                simu_->run_simulation();
-
-                return simu_->get_last();
+                simu = new simulation(&problem, dt_, integration_method_, precision_);
+                simu->run_simulation();
+                result = simu->get_last();
+                delete simu;
             }
             else
             {
                 setDynamicalModel(control);
-                return dynamical_model_->eval_vector(box);
+                result = dynamical_model_->eval_vector(box);
             }
+            return result;
         }
 
         IntervalVector applyMeasures(const IntervalVector& box)
