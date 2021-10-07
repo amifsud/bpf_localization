@@ -249,10 +249,10 @@ class IMUDynamicalModel: public DynamicalModel
 	    Vector guz_;
 
     public:
-        IMUDynamicalModel(  const double dt              = NaN,        // dt
+        IMUDynamicalModel(  const double dt              = NaN,  // dt
                             const bool   ivp             = true, // IVP or not
                             const Method method          = RK4,  // method       
-                            const double precision       = 1e-6, // precision
+                            const double precision       = 1e-3, // precision
                             Vector measures_noise_diams
                                 = Vector(TurtleBotDynamicalModel::measures_size, NaN),
                             Vector process_noise_diams
