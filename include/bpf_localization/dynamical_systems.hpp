@@ -24,19 +24,16 @@ class DynamicalModel
         double dt_; 
 
         // Process
-        std::shared_ptr<Function> dynamical_model_;
         Vector process_noise_diams_;
         unsigned int state_size_;
         unsigned int control_size_;
  
         // Measures
-        std::shared_ptr<Function> measures_model_;
         Vector measures_noise_diams_;
         unsigned int measures_size_;
 
         // Simulation with dynibex
         Method integration_method_;
-        Variable  state;
         double precision_;
         bool ivp_;
 
@@ -52,12 +49,9 @@ class DynamicalModel
                         Method method, double precision, bool ivp)
             :dt_(dt), state_size_(state_size), 
              control_size_(control_size), measures_size_(measures_size),
-             dynamical_model_(NULL),
-             measures_model_(NULL),
              measures_noise_diams_(measures_noise_diams),
              process_noise_diams_(process_noise_diams),
              integration_method_(method), precision_(precision),
-             state(state_size),
              ivp_(ivp)
         {
             ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
@@ -68,22 +62,22 @@ class DynamicalModel
         {
             assert_ready();
             IntervalVector result(state_size_, Interval(0., 0.));
+            std::shared_ptr<Function> dynamical_model;
             if(ivp_)
             {
-                simulation* simu;
-                setIVPDynamicalModel(control);
+                dynamical_model = getIVPDynamicalModel(control);
                 ivp_ode problem 
-                    = ivp_ode(*dynamical_model_, 0.0, box);
+                    = ivp_ode(*dynamical_model, 0.0, box);
 
-                simu = new simulation(&problem, dt_, integration_method_, precision_);
-                simu->run_simulation();
-                result = simu->get_last();
-                delete simu;
+                simulation simu 
+                    = simulation(&problem, dt_, integration_method_, precision_);
+                simu.run_simulation();
+                result = simu.get_last();
             }
             else
             {
-                setDynamicalModel(control);
-                result = dynamical_model_->eval_vector(box);
+                dynamical_model = getDynamicalModel(control);
+                result = dynamical_model->eval_vector(box);
             }
             return result;
         }
@@ -91,8 +85,8 @@ class DynamicalModel
         IntervalVector applyMeasures(const IntervalVector& box)
         {
             assert_ready();
-            setParentMeasuresModel();
-            return measures_model_->eval_vector(box);
+            std::shared_ptr<Function> measures_model = getMeasuresModel();
+            return measures_model->eval_vector(box);
         }
 
         const double& dt()                 const { return dt_; }
@@ -103,48 +97,45 @@ class DynamicalModel
         const Vector& measuresNoiseDiams() const { return measures_noise_diams_; }
 
     protected:
-        virtual void setIVPDynamicalModel(const IntervalVector& control)
+        virtual std::shared_ptr<Function> getIVPDynamicalModel(const IntervalVector& control)
         {
             ROS_ASSERT_MSG(false, 
                     "IVP dynamical model not set, initialize it or use not IVP version");
         }
 
-        virtual void setDynamicalModel   (const IntervalVector& control)
+        virtual std::shared_ptr<Function> getDynamicalModel   (const IntervalVector& control)
         {
             ROS_ASSERT_MSG(false, 
                     "dynamical model not set, initialize it or use IVP version");
         }
 
-        virtual void setMeasuresModel()
+        virtual std::shared_ptr<Function> getMeasuresModel()
         {
             ROS_ASSERT_MSG(false, "measures model not set");
         }
 
-        void setParentMeasuresModel()
-        {
-            if(measures_model_ == NULL) setMeasuresModel();
-        }
-
         void assert_ready()
         {
+            std::shared_ptr<Function> dynamical_model = NULL;
             if(ivp_)
             {
-                setIVPDynamicalModel(IntervalVector(state_size_, Interval(0.,0.)));
+                dynamical_model 
+                    = getIVPDynamicalModel(IntervalVector(state_size_, Interval(0.,0.)));
             }
             else
             {
-                setDynamicalModel(IntervalVector(state_size_, Interval(0., 0.)));
+                dynamical_model 
+                    = getDynamicalModel(IntervalVector(state_size_, Interval(0., 0.)));
             }
-            assert(dynamical_model_ != NULL && "dynamical_model_ not sert");
+            assert(dynamical_model != NULL && "dynamical_model_ not set");
 
-            setParentMeasuresModel(); 
-            assert(measures_model_ != NULL  && "measures_model_ not set");
-            
+            dynamical_model = getMeasuresModel();
+            assert(dynamical_model != NULL  && "measures_model_ not set");
+
             assert(state_size_ != 0         && "state_size not set");
             assert(control_size_ != 0       && "control_size not set");
             assert(measures_size_ != 0      && "measures_size not set");
         }
-
 };
 
 /** Turtlebot 2 **/
@@ -205,36 +196,42 @@ class TurtleBotDynamicalModel: public DynamicalModel
         }
 
     protected:
-        void setIVPDynamicalModel(const IntervalVector& control)
+        std::shared_ptr<Function> getIVPDynamicalModel(const IntervalVector& control)
         {
             ROS_DEBUG_STREAM("set IVP dynamical model begin");
-            dynamical_model_ = std::shared_ptr<Function>(           
+            Variable state(state_size_);
+            auto dynamical_model = std::shared_ptr<Function>(           
                   new Function(state, 
                         Return( wheels_radius_/2*(control[0]+control[1])*cos(state[2]),
                                 wheels_radius_/2*(control[0]+control[1])*sin(state[2]),
                                 wheels_radius_/wheels_distance_*(control[0]-control[1]))));
             ROS_DEBUG_STREAM("set IVP dynamical model end");
+            return dynamical_model;
         }
 
-        void setDynamicalModel(const IntervalVector& control)
+        std::shared_ptr<Function> getDynamicalModel(const IntervalVector& control)
         {
             ROS_DEBUG_STREAM("set dynamical model begin");
-            dynamical_model_  = std::shared_ptr<Function>(           
+            Variable state(state_size_);
+            auto dynamical_model = std::shared_ptr<Function>(           
                   new Function(state, 
                         Return(dt_*wheels_radius_/2*(control[0]+control[1])*cos(state[2])+state[0],
                                dt_*wheels_radius_/2*(control[0]+control[1])*sin(state[2])+state[1],
                                dt_*wheels_radius_/wheels_distance_*(control[0]-control[1])+state[2]
                                )));
             ROS_DEBUG_STREAM("set dynamical model end");
+            return dynamical_model;
         }
 
-        void setMeasuresModel()
+        std::shared_ptr<Function> getMeasuresModel()
         {
             ROS_DEBUG_STREAM("set measures model begin");
-            measures_model_ = std::shared_ptr<Function>( 
+            Variable state(state_size_);
+            auto measures_model = std::shared_ptr<Function>( 
                   new Function(state, Return( state[0],
                                               state[1]+state[2])));
             ROS_DEBUG_STREAM("set measures model end");
+            return measures_model;
         }
 };
 
@@ -251,8 +248,8 @@ class IMUDynamicalModel: public DynamicalModel
     public:
         IMUDynamicalModel(  const double dt              = NaN,  // dt
                             const bool   ivp             = true, // IVP or not
-                            const Method method          = RK4,  // method       
-                            const double precision       = 1e-3, // precision
+                            const Method method          = HEUN,  // method       
+                            const double precision       = 1e-4, // precision
                             Vector measures_noise_diams
                                 = Vector(TurtleBotDynamicalModel::measures_size, NaN),
                             Vector process_noise_diams
@@ -291,11 +288,12 @@ class IMUDynamicalModel: public DynamicalModel
         }
 
     protected:
-        void setIVPDynamicalModel(const IntervalVector& control)
+        std::shared_ptr<Function> getIVPDynamicalModel(const IntervalVector& control)
         {
             ROS_DEBUG_STREAM("set IVP dynamical model begin");
 
-            dynamical_model_ = std::shared_ptr<Function>( 
+            Variable state(state_size_);
+            auto dynamical_model = std::shared_ptr<Function>( 
                 new Function(state, 
                     Return( 0.5*(-state[1]*control[0]-state[2]*control[1]-state[3]*control[2]),
                             0.5*( state[0]*control[0]-state[3]*control[1]+state[2]*control[2]),
@@ -317,19 +315,22 @@ class IMUDynamicalModel: public DynamicalModel
                               + (-state[1]*state[1] - state[2]*state[2])*control[5] ) 
                                     + control[5] - guz[2])));
 
-                ROS_DEBUG_STREAM("set IVP dynamical model end");
+            ROS_DEBUG_STREAM("set IVP dynamical model end");
+            return dynamical_model;
         }
 
-        void setMeasuresModel()
+        std::shared_ptr<Function> getMeasuresModel()
         {
             ROS_DEBUG_STREAM("set measures model begin");
 
-            measures_model_ = std::shared_ptr<Function>(
+            Variable state(state_size_);
+            auto measures_model = std::shared_ptr<Function>(
                     new Function(state, Return( state[4],
                                                 state[5],
                                                 state[6])));
 
             ROS_DEBUG_STREAM("set measures model end");
+            return measures_model;
         }
     };
 

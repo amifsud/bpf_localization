@@ -17,13 +17,14 @@ TEST(BoatBPFLocalizationTest, testBoatBPFLocalization)
     initial_box[8] = Interval(-2., 2.);
     initial_box[9] = Interval(-2., 2.);
 
-    BoatBPFLocalization* boat = new BoatBPFLocalization(initial_box, 2);
+    auto boat = std::shared_ptr<BoatBPFLocalization>(
+            new BoatBPFLocalization(initial_box));
  
     IntervalVector imu(IMUDynamicalModel::control_size);
-    imu[0] = Interval(0., 0.);     // gyrometer
+    imu[0] = Interval(0., 0.); // gyrometer
     imu[1] = Interval(0., 0.);
     imu[2] = Interval(0., 0.);
-    imu[3] = Interval(0., 0.);     // accelerometer
+    imu[3] = Interval(0., 0.); // accelerometer
     imu[4] = Interval(0., 0.);
     imu[5] = Interval(-100.81, -100.81);
 

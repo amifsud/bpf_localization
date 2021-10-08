@@ -46,6 +46,7 @@
 
 #include "bpf_localization/dynamical_systems.hpp"
 #include "ibex/ibex.h"
+#include <omp.h>
 #include <ros/ros.h>
 #include <vector>
 #include <utility>
@@ -260,11 +261,13 @@ class Particles: public std::deque<Particle>
 
         void append(std::deque<Particle> particles)
         {
+            #pragma omp critical
             this->insert(this->end(), particles.begin(), particles.end());
         }
 
         void append(Particle particle)
         {
+            #pragma omp critical
             this->insert(this->end(), particle);
         }
 };
@@ -539,11 +542,10 @@ class BoxParticleFilter
             Particles* particles = getParticlesPtr(input_boxes_type);
             predicted_particles_.clear();
 
-            unsigned int i = 0;
+            #pragma omp parallel for
             for(auto it = particles->begin(); it < particles->end(); it++)
             {
-                ROS_INFO_STREAM("Particle : " << i);
-                i++;
+                //ROS_INFO_STREAM("Particle in thread : " << omp_get_thread_num());
                 predicted_particles_.append(
                         Particle(dynamical_model_->applyDynamics(*it, control),
                                  it->weight()));
@@ -561,20 +563,18 @@ class BoxParticleFilter
             Particles* particles = getParticlesPtr(input_boxes_type);
             corrected_particles_.clear();
 
-            IntervalVector predicted_measures = IntervalVector(measures.size());
-            IntervalVector innovation         = IntervalVector(measures.size());
-
+            #pragma omp parallel for
             for(auto it = particles->begin(); it < particles->end(); it++)
             {
-                predicted_measures  = dynamical_model_->applyMeasures(*it);
-                innovation          = predicted_measures & measures;
+                IntervalVector predicted_measures  = dynamical_model_->applyMeasures(*it);
+                IntervalVector innovation          = predicted_measures & measures;
 
                 if(innovation.volume() > 0)
                 {
                     corrected_particles_.append(
                             Particle(contract(innovation, *it),
                                      it->weight() * (innovation.volume()
-                                                /predicted_measures.volume()))); 
+                                        /predicted_measures.volume()))); 
                 }
             }
 

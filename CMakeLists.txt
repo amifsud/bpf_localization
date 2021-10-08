@@ -1,8 +1,11 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.9)
 project(bpf_localization)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
+#add_compile_options(-Wall)
+
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -10,6 +13,8 @@ project(bpf_localization)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
+
+find_package(OpenMP REQUIRED)
 
 #find_package(Eigen3 REQUIRED)
 
@@ -153,7 +158,6 @@ target_link_libraries(bpf_localization
    /usr/local/lib/libibex.a
    /usr/local/lib/libprim.a
  )
-
 
 #############
 ## Install ##
