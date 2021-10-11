@@ -12,8 +12,8 @@ class BoatBPFLocalization : public BoxParticleFilter
 
     public:
         BoatBPFLocalization(IntervalVector& initial_box,
-                            unsigned int N = 20,
-                            double dt = 1e-3)
+                            unsigned int N = 10,
+                            double dt = 1.)
             :BoxParticleFilter(N, initial_box),
              imu_measures_(IMUDynamicalModel::control_size), 
              gps_measures_(IMUDynamicalModel::measures_size)
