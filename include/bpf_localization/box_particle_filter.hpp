@@ -542,14 +542,19 @@ class BoxParticleFilter
             Particles* particles = getParticlesPtr(input_boxes_type);
             predicted_particles_.clear();
 
+            double start, end;
+            start = omp_get_wtime();
             #pragma omp parallel for
             for(auto it = particles->begin(); it < particles->end(); it++)
             {
                 //ROS_INFO_STREAM("Particle in thread : " << omp_get_thread_num());
                 predicted_particles_.append(
-                        Particle(dynamical_model_->applyDynamics(*it, control),
-                                 it->weight()));
+                      Particle(
+                            dynamical_model_->applyDynamics(*it, control),
+                            it->weight()));
             }
+            end = omp_get_wtime();
+            ROS_INFO_STREAM("prediction duration = " << (end - start)); 
 
             ROS_DEBUG_STREAM("prediction end");
         }
