@@ -36,6 +36,8 @@ class DynamicalModel
         Method integration_method_;
         double precision_;
         bool ivp_;
+        bool adaptative_timestep_;
+        double h_;
 
     #if RESAMPLING_DIRECTION == 1
     public:
@@ -70,8 +72,10 @@ class DynamicalModel
                     = ivp_ode(*dynamical_model, 0.0, box);
 
                 simulation simu 
-                    = simulation(&problem, dt_, integration_method_, precision_);
+                    = simulation(&problem, dt_, integration_method_, precision_, h_);
                 simu.run_simulation();
+                if(adaptative_timestep_) 
+                    h_ = simu.list_solution_g.back().time_j.diam();
                 result = simu.get_last();
             }
             else
@@ -285,6 +289,9 @@ class IMUDynamicalModel: public DynamicalModel
             normalization_values_.push_back(std::make_tuple(1, 1, 1.));
             normalization_values_.push_back(std::make_tuple(2, 1, 1.));
             #endif
+
+            h_ = 0.1; // initial timestep for dynibex simulations
+            adaptative_timestep_ = true;
         }
 
     protected:
