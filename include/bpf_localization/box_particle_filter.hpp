@@ -291,8 +291,9 @@ class BoxParticleFilter
         Particles corrected_particles_;
         Particles resampled_particles_;
 
-        // Resampling
+        // Booleans
         bool resampled_;
+        bool parallelize_;
 
     protected:
         /*** Paving ***/
@@ -516,7 +517,8 @@ class BoxParticleFilter
 
         BoxParticleFilter(  unsigned int N, 
                             IntervalVector& initial_box,
-                            std::shared_ptr<DynamicalModel> dynamical_model)
+                            std::shared_ptr<DynamicalModel> dynamical_model,
+                            bool parallelize = false)
             : uniform_distribution_(0.0, 1.0)
         {
             ROS_ASSERT_MSG(dynamical_model->stateSize() == initial_box.size(), 
@@ -525,22 +527,27 @@ class BoxParticleFilter
             dynamical_model_ = dynamical_model;            
             N_ = N;
             initializeBoxes(initial_box);
+            parallelize_ = parallelize;
         }
 
         BoxParticleFilter(  unsigned int N, 
-                            const IntervalVector& initial_box)
+                            const IntervalVector& initial_box,
+                            bool parallelize = false)
             : uniform_distribution_(0.0, 1.0)
         {
             N_ = N;
             initializeBoxes(initial_box);
+            parallelize_ = parallelize;
         }
 
         BoxParticleFilter(  unsigned int N, 
-                            const Particles& particles)
+                            const Particles& particles,
+                            bool parallelize = false)
             : uniform_distribution_(0.0, 1.0)
         {
             N_ = N;
             particles_ = particles;
+            parallelize_ = parallelize;
         }
 
         void prediction(IntervalVector& control, 
@@ -554,7 +561,7 @@ class BoxParticleFilter
 
             double start, end;
             start = omp_get_wtime();
-            #pragma omp parallel for
+            #pragma omp parallel for if(parallelize_)
             for(auto it = particles->begin(); it < particles->end(); it++)
             {
                 //ROS_INFO_STREAM("Particle in thread : " << omp_get_thread_num());
@@ -564,7 +571,7 @@ class BoxParticleFilter
                             it->weight()));
             }
             end = omp_get_wtime();
-            ROS_INFO_STREAM("prediction duration = " << (end - start)); 
+            //ROS_INFO_STREAM("prediction duration = " << (end - start)); 
 
             ROS_DEBUG_STREAM("prediction end");
         }
