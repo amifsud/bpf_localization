@@ -2,7 +2,8 @@
 #define INIT_METHOD     1
 
 #include <gtest/gtest.h>
-#include <bpf_localization/tests.hpp>
+#include "bpf_localization/dynamical_systems.hpp"
+#include "bpf_localization/tests.hpp"
 
 TEST(TurtlebotTest, testDynamics1)
 {

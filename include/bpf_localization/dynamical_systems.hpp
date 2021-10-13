@@ -1,8 +1,3 @@
-#include "ibex/ibex.h"
-#include <memory>
-#include <ros/ros.h>
-#include <math.h>
-
 /** FIXME
  *
  *  - control in state to not reconstruct objects ?
@@ -14,7 +9,7 @@
 #ifndef DYNAMICAL_SYSTEMS
 #define DYNAMICAL_SYSTEMS
 
-#define NaN std::numeric_limits<double>::quiet_NaN()
+#include "bpf_localization/utils.hpp"
 
 using namespace ibex;
 

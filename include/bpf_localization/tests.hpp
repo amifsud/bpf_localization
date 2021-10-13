@@ -1,8 +1,7 @@
-#include <bpf_localization/box_particle_filter.hpp>
-#include <bpf_localization/dynamical_systems.hpp>
-
 #ifndef TESTS
 #define TESTS
+
+#include <bpf_localization/box_particle_filter.hpp>
 
 bool compareParticles(const Particles* particles1, const Particles* particles2)
 {

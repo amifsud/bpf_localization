@@ -5,6 +5,9 @@
  *
  */
 
+#ifndef BOX_PARTICLE_FILTER
+#define BOX_PARTICLE_FILTER
+
 /*** Available algos ***/
 // Init
 //  * uniformly choosen : 0
@@ -44,19 +47,8 @@
     #define SUBDIVISE_OVER_GIVEN_DIRECTION
 #endif
 
-#include "bpf_localization/dynamical_systems.hpp"
-#include "ibex/ibex.h"
 #include <omp.h>
-#include <ros/ros.h>
-#include <vector>
-#include <utility>
-#include <numeric>
-#include <random>
-//#include <Eigen/Core>
-//#include <Eigen/Cholesky>
-
-#ifndef BOX_PARTICLE_FILTER
-#define BOX_PARTICLE_FILTER
+#include "bpf_localization/dynamical_systems.hpp"
 
 using namespace ibex;
 

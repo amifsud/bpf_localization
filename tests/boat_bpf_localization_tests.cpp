@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include "bpf_localization/boat_bpf_localization.hpp"
+#include "bpf_localization/tests.hpp"
 
 TEST(BoatBPFLocalizationTest, testBoatBPFLocalization)
 {
