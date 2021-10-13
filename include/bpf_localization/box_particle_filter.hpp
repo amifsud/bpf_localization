@@ -535,6 +535,14 @@ class BoxParticleFilter
             initializeBoxes(initial_box);
         }
 
+        BoxParticleFilter(  unsigned int N, 
+                            const Particles& particles)
+            : uniform_distribution_(0.0, 1.0)
+        {
+            N_ = N;
+            particles_ = particles;
+        }
+
         void prediction(IntervalVector& control, 
                         BOXES_TYPE input_boxes_type = BOXES_TYPE::DEFAULT)
         {
