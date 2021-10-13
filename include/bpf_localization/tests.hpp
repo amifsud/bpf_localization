@@ -14,7 +14,7 @@ bool compareParticles(const Particles* particles1, const Particles* particles2)
         found_particle = false;
         for(auto part2 = particles2->begin(); part2 != particles2->end(); ++part2)
         {
-            if(eps_equals(*part1,*part2))
+            if(eps_equals(*part1,*part2, 1e-10))
             {
                 already_found = false;
                 for(unsigned int u = 0; u < found_particles.size(); u++)
