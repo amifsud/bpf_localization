@@ -11,7 +11,7 @@ class BoatBPFLocalization : public BoxParticleFilter
         IntervalVector gps_measures_;
 
     public:
-        BoatBPFLocalization(IntervalVector& initial_box,
+        BoatBPFLocalization(const IntervalVector& initial_box,
                             unsigned int N = 10,
                             double dt = 1.)
             :BoxParticleFilter(N, initial_box),

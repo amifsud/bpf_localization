@@ -298,7 +298,7 @@ class BoxParticleFilter
         /*** Paving ***/
 
         #if INIT_METHOD == 0
-        void initializeBoxes(IntervalVector& initial_box)
+        void initializeBoxes(const IntervalVector& initial_box)
         {
             ROS_DEBUG_STREAM("Uniformly choosen paving initialization begin");
             // We choose to subdvise the initial box with equal size boxes (1)
@@ -314,7 +314,7 @@ class BoxParticleFilter
         #endif
 
         #if INIT_METHOD == 1
-        void initializeBoxes(IntervalVector& initial_box)
+        void initializeBoxes(const IntervalVector& initial_box)
         {
             ROS_DEBUG_STREAM("Uniform paving initialization begin");
 
@@ -528,7 +528,7 @@ class BoxParticleFilter
         }
 
         BoxParticleFilter(  unsigned int N, 
-                            IntervalVector& initial_box)
+                            const IntervalVector& initial_box)
             : uniform_distribution_(0.0, 1.0)
         {
             N_ = N;
