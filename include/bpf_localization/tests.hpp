@@ -4,6 +4,49 @@
 #ifndef TESTS
 #define TESTS
 
+bool compareParticles(const Particles* particles1, const Particles* particles2)
+{
+    bool found_particle, already_found;
+    std::vector<unsigned int> found_particles;
+    unsigned int i;
+    for(auto part1 = particles1->begin(); part1 != particles1->end(); ++part1)
+    {
+        i = 0;
+        found_particle = false;
+        for(auto part2 = particles2->begin(); part2 != particles2->end(); ++part2)
+        {
+            if(eps_equals(*part1,*part2))
+            {
+                already_found = false;
+                for(unsigned int u = 0; u < found_particles.size(); u++)
+                {
+                    if(found_particles[u] == i)
+                    {
+                        already_found = true;
+                        break;
+                    }
+                }
+                
+                if(!already_found)
+                {
+                    found_particle = true;
+                    found_particles.push_back(i);
+                    break;
+                }
+            }
+
+            i++;
+        }
+
+        if(!found_particle) return false;    
+    }
+
+    //for(unsigned int u = 0; u < found_particles.size(); u++)
+    //    ROS_INFO_STREAM(found_particles[u]);
+
+    return true;
+}
+
 bool wellPavedTest(Particles* particles, IntervalVector initial_box)
 {
     if(particles->size() > 0)

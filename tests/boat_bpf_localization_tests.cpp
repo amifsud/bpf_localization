@@ -5,21 +5,10 @@
 
 TEST(BoatBPFLocalizationTest, testBoatBPFLocalization)
 {
-    IntervalVector initial_box(IMUDynamicalModel::state_size);
-    initial_box[0] = Interval(-2., 2.);
-    initial_box[1] = Interval(-2., 2.);
-    initial_box[2] = Interval(-2., 2.);
-    initial_box[3] = Interval(-2., 2.);
-    initial_box[4] = Interval(-2., 2.);
-    initial_box[5] = Interval(-2., 2.);
-    initial_box[6] = Interval(-2., 2.);
-    initial_box[7] = Interval(-2., 2.);
-    initial_box[8] = Interval(-2., 2.);
-    initial_box[9] = Interval(-2., 2.);
+    double pos = 1.;
+    double vel = 0.1;
+    double theta = 10./180.*3.14;
 
-    auto boat = std::shared_ptr<BoatBPFLocalization>(
-            new BoatBPFLocalization(initial_box));
- 
     IntervalVector imu(IMUDynamicalModel::control_size);
     imu[0] = Interval(0., 0.); // gyrometer
     imu[1] = Interval(0., 0.);
@@ -28,14 +17,43 @@ TEST(BoatBPFLocalizationTest, testBoatBPFLocalization)
     imu[4] = Interval(0., 0.);
     imu[5] = Interval(-100.81, -100.81);
 
+    auto boat = std::shared_ptr<BoatBPFLocalization>(
+            new BoatBPFLocalization(pos, vel, theta, false));
+    Particles initial_particles = Particles(boat->getParticles());
+ 
+    boat->IMUCallback(imu);
+
+    Particles mono_threaded_particles 
+        = Particles(boat->getParticles(BOXES_TYPE::PREDICTION));
+ 
+    boat = std::shared_ptr<BoatBPFLocalization>(
+            new BoatBPFLocalization(initial_particles, true));
+ 
     boat->IMUCallback(imu);
  
+    Particles multi_threaded_particles 
+        = Particles(boat->getParticles(BOXES_TYPE::PREDICTION));
+
+    bool equal_particles 
+        = compareParticles(&mono_threaded_particles, &multi_threaded_particles);
+
+
+    EXPECT_TRUE(equal_particles)
+        << "Multi-threaded and no multi-threaded predicted particles not the same";
+
+    /*auto particles = boat->getParticles(BOXES_TYPE::PREDICTION);
+    for(auto particle = particles.begin(); particle != particles.end(); particle++)
+        std::cout << *particle << std::endl;;*/
+}
+
+TEST(BoatBPFLocalizationTest, testBoatBPFLocalization1)
+{
     IntervalVector gps(IMUDynamicalModel::measures_size);
     gps[0] = Interval(-0.2, 0.2); // gps
     gps[1] = Interval(-0.2, 0.2);
     gps[2] = Interval(-0.2, 0.2);
 
-    boat->GPSCallback(gps);
+    //boat->GPSCallback(gps);
 }
 
 // Run all the tests that were declared with TEST()
