@@ -215,6 +215,12 @@ target_link_libraries(imu_interface
 ## Testing ##
 #############
 
+#if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+  add_rostest_gtest(tests_calibration launch/imu_calibration.launch src/imu_interface.cpp)
+  target_link_libraries(tests_calibration ${catkin_LIBRARIES})
+  #endif()
+
 catkin_add_gtest(bpf_particle_given_dir_subdivision tests/bpf_particle_given_dir_subdivision.cpp)
 if(TARGET bpf_particle_given_dir_subdivision)
     target_link_libraries(bpf_particle_given_dir_subdivision
