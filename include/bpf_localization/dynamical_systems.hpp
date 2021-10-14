@@ -49,7 +49,7 @@ class DynamicalModel
              measures_noise_diams_(measures_noise_diams),
              process_noise_diams_(process_noise_diams),
              integration_method_(method), precision_(precision),
-             ivp_(ivp)
+             ivp_(ivp), adaptative_timestep_(false)
         {
             ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
         }
