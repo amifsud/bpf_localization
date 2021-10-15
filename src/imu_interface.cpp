@@ -22,11 +22,11 @@ class IMUInterface
 
         // Interval IMU
         std::string name_;
-        Vector diameters_;
+        Vector half_diameters_;
 
     public:
         IMUInterface(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-            calibration_(false), name_(name), diameters_(6, 0.),
+            calibration_(false), name_(name), half_diameters_(6, 0.),
             mean_(Vector(6,0.)), nb_(0), tmp_(6), precision_(pow(10, decimal))
         {
             imu_sub_ = nh->subscribe("imu_in", 50, &IMUInterface::callback, this);
@@ -51,7 +51,7 @@ class IMUInterface
         {
             if(!calibration_)
             {
-                ROS_INFO_STREAM(diameters_);
+                ROS_INFO_STREAM(half_diameters_);
             }
             else
             {
@@ -60,9 +60,9 @@ class IMUInterface
             }
         }
 
-        Vector computeInterval()
+        Vector computeHalfDiameters()
         {
-            Vector diameters(6, 0.);
+            Vector half_diameters(6, 0.);
 
             double number;
             for(auto vect = data_.begin(); vect !=data_.end(); vect++)
@@ -70,21 +70,21 @@ class IMUInterface
                 for(unsigned int i = 0; i < 6; ++i)
                 {
                     number = 2*std::abs(vect->operator[](i)-mean_[i]/nb_);
-                    if(number - diameters[i] > 1./precision_) 
-                        diameters[i] 
+                    if(number - half_diameters[i] > 1./precision_) 
+                        half_diameters[i] 
                             = roundf(number * precision_) / precision_;
                 }
             }
 
             for(unsigned int i = 0; i < 6; ++i)
             {
-                diameters[i] += 1./precision_;
+                half_diameters[i] += 1./precision_;
                 ROS_INFO_STREAM(mean_[i]/nb_);
             }
 
-            ROS_INFO_STREAM(diameters);
+            ROS_INFO_STREAM(half_diameters);
 
-            return diameters;
+            return half_diameters;
         }
 
         void feed_calibration(const sensor_msgs::Imu& imu_in)
@@ -102,12 +102,12 @@ class IMUInterface
                 data_.push_back(Vector(tmp_));
                 nb_ += 1.;
 
-                diameters_ = computeInterval(); 
+                half_diameters_ = computeHalfDiameters(); 
             }
             else
             {
                 calibration_ = false;
-                diameters_ = computeInterval(); 
+                half_diameters_ = computeHalfDiameters(); 
             }
         }
 };
