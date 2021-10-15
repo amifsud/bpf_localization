@@ -3,36 +3,29 @@
 #include <message_filters/subscriber.h>
 #include <sensor_msgs/Imu.h>
 #include "bpf_localization/Calibration.h"
+#include "bpf_localization/sensors.h"
 
-class IMUInterface
+class Calibrable
 {
     protected:
-        // ROS IMU
-        ros::Subscriber imu_sub_;
-        
-        // Calibration
-        ros::ServiceServer calibration_server_;
+        bool calibration_;
         ros::Time until_;
+
+        ros::ServiceServer calibration_server_;
+
         std::vector<Vector> data_;
         Vector mean_;
         Vector tmp_;
         double nb_;
-        bool calibration_;
+
         double precision_;
 
-        // Interval IMU
-        std::string name_;
-        Vector half_diameters_;
-
     public:
-        IMUInterface(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-            calibration_(false), name_(name), half_diameters_(6, 0.),
-            mean_(Vector(6,0.)), nb_(0), tmp_(6), precision_(pow(10, decimal))
+        Calibrable(ros::NodeHandle* nh, std::string name, unsigned int size, unsigned int decimal):
+            calibration_(false), name_(name), nb_(0), precision_(pow(10, decimal)), size_(size)
         {
-            imu_sub_ = nh->subscribe("imu_in", 50, &IMUInterface::callback, this);
-            
             calibration_server_ 
-                = nh->advertiseService("imu_calibration", &IMUInterface::calibration, this);
+                = nh->advertiseService(name + "_calibration", &Calibrable::calibration, this);
         }
 
     protected:
@@ -40,34 +33,21 @@ class IMUInterface
                          bpf_localization::Calibration::Response &res)
         {
             calibration_ = true;
-            mean_ = Vector(6, 0.);
+            mean_ = Vector(size_, 0.);
             nb_ = 0.;
             data_.clear();
             until_ = ros::Time::now() + ros::Duration(req.calibration_duration, 0);
             return true;
         }
 
-        void callback(const sensor_msgs::Imu& imu_in) 
-        {
-            if(!calibration_)
-            {
-                ROS_INFO_STREAM(half_diameters_);
-            }
-            else
-            {
-                ROS_INFO_STREAM("Calibrating...");
-                feed_calibration(imu_in);
-            }
-        }
-
         Vector computeHalfDiameters()
         {
-            Vector half_diameters(6, 0.);
+            Vector half_diameters(size_, 0.);
 
             double number;
             for(auto vect = data_.begin(); vect !=data_.end(); vect++)
             {
-                for(unsigned int i = 0; i < 6; ++i)
+                for(unsigned int i = 0; i < size_; ++i)
                 {
                     number = 2*std::abs(vect->operator[](i)-mean_[i]/nb_);
                     if(number - half_diameters[i] > 1./precision_) 
@@ -76,7 +56,7 @@ class IMUInterface
                 }
             }
 
-            for(unsigned int i = 0; i < 6; ++i)
+            for(unsigned int i = 0; i < size_; ++i)
             {
                 half_diameters[i] += 1./precision_;
                 ROS_INFO_STREAM(mean_[i]/nb_);
@@ -87,27 +67,67 @@ class IMUInterface
             return half_diameters;
         }
 
-        void feed_calibration(const sensor_msgs::Imu& imu_in)
+        void feed_calibration(const Vector& vect, Vector& half_diameters)
         {
+            ROS_INFO_STREAM("Calibrating...");
             if(ros::Time::now().toSec() < until_.toSec())
             {
-                tmp_[0] = imu_in.angular_velocity.x;
-                tmp_[1] = imu_in.angular_velocity.y;
-                tmp_[2] = imu_in.angular_velocity.z;
-                tmp_[3] = imu_in.linear_acceleration.x;
-                tmp_[4] = imu_in.linear_acceleration.y;
-                tmp_[5] = imu_in.linear_acceleration.z;
-
-                mean_ += tmp_;
-                data_.push_back(Vector(tmp_));
+                mean_ += vect;
+                data_.push_back(Vector(vect));
                 nb_ += 1.;
 
-                half_diameters_ = computeHalfDiameters(); 
+                computeHalfDiameters(); 
             }
             else
             {
                 calibration_ = false;
-                half_diameters_ = computeHalfDiameters(); 
+                half_diameters = computeHalfDiameters(); 
+            }
+        }
+
+        bool is_calibrating()
+        {
+            return calibration_;
+        }
+};
+
+class IMUInterface: public Calibrable
+{
+    public:
+        static const size = 6;
+
+    protected:
+        // ROS IMU
+        ros::Subscriber imu_sub_;
+        Vector imu_tmp_;_
+        
+        // Interval IMU
+        std::string name_;
+        Vector half_diameters_;
+
+    public:
+        IMUInterface(ros::NodeHandle* nh, std::string name, unsigned int decimal):
+            Calibrable(nh, name, IMUInterface::size, decimal) 
+        {
+            imu_sub_ = nh->subscribe("imu_in", 50, &IMUInterface::callback, this);    
+        }
+
+    protected:
+        void callback(const sensor_msgs::Imu& imu_in) 
+        {
+            if(!is_calibrating())
+            {
+                ROS_INFO_STREAM(half_diameters_);
+            }
+            else
+            {
+                imu_tmp_[0] = imu_in.angular_velocity.x;
+                imu_tmp_[1] = imu_in.angular_velocity.y;
+                imu_tmp_[2] = imu_in.angular_velocity.z;
+                imu_tmp_[3] = imu_in.linear_acceleration.x;
+                imu_tmp_[4] = imu_in.linear_acceleration.y;
+                imu_tmp_[5] = imu_in.linear_acceleration.z;
+                feed_calibration(imu_tmp_, half_diameters_);
             }
         }
 };
