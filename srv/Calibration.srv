@@ -1,0 +1,4 @@
+duration calibration_duration
+---
+geometry_msgs/Vector3 angular_velocity_diameters
+geometry_msgs/Vector3 linear_acceleration_diameters

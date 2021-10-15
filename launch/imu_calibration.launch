@@ -1,18 +1,17 @@
 <launch>
+    <arg name="rosbag_name" value="imu_static_1.bag"/>
+
+    <node   pkg="bpf_localization" 
+            type="imu_interface" 
+            name="imu_calibration"  
+            output="screen"/>
+
 <!--
     <arg name="rosbag_name" value="imu_static_1.bag"/>
     <arg name="rosbag_name" value="imu_static_2.bag"/>
     <arg name="rosbag_name" value="imu_perturbations_1.bag"/>
     <arg name="rosbag_name" value="imu_perturbations_2.bag"/>
 -->
-
-    <arg name="rosbag_name" value="imu_static_1.bag"/>
-
-    <node   pkg="bpf_localization" 
-            type="imu_interface" 
-            name="imu_calibration"  
-            output="screen"
-    />
 
     <node   pkg="rosbag" 
             type="play" 

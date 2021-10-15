@@ -3,12 +3,14 @@
 
 #include <message_filters/subscriber.h>
 #include <sensor_msgs/Imu.h>
+#include "bpf_localization/Calibration.h"
 
 class IMU
 {
     public:
         ros::Publisher  imu_pub_;
         ros::Subscriber imu_sub_;
+        ros::ServiceServer calibration_server_;
 
         sensor_msgs::Imu imu_msg_;
 
@@ -16,10 +18,25 @@ class IMU
         IMU(ros::NodeHandle* nh)
         {
             imu_pub_ = nh->advertise<sensor_msgs::Imu>("imu_out", 50);
-            imu_sub_ = nh->subscribe("imu_in", 50, &IMU::callback_imu, this);
+            imu_sub_ = nh->subscribe("imu_in", 50, &IMU::callback, this);
+            calibration_server_ 
+                = nh->advertiseService("imu_calibration", &IMU::calibration, this);
         }
 
-        void callback_imu(const sensor_msgs::Imu& imu_in) 
+        bool calibration(bpf_localization::Calibration::Request  &req,
+                         bpf_localization::Calibration::Response &res)
+        {
+            res.angular_velocity_diameters.x = 2.;
+            res.angular_velocity_diameters.y = 2.;
+            res.angular_velocity_diameters.z = 2.;
+            res.linear_acceleration_diameters.x = 2.;
+            res.linear_acceleration_diameters.y = 2.;
+            res.linear_acceleration_diameters.z = 2.;
+
+            return true;
+        }
+
+        void callback(const sensor_msgs::Imu& imu_in) 
         {
             imu_msg_ = imu_in;
             imu_msg_.header.frame_id = "imu_calibrated";

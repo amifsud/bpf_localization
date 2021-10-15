@@ -15,7 +15,9 @@ add_compile_options(-frounding-math -O1)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  geometry_msgs
   nav_msgs
+  message_generation
 )
 
 find_package(OpenMP REQUIRED)
@@ -63,11 +65,10 @@ find_package(OpenMP REQUIRED)
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(DIRECTORY srv
+   FILES
+   Calibration.srv
+ )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -77,10 +78,11 @@ find_package(OpenMP REQUIRED)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   std_msgs  # Or other packages containing msgs
+   geometry_msgs  # Or other packages containing msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -113,6 +115,9 @@ find_package(OpenMP REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
+  CATKIN_DEPENDS message_runtime
+  std_msgs
+  geometry_msgs
 #  LIBRARIES bpf_localization
 #  CATKIN_DEPENDS roscpp
 #  DEPENDS /usr/local/include/ibex
