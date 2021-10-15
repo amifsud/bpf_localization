@@ -18,15 +18,16 @@ class IMUInterface
         Vector tmp_;
         double nb_;
         bool calibration_;
+        double precision_;
 
         // Interval IMU
         std::string name_;
         Vector diameters_;
 
     public:
-        IMUInterface(ros::NodeHandle* nh, std::string name):
+        IMUInterface(ros::NodeHandle* nh, std::string name, unsigned int decimal):
             calibration_(false), name_(name), diameters_(6, 0.),
-            mean_(Vector(6,0.)), nb_(0), tmp_(6)
+            mean_(Vector(6,0.)), nb_(0), tmp_(6), precision_(pow(10, decimal))
         {
             imu_sub_ = nh->subscribe("imu_in", 50, &IMUInterface::callback, this);
             
@@ -68,9 +69,17 @@ class IMUInterface
             {
                 for(unsigned int i = 0; i < 6; ++i)
                 {
-                    number = 4*std::abs(vect->operator[](i)-mean_[i]/nb_);
-                    if(number > diameters[i]) diameters[i] = number;
+                    number = 2*std::abs(vect->operator[](i)-mean_[i]/nb_);
+                    if(number - diameters[i] > 1./precision_) 
+                        diameters[i] 
+                            = roundf(number * precision_) / precision_;
                 }
+            }
+
+            for(unsigned int i = 0; i < 6; ++i)
+            {
+                diameters[i] += 1./precision_;
+                ROS_INFO_STREAM(mean_[i]/nb_);
             }
 
             ROS_INFO_STREAM(diameters);
@@ -108,7 +117,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "imu_interface");
     ros::NodeHandle nh;
 
-    auto imu = IMUInterface(&nh, "boat_imu");
+    auto imu = IMUInterface(&nh, "boat_imu", 3);
 
     ros::Rate r(5.0);
     while(nh.ok())
