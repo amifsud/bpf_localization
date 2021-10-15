@@ -14,7 +14,6 @@ add_compile_options(-frounding-math -O1)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
-  geometry_msgs
   nav_msgs
   message_generation
 )
@@ -79,7 +78,6 @@ add_service_files(DIRECTORY srv
  generate_messages(
    DEPENDENCIES
    std_msgs  # Or other packages containing msgs
-   geometry_msgs  # Or other packages containing msgs
  )
 
 ################################################
@@ -115,7 +113,6 @@ catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS message_runtime
   std_msgs
-  geometry_msgs
 #  LIBRARIES bpf_localization
 #  CATKIN_DEPENDS roscpp
 #  DEPENDS /usr/local/include/ibex
@@ -163,12 +160,16 @@ include_directories(
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(bpf_localization
-   ${catkin_LIBRARIES}
-   /usr/local/lib/libibex.a
-   /usr/local/lib/libprim.a
- )
+    ${catkin_LIBRARIES}
+    /usr/local/lib/libibex.a
+    /usr/local/lib/libprim.a
+)
 
-target_link_libraries(imu_interface ${catkin_LIBRARIES})
+target_link_libraries(imu_interface 
+    ${catkin_LIBRARIES}
+    /usr/local/lib/libibex.a
+    /usr/local/lib/libprim.a
+)
 
 #############
 ## Install ##
