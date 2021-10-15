@@ -1,5 +1,5 @@
 <launch>
-    <arg name="rosbag_name" value="imu_static_1.bag"/>
+    <arg name="rosbag_name" value="imu_static_2.bag"/>
 
     <node   pkg="bpf_localization" 
             type="imu_interface" 
