@@ -63,17 +63,13 @@ class Calibrable
             for(unsigned int i = 0; i < size_; ++i)
             {
                 half_diameters[i] += 1./precision_;
-                ROS_INFO_STREAM(mean_[i]/nb_);
             }
-
-            ROS_INFO_STREAM(half_diameters);
 
             return half_diameters;
         }
 
         void feed(const Vector& vect, Vector& half_diameters)
         {
-            ROS_INFO_STREAM("Calibrating...");
             if(ros::Time::now().toSec() < until_.toSec())
             {
                 mean_ += vect;
