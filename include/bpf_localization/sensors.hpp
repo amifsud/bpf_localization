@@ -141,7 +141,7 @@ class Sensor
         }
 };
 
-class CalibrableSensor: public Calibrable, Sensor
+class CalibrableSensor: public Calibrable, public Sensor
 {
     public:
         CalibrableSensor(ros::NodeHandle* nh, std::string name, 
