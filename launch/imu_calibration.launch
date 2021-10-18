@@ -3,7 +3,7 @@
 
     <node   pkg="bpf_localization" 
             type="imu_interface" 
-            name="imu_calibration"  
+            name="calibration"  
             output="screen"/>
 
 <!--
