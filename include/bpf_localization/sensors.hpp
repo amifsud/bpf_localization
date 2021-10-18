@@ -99,20 +99,26 @@ class Sensor
 {
     protected:
         unsigned int size_;
-        
+
+        // ROS
+        ros::Subscriber sub_;
+        Vector tmp_;
+
         // Interval
         Vector half_diameters_;
         std::deque<IntervalVector> buffer_;
 
     public:
         Sensor(ros::NodeHandle* nh, unsigned int size):
-            half_diameters_(Vector(size, 0.)), size_(size)
+            half_diameters_(Vector(size, 0.)), size_(size),
+            tmp_(Vector(size, 0.))
         {
         }
 
         Sensor( ros::NodeHandle* nh, unsigned int size, 
                 const Vector& half_diameters):
-            half_diameters_(half_diameters), size_(size)
+            half_diameters_(half_diameters), size_(size),
+            tmp_(Vector(size, 0.))
         {
         }
 
@@ -177,14 +183,9 @@ class IMUInterface: public CalibrableSensor
     public:
         static const unsigned int size = 6;
 
-    protected:
-        ros::Subscriber sub_;
-        Vector tmp_;
-
     public:
         IMUInterface(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-            CalibrableSensor(nh, name, size, decimal),
-            tmp_(Vector(size, 0.))
+            CalibrableSensor(nh, name, size, decimal)
         {
             sub_ = nh->subscribe(name + "_in", 50, &IMUInterface::callback, this);
         }
@@ -207,14 +208,9 @@ class GPSInterface: public CalibrableSensor
     public:
         static const unsigned int size = 3;
 
-    protected:
-        ros::Subscriber sub_;
-        Vector tmp_;
-
     public:
         GPSInterface(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-            CalibrableSensor(nh, name, size, decimal),
-            tmp_(Vector(size, 0.))
+            CalibrableSensor(nh, name, size, decimal)
         {
             sub_ = nh->subscribe(name + "_in", 50, &GPSInterface::callback, this);    
         }
