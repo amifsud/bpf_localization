@@ -8,6 +8,8 @@ add_compile_options(-std=c++11)
 add_compile_options(-frounding-math -O1)
 #add_compile_options(-Wall)
 
+SET(IBEX_DEPENDENCIES  "/usr/local/lib/libibex.a" "/usr/local/lib/libprim.a")
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -115,7 +117,6 @@ catkin_package(
   std_msgs
 #  LIBRARIES bpf_localization
 #  CATKIN_DEPENDS roscpp
-#  DEPENDS /usr/local/include/ibex
 )
 
 ###########
@@ -127,7 +128,6 @@ catkin_package(
 include_directories(
  include
   ${catkin_INCLUDE_DIRS}
-  #/usr/local/include/ibex
   ${EIGEN3_INCLUDE_DIR}
 )
 
@@ -161,14 +161,12 @@ include_directories(
 ## Specify libraries to link a library or executable target against
 target_link_libraries(bpf_localization
     ${catkin_LIBRARIES}
-    /usr/local/lib/libibex.a
-    /usr/local/lib/libprim.a
+    ${IBEX_DEPENDENCIES}
 )
 
 target_link_libraries(imu_standalone 
     ${catkin_LIBRARIES}
-    /usr/local/lib/libibex.a
-    /usr/local/lib/libprim.a
+    ${IBEX_DEPENDENCIES}
 )
 
 #############
@@ -221,8 +219,7 @@ catkin_add_gtest(bpf_particle_given_dir_subdivision tests/bpf_particle_given_dir
 if(TARGET bpf_particle_given_dir_subdivision)
     target_link_libraries(bpf_particle_given_dir_subdivision
         ${catkin_LIBRARIES}
-        /usr/local/lib/libibex.a
-        /usr/local/lib/libprim.a
+        ${IBEX_DEPENDENCIES}
     )
 endif()
 
@@ -230,8 +227,7 @@ catkin_add_gtest(bpf_particle_uniform_subdivision tests/bpf_particle_uniform_sub
 if(TARGET bpf_particle_uniform_subdivision)
     target_link_libraries(bpf_particle_uniform_subdivision
         ${catkin_LIBRARIES}
-        /usr/local/lib/libibex.a
-        /usr/local/lib/libprim.a
+        ${IBEX_DEPENDENCIES}
     )
 endif()
 
@@ -239,8 +235,7 @@ catkin_add_gtest(bpf_particle_random_subdivision tests/bpf_particle_random_subdi
 if(TARGET bpf_particle_random_subdivision)
     target_link_libraries(bpf_particle_random_subdivision
         ${catkin_LIBRARIES}
-        /usr/local/lib/libibex.a
-        /usr/local/lib/libprim.a
+        ${IBEX_DEPENDENCIES}
     )
 endif()
 
@@ -248,8 +243,7 @@ catkin_add_gtest(bpf_generic_tests tests/bpf_generic_tests.cpp)
 if(TARGET bpf_generic_tests)
     target_link_libraries(bpf_generic_tests
         ${catkin_LIBRARIES}
-        /usr/local/lib/libibex.a
-        /usr/local/lib/libprim.a
+        ${IBEX_DEPENDENCIES}
     )
 endif()
 
@@ -257,8 +251,7 @@ catkin_add_gtest(bpf_init_tests_uniform_paving tests/bpf_init_tests_uniform_pavi
 if(TARGET bpf_init_tests_uniform_paving)
     target_link_libraries(bpf_init_tests_uniform_paving
         ${catkin_LIBRARIES}
-        /usr/local/lib/libibex.a
-        /usr/local/lib/libprim.a
+        ${IBEX_DEPENDENCIES}
     )
 endif()
 
@@ -266,8 +259,7 @@ catkin_add_gtest(bpf_init_tests_uniformly_choosen_paving tests/bpf_init_tests_un
 if(TARGET bpf_init_tests_uniformly_choosen_paving)
     target_link_libraries(bpf_init_tests_uniformly_choosen_paving
         ${catkin_LIBRARIES}
-        /usr/local/lib/libibex.a
-        /usr/local/lib/libprim.a
+        ${IBEX_DEPENDENCIES}
     )
 endif()
 
@@ -275,8 +267,7 @@ catkin_add_gtest(turtlebot_tests tests/turtlebot/turtlebot_tests.cpp)
 if(TARGET turtlebot_tests)
     target_link_libraries(turtlebot_tests
         ${catkin_LIBRARIES}
-        /usr/local/lib/libibex.a
-        /usr/local/lib/libprim.a
+        ${IBEX_DEPENDENCIES}
     )
 endif()
 
@@ -284,8 +275,7 @@ catkin_add_gtest(imu_dynamical_model_tests tests/imu_dynamical_model_tests.cpp)
 if(TARGET imu_dynamical_model_tests)
     target_link_libraries(imu_dynamical_model_tests
         ${catkin_LIBRARIES}
-        /usr/local/lib/libibex.a
-        /usr/local/lib/libprim.a
+        ${IBEX_DEPENDENCIES}
     )
 endif()
 
@@ -293,8 +283,7 @@ catkin_add_gtest(boat_bpf_localization_tests tests/boat_bpf_localization_tests.c
 if(TARGET boat_bpf_localization_tests)
     target_link_libraries(boat_bpf_localization_tests
         ${catkin_LIBRARIES}
-        /usr/local/lib/libibex.a
-        /usr/local/lib/libprim.a
+        ${IBEX_DEPENDENCIES}
     )
 endif()
 
