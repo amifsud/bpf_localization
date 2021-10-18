@@ -61,9 +61,7 @@ class Calibrable
             }
 
             for(unsigned int i = 0; i < size_; ++i)
-            {
                 half_diameters[i] += 1./precision_;
-            }
 
             return half_diameters;
         }
