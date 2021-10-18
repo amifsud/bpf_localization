@@ -1,0 +1,23 @@
+<launch>
+<!--
+    <arg name="rosbag_name" value="imu_static_1.bag"/>
+    <arg name="rosbag_name" value="imu_static_2.bag"/>
+    <arg name="rosbag_name" value="imu_perturbations_1.bag"/>
+    <arg name="rosbag_name" value="imu_perturbations_2.bag"/>
+-->
+
+    <arg name="rosbag_name" value="imu_static_2.bag"/>
+
+    <test   test-name="tests_imu_standalone" 
+            pkg="bpf_localization" 
+            type="tests_imu_standalone" />
+
+    <node   pkg="rosbag" 
+            type="play" 
+            name="player" 
+            output="screen" 
+            args="$(find bpf_localization)/rosbag/calibration_tests/$(arg rosbag_name)">
+        <remap from="/imu1" to="/boat_imu_in"/>
+        <remap from="/mag1" to="/boat_mag_in"/>
+    </node>
+</launch>

@@ -15,6 +15,7 @@ SET(IBEX_DEPENDENCIES  "/usr/local/lib/libibex.a" "/usr/local/lib/libprim.a")
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  rostest
   std_msgs
   nav_msgs
   message_generation
@@ -215,6 +216,8 @@ target_link_libraries(imu_standalone
 ## Testing ##
 #############
 
+## Gtests unit tests
+
 catkin_add_gtest(bpf_particle_given_dir_subdivision tests/bpf_particle_given_dir_subdivision.cpp)
 if(TARGET bpf_particle_given_dir_subdivision)
     target_link_libraries(bpf_particle_given_dir_subdivision
@@ -282,6 +285,16 @@ endif()
 catkin_add_gtest(boat_bpf_localization_tests tests/boat_bpf_localization_tests.cpp)
 if(TARGET boat_bpf_localization_tests)
     target_link_libraries(boat_bpf_localization_tests
+        ${catkin_LIBRARIES}
+        ${IBEX_DEPENDENCIES}
+    )
+endif()
+
+## ROSTESTS
+
+add_rostest_gtest(tests_imu_standalone rostests/imu_standalone.test tests/rostest_imu_standalone.cpp)
+if(TARGET tests_imu_standalone)
+    target_link_libraries(tests_imu_standalone 
         ${catkin_LIBRARIES}
         ${IBEX_DEPENDENCIES}
     )
