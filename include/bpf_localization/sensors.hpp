@@ -154,7 +154,7 @@ class CalibrableSensor: public Calibrable, public Sensor
         }
 
     protected:
-        void callback(const Vector& data) 
+        void feed(const Vector& data)
         {
             if(!is_calibrating())
             {
@@ -198,7 +198,7 @@ class IMUInterface: public CalibrableSensor
             tmp_[3] = imu_data.linear_acceleration.x;
             tmp_[4] = imu_data.linear_acceleration.y;
             tmp_[5] = imu_data.linear_acceleration.z;
-            CalibrableSensor::callback(tmp_);
+            CalibrableSensor::feed(tmp_);
         }
 };
 
@@ -225,6 +225,6 @@ class GPSInterface: public CalibrableSensor
             tmp_[0] = gps_data.x;
             tmp_[1] = gps_data.y;
             tmp_[2] = gps_data.z;
-            CalibrableSensor::callback(tmp_);
+            CalibrableSensor::feed(tmp_);
         }
 };
