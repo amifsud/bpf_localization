@@ -69,7 +69,6 @@ find_package(OpenMP REQUIRED)
 add_service_files(DIRECTORY srv
    FILES
    StartCalibration.srv
-   StopCalibration.srv
    GetDiameters.srv
  )
 

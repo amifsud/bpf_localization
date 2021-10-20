@@ -4,7 +4,6 @@
 
 #include "bpf_localization/utils.hpp"
 #include "bpf_localization/StartCalibration.h"
-#include "bpf_localization/StopCalibration.h"
 #include "bpf_localization/GetDiameters.h"
 
 class Calibrable
@@ -52,8 +51,8 @@ class Calibrable
             return true;
         }
 
-        bool stopCalibration(bpf_localization::StopCalibration::Request  &req,
-                             bpf_localization::StopCalibration::Response &res)
+        bool stopCalibration(bpf_localization::GetDiameters::Request  &req,
+                             bpf_localization::GetDiameters::Response &res)
         {
             calibration_ = false;
             half_diameters_ = computeHalfDiameters();
