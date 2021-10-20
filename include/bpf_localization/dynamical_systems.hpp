@@ -297,7 +297,7 @@ class IMUDynamicalModel: public DynamicalModel
             Variable state(state_size_);
             auto dynamical_model = std::shared_ptr<Function>( 
                 new Function(state, 
-                    Return( 0.5*(-state[1]*control[0]-state[2]*control[1]-state[3]*control[2]),
+                    ReturnIMU( 0.5*(-state[1]*control[0]-state[2]*control[1]-state[3]*control[2]),
                             0.5*( state[0]*control[0]-state[3]*control[1]+state[2]*control[2]),
                             0.5*( state[3]*control[0]+state[0]*control[1]-state[1]*control[2]),
                             0.5*(-state[2]*control[0]+state[1]*control[1]+state[0]*control[2]),
