@@ -3,7 +3,9 @@
 #include <geometry_msgs/Point.h>
 
 #include "bpf_localization/utils.hpp"
-#include "bpf_localization/Calibration.h"
+#include "bpf_localization/StartCalibration.h"
+#include "bpf_localization/StopCalibration.h"
+#include "bpf_localization/GetDiameters.h"
 
 class Calibrable
 {
@@ -14,33 +16,49 @@ class Calibrable
         bool calibration_;
         ros::Time until_;
 
-        ros::ServiceServer calibration_server_;
+        ros::ServiceServer start_calibration_server_;
+        ros::ServiceServer stop_calibration_server_;
 
         std::vector<Vector> data_;
         Vector mean_;
         double nb_;
 
+        Vector half_diameters_;
         double precision_;
 
     public:
         Calibrable( ros::NodeHandle* nh, std::string name, 
                     unsigned int size, unsigned int decimal):
             calibration_(false), name_(name), nb_(0), precision_(pow(10, decimal)), 
-            size_(size), mean_(Vector(size, 0.)) 
+            size_(size), mean_(Vector(size, 0.)), half_diameters_(Vector(size, 0.)) 
         {
-            calibration_server_ 
-                = nh->advertiseService(name + "_calibration", &Calibrable::calibration, this);
+            start_calibration_server_ 
+                = nh->advertiseService(name + "_start_calibration", 
+                        &Calibrable::startCalibration, this);
+            stop_calibration_server_ 
+                = nh->advertiseService(name + "_stop_calibration", 
+                        &Calibrable::stopCalibration, this);
         }
 
     protected:
-        bool calibration(bpf_localization::Calibration::Request  &req,
-                         bpf_localization::Calibration::Response &res)
+        bool startCalibration(bpf_localization::StartCalibration::Request &req,
+                         bpf_localization::StartCalibration::Response     &res)
         {
             calibration_ = true;
             mean_ = Vector(size_, 0.);
             nb_ = 0.;
             data_.clear();
-            until_ = ros::Time::now() + ros::Duration(req.calibration_duration, 0);
+            until_ = ros::Time::now() + ros::Duration(req.duration, 0);
+            return true;
+        }
+
+        bool stopCalibration(bpf_localization::StopCalibration::Request  &req,
+                             bpf_localization::StopCalibration::Response &res)
+        {
+            calibration_ = false;
+            half_diameters_ = computeHalfDiameters();
+            for(auto i = 0; i < half_diameters_.size(); ++i)
+                res.diameters.push_back(2*half_diameters_[i]);
             return true;
         }
 
@@ -66,21 +84,22 @@ class Calibrable
             return half_diameters;
         }
 
-        void feed(const Vector& vect, Vector& half_diameters)
+        void feed(const Vector& vect)
         {
+            ROS_INFO_STREAM("Calibrating...");
+            
             if(ros::Time::now().toSec() < until_.toSec())
             {
                 mean_ += vect;
                 data_.push_back(Vector(vect));
                 nb_ += 1.;
-
-                computeHalfDiameters(); 
             }
             else
             {
                 calibration_ = false;
-                half_diameters = computeHalfDiameters(); 
             }
+            
+            half_diameters_ = computeHalfDiameters(); 
         }
 
         bool is_calibrating()
@@ -89,31 +108,41 @@ class Calibrable
         }
 };
 
-class Sensor
+class Sensor: public Calibrable
 {
     protected:
-        unsigned int size_;
-
         // ROS
+        ros::ServiceServer diameters_server_;
         ros::Subscriber sub_;
         Vector tmp_;
 
         // Interval
-        Vector half_diameters_;
         std::deque<IntervalVector> buffer_;
 
     public:
-        Sensor(ros::NodeHandle* nh, unsigned int size):
-            half_diameters_(Vector(size, 0.)), size_(size),
+        Sensor(ros::NodeHandle* nh, std::string name, unsigned int size, 
+                unsigned int decimal):
+            Calibrable(nh, name, size, decimal),
             tmp_(Vector(size, 0.))
         {
+            diameters_server_ 
+                = nh->advertiseService(name + "_diameters", &Sensor::getDiameters, this);
         }
 
-        Sensor( ros::NodeHandle* nh, unsigned int size, 
-                const Vector& half_diameters):
-            half_diameters_(half_diameters), size_(size),
+        Sensor( ros::NodeHandle* nh, std::string name, unsigned int size, 
+                unsigned int decimal, const Vector& half_diameters):
+            Calibrable(nh, name, size, decimal),
             tmp_(Vector(size, 0.))
         {
+            diameters_server_ 
+                = nh->advertiseService(name + "_diameters", &Sensor::getDiameters, this);
+        }
+
+        bool getDiameters(bpf_localization::GetDiameters::Request  &req,
+                          bpf_localization::GetDiameters::Response &res)
+        {
+            for(auto i = 0; i < half_diameters_.size(); ++i)
+                res.diameters.push_back(2*half_diameters_[i]);
         }
 
         std::deque<IntervalVector> getIntervalData()
@@ -139,31 +168,13 @@ class Sensor
 
         void feed(const Vector& data)
         {
-            buffer_.push_back(interval_from_vector(data));
-        }
-};
-
-class CalibrableSensor: public Calibrable, public Sensor
-{
-    public:
-        CalibrableSensor(ros::NodeHandle* nh, std::string name, 
-                         unsigned int size, unsigned int decimal):
-            Calibrable(nh, name, size, decimal),
-            Sensor(nh, size)
-        {
-        }
-
-    protected:
-        void feed(const Vector& data)
-        {
             if(!is_calibrating())
             {
-                Sensor::feed(data);
+                buffer_.push_back(interval_from_vector(data));
             }
             else
             {
-                ROS_INFO_STREAM("Calibrating...");
-                Calibrable::feed(data, half_diameters_);
+                Calibrable::feed(data);
             }
         }
 };
@@ -172,14 +183,14 @@ class CalibrableSensor: public Calibrable, public Sensor
  *      Common sensors
  */
 
-class IMUInterface: public CalibrableSensor
+class IMUInterface: public Sensor
 {
     public:
         static const unsigned int size = 6;
 
     public:
         IMUInterface(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-            CalibrableSensor(nh, name, size, decimal)
+            Sensor(nh, name, size, decimal)
         {
             sub_ = nh->subscribe(name + "_in", 50, &IMUInterface::callback, this);
         }
@@ -193,18 +204,18 @@ class IMUInterface: public CalibrableSensor
             tmp_[3] = imu_data.linear_acceleration.x;
             tmp_[4] = imu_data.linear_acceleration.y;
             tmp_[5] = imu_data.linear_acceleration.z;
-            CalibrableSensor::feed(tmp_);
+            feed(tmp_);
         }
 };
 
-class GPSInterface: public CalibrableSensor
+class GPSInterface: public Sensor
 {
     public:
         static const unsigned int size = 3;
 
     public:
         GPSInterface(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-            CalibrableSensor(nh, name, size, decimal)
+            Sensor(nh, name, size, decimal)
         {
             sub_ = nh->subscribe(name + "_in", 50, &GPSInterface::callback, this);    
         }
@@ -215,6 +226,6 @@ class GPSInterface: public CalibrableSensor
             tmp_[0] = gps_data.x;
             tmp_[1] = gps_data.y;
             tmp_[2] = gps_data.z;
-            CalibrableSensor::feed(tmp_);
+            feed(tmp_);
         }
 };

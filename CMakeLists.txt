@@ -68,7 +68,9 @@ find_package(OpenMP REQUIRED)
 ## Generate services in the 'srv' folder
 add_service_files(DIRECTORY srv
    FILES
-   Calibration.srv
+   StartCalibration.srv
+   StopCalibration.srv
+   GetDiameters.srv
  )
 
 ## Generate actions in the 'action' folder
