@@ -4,6 +4,7 @@ project(bpf_localization)
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
 ## Compile as C++11, supported in ROS Kinetic and newer
+add_compile_options(-fopenmp)
 add_compile_options(-std=c++11)
 add_compile_options(-frounding-math -O1)
 #add_compile_options(-Wall)
