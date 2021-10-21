@@ -6,4 +6,10 @@
         <remap from="/boat_imu_in" to="/imu"/>
         <remap from="/boat_mag_in" to="/mag"/>
     </node>
+
+    <node   pkg="bpf_localization" 
+            type="plot_imu_calibration_node.py" 
+            name="calibration_plotting"  
+            output="screen">
+    </node>
 </launch>
