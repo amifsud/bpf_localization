@@ -6,6 +6,8 @@
 #include "bpf_localization/StartCalibration.h"
 #include "bpf_localization/GetDiameters.h"
 
+// FIXME: Make this file independant from ROS except for logging
+
 class Calibrable
 {
     protected:
