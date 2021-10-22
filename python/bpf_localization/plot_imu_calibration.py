@@ -7,6 +7,7 @@ class CallbackTriggeredPlotting(object):
         plt.ion()
         self.fig, self.ax = plt.subplots(i, j, figsize=(10, 8))
         self.data_size = 0
+        self.vectors = None
 
     def __del__(self):
         plt.close(self.fig)
@@ -19,16 +20,16 @@ class CallbackTriggeredPlotting(object):
             line.set_ydata(vector[i])
 
     def plot(self):
-        if len(self.linear_acceleration[0]) > self.data_size:
-            self.plotVector(self.angular_velocity, 0)
-            self.plotVector(self.linear_acceleration, 1)
+        if self.vectors == None: raise("vectors has to be initialized")
+        if len(self.vectors[0][0]) > self.data_size:
+            for i in range(len(self.vectors)):
+                self.plotVector(self.vectors[i], i)
             self.fig.canvas.flush_events()
             self.fig.canvas.draw()
-            self.data_size = len(self.linear_acceleration[0])
+            self.data_size = len(self.vectors[0][0])
 
     def feed(self, data):
         raise("Feed method has to be implemented")
-
 
 class PlotImuCalibration(CallbackTriggeredPlotting):
     def __init__(self):
@@ -40,7 +41,8 @@ class PlotImuCalibration(CallbackTriggeredPlotting):
                          "linear_acceleration y",
                          "linear_acceleration z",]]
         self.angular_velocity    = [[],[],[]] 
-        self.linear_acceleration = [[],[],[]] 
+        self.linear_acceleration = [[],[],[]]
+        self.vectors = [self.angular_velocity, self.linear_acceleration]
 
     def feed(self, data):
         self.angular_velocity[0]    += [data.angular_velocity.x]
