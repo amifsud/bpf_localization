@@ -13,11 +13,17 @@ class PlotImuCalibrationROS(PlotImuCalibration):
         rospy.Subscriber("/imu", Imu, self.callback)
 
     def callback(self, data):
-        self.plot(data)
+        self.feed(data)
 
 if __name__ == '__main__':
     rospy.init_node('py_plot_imu', anonymous = True)
 
-    plot = PlotImuCalibrationROS()
+    duration = 10.
+    plot_imu = PlotImuCalibrationROS()
 
-    rospy.spin()
+    print("trtr")
+    while 1:
+        rospy.loginfo("tata")
+        plot_imu.plot()
+
+    #rospy.spin()
