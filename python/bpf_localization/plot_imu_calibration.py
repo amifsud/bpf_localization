@@ -1,20 +1,11 @@
 #!/usr/bin/env python
-import rospy
 from matplotlib import pyplot as plt
 import numpy as np
 
-class PlotImuCalibration():
-    def __init__(self):
+class CallbackTriggeredPlotting(object):
+    def __init__(self, i, j):
         plt.ion()
-        self.fig, self.ax = plt.subplots(2, 3, figsize=(10, 8))
-        self.labels = [["angular_velocity x",
-                        "angular_velocity y",
-                        "angular_velocity z",],
-                        ["linear_acceleration x",
-                         "linear_acceleration y",
-                         "linear_acceleration z",]]
-        self.angular_velocity    = [[],[],[]] 
-        self.linear_acceleration = [[],[],[]] 
+        self.fig, self.ax = plt.subplots(i, j, figsize=(10, 8))
         self.data_size = 0
 
     def __del__(self):
@@ -34,6 +25,22 @@ class PlotImuCalibration():
             self.fig.canvas.flush_events()
             self.fig.canvas.draw()
             self.data_size = len(self.linear_acceleration[0])
+
+    def feed(self, data):
+        raise("Feed method has to be implemented")
+
+
+class PlotImuCalibration(CallbackTriggeredPlotting):
+    def __init__(self):
+        CallbackTriggeredPlotting.__init__(self, 2, 3)
+        self.labels = [["angular_velocity x",
+                        "angular_velocity y",
+                        "angular_velocity z",],
+                        ["linear_acceleration x",
+                         "linear_acceleration y",
+                         "linear_acceleration z",]]
+        self.angular_velocity    = [[],[],[]] 
+        self.linear_acceleration = [[],[],[]] 
 
     def feed(self, data):
         self.angular_velocity[0]    += [data.angular_velocity.x]
