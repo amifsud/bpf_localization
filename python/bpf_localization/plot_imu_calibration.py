@@ -7,27 +7,39 @@ class PlotImuCalibration():
     def __init__(self):
         plt.ion()
         self.fig, self.ax = plt.subplots(2, 3, figsize=(10, 8))
-        self.x = [0.]
-        self.y = [0.]
-        self.phase = 0.
-        self.x_size = 0
-
-    def plot(self):
-        if len(self.x) > self.x_size:
-            self.ax[0,0].set_xlabel("angular_velocity x")
-            self.ax[0,0].set_xlim([-2., 2.])
-            self.ax[0,0].set_ylim([-.1., .1])
-            line, = self.ax[0,0].plot(self.x, self.y, 'b-')
-            line.set_xdata(self.x)
-            line.set_ydata(self.y)
-            self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
-            self.x_size = len(self.x)
+        self.labels = [["angular_velocity x",
+                        "angular_velocity y",
+                        "angular_velocity z",],
+                        ["linear_acceleration x",
+                         "linear_acceleration y",
+                         "linear_acceleration z",]]
+        self.angular_velocity    = [[],[],[]] 
+        self.linear_acceleration = [[],[],[]] 
+        self.data_size = 0
 
     def __del__(self):
         plt.close(self.fig)
 
+    def plotVector(self, vector, nb):
+        for i in range(len(vector)):
+            self.ax[nb, i].set_xlabel(self.labels[nb][i])
+            self.ax[nb, i].set_ylim([min(vector[i]), max(vector[i])])
+            line, = self.ax[nb, i].plot(vector[i], 'x', color='blue')
+            line.set_ydata(vector[i])
+
+    def plot(self):
+        if len(self.linear_acceleration[0]) > self.data_size:
+            self.plotVector(self.angular_velocity, 0)
+            self.plotVector(self.linear_acceleration, 1)
+            self.fig.canvas.flush_events()
+            self.fig.canvas.draw()
+            self.data_size = len(self.linear_acceleration[0])
+
     def feed(self, data):
-        self.phase += 1.
-        self.x.append(self.phase)
-        self.y.append(self.phase)
+        self.angular_velocity[0]    += [data.angular_velocity.x]
+        self.angular_velocity[1]    += [data.angular_velocity.y]
+        self.angular_velocity[2]    += [data.angular_velocity.z]
+        self.linear_acceleration[0] += [data.linear_acceleration.x]
+        self.linear_acceleration[1] += [data.linear_acceleration.y]
+        self.linear_acceleration[2] += [data.linear_acceleration.z]
+

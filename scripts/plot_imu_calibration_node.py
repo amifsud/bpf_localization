@@ -21,9 +21,6 @@ if __name__ == '__main__':
     duration = 10.
     plot_imu = PlotImuCalibrationROS()
 
-    print("trtr")
-    while 1:
-        rospy.loginfo("tata")
-        plot_imu.plot()
+    while 1: plot_imu.plot()
 
     #rospy.spin()
