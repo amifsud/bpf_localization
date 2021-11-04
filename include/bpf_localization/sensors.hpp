@@ -197,14 +197,9 @@ class Sensor: public Calibrable
 
         void feed(const Vector& data)
         {
-            if(!is_calibrating())
-            {
-                buffer_.push_back(interval_from_vector(data));
-            }
-            else
-            {
+            buffer_.push_back(interval_from_vector(data));
+            if(is_calibrating())
                 Calibrable::feed(data);
-            }
         }
 };
 
