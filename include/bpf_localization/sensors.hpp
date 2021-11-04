@@ -8,6 +8,12 @@
 
 // FIXME: Make this file independant from ROS except for logging
 
+/*** Available calibrations ***/
+//  * midpoint offset : 0
+//  * mean offset     : 1
+
+#define CALIBRATION_POLICY 0
+
 class Calibrable
 {
     protected:
@@ -25,6 +31,10 @@ class Calibrable
         std::vector<Vector> data_;
         Vector sum_;
         double nb_;
+        Vector lb_;
+        Vector ub_;
+        Vector mid_;
+        Vector mean_;
 
         Vector half_diameters_;
         double precision_;
@@ -32,8 +42,12 @@ class Calibrable
     public:
         Calibrable( ros::NodeHandle* nh, std::string name, 
                     unsigned int size, unsigned int decimal):
-            calibration_(false), name_(name), nb_(0), precision_(pow(10, decimal)), 
-            size_(size), sum_(Vector(size, 0.)), half_diameters_(Vector(size, 0.)) 
+            calibration_(false), name_(name), nb_(0), 
+            precision_(pow(10, decimal)), 
+            size_(size), sum_(Vector(size, 0.)), 
+            half_diameters_(Vector(size, 0.)),
+            lb_(Vector(size, 0.)), ub_(Vector(size, 0.)),
+            mid_(Vector(size, 0.)), mean_(Vector(size, 0.))
         {
             start_calibration_server_ 
                 = nh->advertiseService(name + "_start_calibration", 
@@ -52,7 +66,7 @@ class Calibrable
             nb_ = 0.;
             data_.clear();
             init_time_ = ros::Time::now(); 
-            until_ = ros::Duration(req.duration, 0);
+            until_     = ros::Duration(req.duration, 0);
             return true;
         }
 
@@ -60,48 +74,59 @@ class Calibrable
                              bpf_localization::GetDiameters::Response &res)
         {
             calibration_ = false;
-            computeHalfDiameters(&half_diameters_);
-            for(auto i = 0; i < half_diameters_.size(); ++i)
-                res.diameters.push_back(2*half_diameters_[i]);
+            update();
+            for(auto i = 0; i < size_; ++i)
+                res.diameters.push_back(2*getHalfDiameter(i));
             return true;
         }
 
-        Vector* computeHalfDiameters(Vector* half_diameters)
+        inline double getHalfDiameter(unsigned int i)
         {
-            //Vector half_diameters(size_, 0.);
+            #if CALIBRATION_POLICY == 0 
+            return (ub_[i]-lb_[i]);
+            #elif CALIBRATION_POLICY == 1
+            return 2*std::max(ub_[i]-mean_[i], mean_[i]-lb_[i]);
+            #endif
+        }
 
-            double number;
+        void update()
+        {
             for(auto vect = data_.begin(); vect !=data_.end(); vect++)
             {
                 for(unsigned int i = 0; i < size_; ++i)
                 {
-                    number = 2*std::abs(vect->operator[](i)-sum_[i]/nb_);
-                    if(number - half_diameters->operator[](i) > 1./precision_) 
-                        half_diameters->operator[](i) 
-                            = roundf(number * precision_) / precision_;
+                    if(vect->operator[](i) - ub_[i] > 1./precision_)
+                    {
+                        ub_[i] = roundf(vect->operator[](i) * precision_) 
+                            / precision_ + 1./precision_;
+                        mid_[i] = ub_[i] - lb_[i];
+                    }
+
+                    if(lb_[i] - vect->operator[](i) < 1./precision_) 
+                    {
+                        lb_[i] = roundf(vect->operator[](i) * precision_) 
+                            / precision_ + 1./precision_;
+                        mid_[i] = ub_[i] - lb_[i];
+                    }
                 }
+
+                sum_ += *vect;
+                nb_ += 1.;
             }
 
-            for(unsigned int i = 0; i < size_; ++i)
-                half_diameters->operator[](i) += 1./precision_;
+            time_ = ros::Time::now() - init_time_; 
+            mean_ = 1./nb_*sum_;
+            data_.clear();
         }
 
         void feed(const Vector& vect)
         {
             ROS_INFO_STREAM("Calibrating...");
 
-            time_ = ros::Time::now() - init_time_; 
-            if(time_ < until_)
-            {
-                sum_ += vect;
-                data_.push_back(Vector(vect));
-                nb_ += 1.;
-                computeHalfDiameters(&half_diameters_); 
-            }
-            else
-            {
-                calibration_ = false;
-            }    
+            data_.push_back(Vector(vect));
+            update();
+
+            if(time_ >= until_) calibration_ = false;
         }
 
         bool is_calibrating()
@@ -128,7 +153,8 @@ class Sensor: public Calibrable
             tmp_(Vector(size, 0.))
         {
             diameters_server_ 
-                = nh->advertiseService(name + "_diameters", &Sensor::getDiameters, this);
+                = nh->advertiseService( name + "_diameters", 
+                                        &Sensor::getDiameters, this);
         }
 
         Sensor( ros::NodeHandle* nh, std::string name, unsigned int size, 
@@ -137,14 +163,15 @@ class Sensor: public Calibrable
             tmp_(Vector(size, 0.))
         {
             diameters_server_ 
-                = nh->advertiseService(name + "_diameters", &Sensor::getDiameters, this);
+                = nh->advertiseService( name + "_diameters", 
+                                        &Sensor::getDiameters, this);
         }
 
         bool getDiameters(bpf_localization::GetDiameters::Request  &req,
                           bpf_localization::GetDiameters::Response &res)
         {
-            for(auto i = 0; i < half_diameters_.size(); ++i)
-                res.diameters.push_back(2*half_diameters_[i]);
+            for(auto i = 0; i < size_; ++i)
+                res.diameters.push_back(2*getHalfDiameter(i));
         }
 
         std::deque<IntervalVector> getIntervalData()
@@ -161,8 +188,8 @@ class Sensor: public Calibrable
 
             for(auto i = 0; i < size_; ++i)
             {
-                interval[i] = Interval( data[i]-half_diameters_[i],
-                                        data[i]+half_diameters_[i]);
+                interval[i] = Interval( data[i]-getHalfDiameter(i),
+                                        data[i]+getHalfDiameter(i));
             }
 
             return interval;
