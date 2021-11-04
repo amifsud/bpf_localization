@@ -15,7 +15,9 @@ class Calibrable
         unsigned int size_;
 
         bool calibration_;
-        ros::Time until_;
+        ros::Time     init_time_;
+        ros::Duration until_;
+        ros::Duration     time_;
 
         ros::ServiceServer start_calibration_server_;
         ros::ServiceServer stop_calibration_server_;
@@ -49,7 +51,8 @@ class Calibrable
             sum_ = Vector(size_, 0.);
             nb_ = 0.;
             data_.clear();
-            until_ = ros::Time::now() + ros::Duration(req.duration, 0);
+            init_time_ = ros::Time::now(); 
+            until_ = ros::Duration(req.duration, 0);
             return true;
         }
 
@@ -88,8 +91,9 @@ class Calibrable
         void feed(const Vector& vect)
         {
             ROS_INFO_STREAM("Calibrating...");
-            
-            if(ros::Time::now().toSec() < until_.toSec())
+
+            time_ = ros::Time::now() - init_time_; 
+            if(time_ < until_)
             {
                 sum_ += vect;
                 data_.push_back(Vector(vect));
