@@ -21,7 +21,7 @@ class Calibrable
         ros::ServiceServer stop_calibration_server_;
 
         std::vector<Vector> data_;
-        Vector mean_;
+        Vector sum_;
         double nb_;
 
         Vector half_diameters_;
@@ -31,7 +31,7 @@ class Calibrable
         Calibrable( ros::NodeHandle* nh, std::string name, 
                     unsigned int size, unsigned int decimal):
             calibration_(false), name_(name), nb_(0), precision_(pow(10, decimal)), 
-            size_(size), mean_(Vector(size, 0.)), half_diameters_(Vector(size, 0.)) 
+            size_(size), sum_(Vector(size, 0.)), half_diameters_(Vector(size, 0.)) 
         {
             start_calibration_server_ 
                 = nh->advertiseService(name + "_start_calibration", 
@@ -46,7 +46,7 @@ class Calibrable
                          bpf_localization::StartCalibration::Response     &res)
         {
             calibration_ = true;
-            mean_ = Vector(size_, 0.);
+            sum_ = Vector(size_, 0.);
             nb_ = 0.;
             data_.clear();
             until_ = ros::Time::now() + ros::Duration(req.duration, 0);
@@ -72,7 +72,7 @@ class Calibrable
             {
                 for(unsigned int i = 0; i < size_; ++i)
                 {
-                    number = 2*std::abs(vect->operator[](i)-mean_[i]/nb_);
+                    number = 2*std::abs(vect->operator[](i)-sum_[i]/nb_);
                     if(number - half_diameters[i] > 1./precision_) 
                         half_diameters[i] 
                             = roundf(number * precision_) / precision_;
@@ -91,7 +91,7 @@ class Calibrable
             
             if(ros::Time::now().toSec() < until_.toSec())
             {
-                mean_ += vect;
+                sum_ += vect;
                 data_.push_back(Vector(vect));
                 nb_ += 1.;
             }
