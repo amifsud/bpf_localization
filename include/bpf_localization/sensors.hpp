@@ -60,15 +60,15 @@ class Calibrable
                              bpf_localization::GetDiameters::Response &res)
         {
             calibration_ = false;
-            half_diameters_ = computeHalfDiameters();
+            computeHalfDiameters(&half_diameters_);
             for(auto i = 0; i < half_diameters_.size(); ++i)
                 res.diameters.push_back(2*half_diameters_[i]);
             return true;
         }
 
-        Vector computeHalfDiameters()
+        Vector* computeHalfDiameters(Vector* half_diameters)
         {
-            Vector half_diameters(size_, 0.);
+            //Vector half_diameters(size_, 0.);
 
             double number;
             for(auto vect = data_.begin(); vect !=data_.end(); vect++)
@@ -76,16 +76,14 @@ class Calibrable
                 for(unsigned int i = 0; i < size_; ++i)
                 {
                     number = 2*std::abs(vect->operator[](i)-sum_[i]/nb_);
-                    if(number - half_diameters[i] > 1./precision_) 
-                        half_diameters[i] 
+                    if(number - half_diameters->operator[](i) > 1./precision_) 
+                        half_diameters->operator[](i) 
                             = roundf(number * precision_) / precision_;
                 }
             }
 
             for(unsigned int i = 0; i < size_; ++i)
-                half_diameters[i] += 1./precision_;
-
-            return half_diameters;
+                half_diameters->operator[](i) += 1./precision_;
         }
 
         void feed(const Vector& vect)
@@ -98,13 +96,12 @@ class Calibrable
                 sum_ += vect;
                 data_.push_back(Vector(vect));
                 nb_ += 1.;
+                computeHalfDiameters(&half_diameters_); 
             }
             else
             {
                 calibration_ = false;
-            }
-            
-            half_diameters_ = computeHalfDiameters(); 
+            }    
         }
 
         bool is_calibrating()
