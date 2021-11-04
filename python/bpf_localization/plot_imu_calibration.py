@@ -20,12 +20,10 @@ class CallbackTriggeredPlotting(object):
         self.lb_evolution   = self.initDataContainers(i, j)
         self.ub_evolution   = self.initDataContainers(i, j)
         self.method = method
-        self.lb = 
-            [[-0.0255413819104, -0.0489543154836, 0.0329909510911],
-             [0.143652096391, -0.0383072271943, 9.53849983215]]
-        self.ub = 
-            [[-0.00532112130895,-0.0329909510911, 0.0489543154836],
-             [0.339976638556, 0.210689753294, 9.9359369278]]
+        self.lb =   [[-0.0255413819104, -0.0489543154836, 0.0329909510911],
+                     [0.143652096391, -0.0383072271943, 9.53849983215]]
+        self.ub =   [[-0.00532112130895,-0.0329909510911, 0.0489543154836],
+                     [0.339976638556, 0.210689753294, 9.9359369278]]
 
     def __del__(self):
         plt.close(self.fig)
@@ -108,13 +106,12 @@ class PlotImuCalibration(CallbackTriggeredPlotting):
     def __init__(self, method, name):
         CallbackTriggeredPlotting.__init__(self, 2, 3, method)
         self.name = name
-        self.labels = 
-            [["angular_velocity x",
-              "angular_velocity y",
-              "angular_velocity z"],
-             ["linear_acceleration x",
-              "linear_acceleration y",
-              "linear_acceleration z"]]
+        self.labels = [["angular_velocity x",
+                        "angular_velocity y",
+                        "angular_velocity z"],
+                       ["linear_acceleration x",
+                        "linear_acceleration y",
+                        "linear_acceleration z"]]
         self.angular_velocity    = [[],[],[]] 
         self.linear_acceleration = [[],[],[]]
         self.vectors = [self.angular_velocity, self.linear_acceleration]
