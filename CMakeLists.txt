@@ -17,6 +17,7 @@ SET(IBEX_DEPENDENCIES  "/usr/local/lib/libibex.a" "/usr/local/lib/libprim.a")
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  roslib
   rostest
   std_msgs
   nav_msgs

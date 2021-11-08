@@ -23,8 +23,10 @@
     <node pkg="rosbag" 
           type="play" 
           name="rosbag" 
-          args="$(find bpf_localization)/rosbag/$(arg bag_file)"
-          output="screen"
-    />
+          args="$(find bpf_localization)/data/rosbag/$(arg bag_file)"
+          output="screen">
+        <remap from="/imu1" to="/imu"/>
+        <remap from="/mag1" to="/mag"/>
+    </node>
     </group>
 </launch>
