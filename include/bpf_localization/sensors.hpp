@@ -50,8 +50,8 @@ class Calibrable
             precision_(pow(10, decimal)), 
             size_(size), sum_(Vector(size, 0.)), 
             half_diameters_(Vector(size, 0.)),
-            lb_(Vector(size, 0.)), ub_(Vector(size, 0.)),
-            mid_(Vector(size, 0.)), mean_(Vector(size, 0.))
+            lb_(Vector(size, 1e7)), ub_(Vector(size, -1e7)),
+            mid_(Vector(size, 1e7)), mean_(Vector(size, 1e7))
         {
             start_calibration_server_ 
                 = nh->advertiseService(name + "_start_calibration", 
@@ -102,14 +102,14 @@ class Calibrable
             {
                 for(unsigned int i = 0; i < size_; ++i)
                 {
-                    if(vect->operator[](i) - ub_[i] > 1./precision_)
+                    if(vect->operator[](i) > ub_[i] + 1./precision_)
                     {
                         ub_[i] = roundf(vect->operator[](i) * precision_) 
                             / precision_ + 1./precision_;
                         mid_[i] = ub_[i] - lb_[i];
                     }
 
-                    if(lb_[i] - vect->operator[](i) < 1./precision_) 
+                    if(vect->operator[](i) < lb_[i] - 1./precision_) 
                     {
                         lb_[i] = roundf(vect->operator[](i) * precision_) 
                             / precision_ + 1./precision_;
