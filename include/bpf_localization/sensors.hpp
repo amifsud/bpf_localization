@@ -126,10 +126,10 @@ class Calibrable
             data_.clear();
         }
 
-        virtual void write_calibration(std::string filename)
+        virtual void write_calibration_file(std::string filename)
         {
             ROS_ASSERT_MSG(false, 
-                    "You have to implement the write_calibration method in your sensor");
+                "You have to implement the write_calibration_file method in your sensor");
         }
 
         void endingCalibration()
@@ -137,7 +137,7 @@ class Calibrable
             ROS_INFO_STREAM("Stoppping calibration");
             calibration_ = false;
             update();
-            write_calibration(calibration_file_);
+            write_calibration_file(calibration_file_);
         }
 
         void feed(const Vector& vect)
@@ -253,17 +253,20 @@ class IMUInterface: public Sensor
             feed(tmp_);
         }
 
-        void append_to_line(std::fstream* file, double data)
+        void read_calibration_file( std::vector<std::string>* lines,
+                                    std::fstream*             file)
         {
-            std::string str;
-            streampos oldpos = file->tellg();
-            std::getline(*file, str);
-            str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
-            file->seekp(oldpos, file->beg);
-            *file << str << "," << data << std::endl;
+            std::string line;
+            file->seekp(0, file->beg);
+            while(!file->eof())
+            {
+                std::getline(*file, line);
+                line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+                lines->push_back(line);
+            }
         }
 
-        void write_calibration(std::string filename)
+        void write_calibration_file(std::string filename)
         {
             ROS_INFO_STREAM("Begin to write calibration file");
             std::fstream file(filename, std::ios::out | std::ios::in);
@@ -272,7 +275,6 @@ class IMUInterface: public Sensor
             if(file.is_open())
             {
                 std:vector<std::string> lines;
-                std::string line;
                 file.seekg(0, file.end);
                 if(file.tellg() == 0)
                 {
@@ -305,13 +307,7 @@ class IMUInterface: public Sensor
                 }
                 else
                 {
-                    file.seekp(0, file.beg);
-                    while(!file.eof())
-                    {
-                        std::getline(file, line);
-                        line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
-                        lines.push_back(line);
-                    }
+                    read_calibration_file(&lines, &file);
                 }
 
                 lines[0] += "," + to_string(ros::Time::now().toSec());
