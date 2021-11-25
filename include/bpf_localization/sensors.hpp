@@ -328,7 +328,7 @@ class IMUInterface: public Sensor
             }
             else
             {
-                ROS_ASSERT_MSG(false, "File can't be open");
+                ROS_ASSERT_MSG(false, "File can't be open, please create it");
             }
 
             file.close();
