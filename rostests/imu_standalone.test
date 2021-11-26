@@ -16,7 +16,7 @@
             type="play" 
             name="player" 
             output="screen" 
-            args="$(find bpf_localization)/rosbag/calibration_tests/$(arg rosbag_name)">
+            args="$(find bpf_localization)/data/rosbag/calibration_tests/$(arg rosbag_name)">
         <remap from="/imu1" to="/boat_imu_in"/>
         <remap from="/mag1" to="/boat_mag_in"/>
     </node>
