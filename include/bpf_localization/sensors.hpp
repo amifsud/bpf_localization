@@ -263,16 +263,6 @@ class Sensor: public Calibrable
                                         &Sensor::getDiameters, this);
         }
 
-        Sensor( ros::NodeHandle* nh, std::string name, unsigned int size, 
-                unsigned int decimal, const Vector& half_diameters):
-            Calibrable(nh, name, size, decimal),
-            tmp_(Vector(size, 0.))
-        {
-            diameters_server_ 
-                = nh->advertiseService( name + "_diameters", 
-                                        &Sensor::getDiameters, this);
-        }
-
         bool getDiameters(bpf_localization::GetDiameters::Request  &req,
                           bpf_localization::GetDiameters::Response &res)
         {
