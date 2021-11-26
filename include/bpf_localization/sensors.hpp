@@ -24,7 +24,10 @@ class Calibrable
         unsigned int size_;
 
         bool calibration_;
-        std::string calibration_file_;
+        std::string calibration_file_name_;
+        std::fstream* calibration_file_;
+        std::vector<std::string> calibration_data_format_;
+
         ros::Time     init_time_;
         ros::Duration until_;
         ros::Duration time_;
@@ -60,7 +63,7 @@ class Calibrable
                 = nh->advertiseService(name + "_stop_calibration", 
                         &Calibrable::stopCalibration, this);
             std::string path = ros::package::getPath("bpf_localization");
-            calibration_file_ = path + "/data/calibrations/" + 
+            calibration_file_name_ = path + "/data/calibrations/" + 
                                 name_ + ".csv";
         }
 
@@ -126,10 +129,91 @@ class Calibrable
             data_.clear();
         }
 
-        virtual void write_calibration_file(std::string filename)
+        void read_calibration_file( std::vector<std::string>* lines)
+        {
+            std::string line;
+            calibration_file_->seekp(0, calibration_file_->beg);
+            while(!calibration_file_->eof())
+            {
+                std::getline(*calibration_file_, line);
+                line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+                lines->push_back(line);
+            }
+        }
+
+        void write_calibration_file(std::string filename)
+        {
+            ROS_INFO_STREAM("Begin to write calibration file");
+
+            // Try to open file twice
+            calibration_file_ = 
+                new std::fstream(calibration_file_name_, std::ios::out | std::ios::in);
+            if(!calibration_file_->is_open())
+            {
+                calibration_file_ = 
+                    new std::fstream(calibration_file_name_, std::ios::out | std::ios::in);
+            }
+
+            if(calibration_file_->is_open())
+            {
+                // If file open
+                std:vector<std::string> lines;
+                calibration_file_->seekg(0, calibration_file_->end);
+                if(calibration_file_->tellg() == 0)
+                {
+                    // If file empty : create lines with sensor format
+                    ROS_INFO_STREAM("New file");
+                    calibration_data_format();
+                    lines.push_back("vector,component,data");
+                    for(auto u = 0; u < calibration_data_format_.size(); ++u)
+                    {
+                        for(auto i = 0; i < size_; ++i)
+                        {
+                            lines.push_back(calibration_data_format_[u] + ",lb");
+                            lines.push_back(calibration_data_format_[u] + ",ub");
+                            lines.push_back(calibration_data_format_[u] + ",mid");
+                            lines.push_back(calibration_data_format_[u] + ",mean");
+                        }
+                    }
+                }
+                else
+                {
+                    // If file not empty : read lines from file
+                    read_calibration_file(&lines);
+                }
+
+                // Update calibration data
+                lines.operator[](0) += "," + to_string(ros::Time::now().toSec());
+                for(auto i = 0; i < size_; ++i)
+                {
+                    lines.operator[](i*4+1) += "," + to_string(lb_[i]);
+                    lines.operator[](i*4+2) += "," + to_string(ub_[i]);
+                    lines.operator[](i*4+3) += "," + to_string(mid_[i]);
+                    lines.operator[](i*4+4) += "," + to_string(mean_[i]);
+                }
+
+                // Write lines and close
+                calibration_file_->clear(); 
+                calibration_file_->seekp(0, calibration_file_->beg);
+                for(auto i = 0; i < lines.size(); ++i)
+                {
+                    *calibration_file_ << lines[i];
+                    if(i != lines.size()-1) *calibration_file_ << "\n";
+                }
+                calibration_file_->close();
+            }
+            else
+            {
+                ROS_ASSERT_MSG(false, "File can't be open, please create it");
+            }
+
+            ROS_INFO_STREAM("End to write calibration file");
+        }
+
+        virtual void calibration_data_format()
         {
             ROS_ASSERT_MSG(false, 
-                "You have to implement the write_calibration_file method in your sensor");
+                "You have to implement the update_calibration_data method in your sensor");
         }
 
         void endingCalibration()
@@ -137,7 +221,7 @@ class Calibrable
             ROS_INFO_STREAM("Stoppping calibration");
             calibration_ = false;
             update();
-            write_calibration_file(calibration_file_);
+            write_calibration_file(calibration_file_name_);
         }
 
         void feed(const Vector& vect)
@@ -253,86 +337,14 @@ class IMUInterface: public Sensor
             feed(tmp_);
         }
 
-        void read_calibration_file( std::vector<std::string>* lines,
-                                    std::fstream*             file)
+        void calibration_data_format()
         {
-            std::string line;
-            file->seekp(0, file->beg);
-            while(!file->eof())
-            {
-                std::getline(*file, line);
-                line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
-                lines->push_back(line);
-            }
-        }
-
-        void write_calibration_file(std::string filename)
-        {
-            ROS_INFO_STREAM("Begin to write calibration file");
-            std::fstream file(filename, std::ios::out | std::ios::in);
-            if(!file.is_open()) std::fstream file(filename, std::ios::out | std::ios::in);
-
-            if(file.is_open())
-            {
-                std:vector<std::string> lines;
-                file.seekg(0, file.end);
-                if(file.tellg() == 0)
-                {
-                    ROS_INFO_STREAM("New file");
-                    lines.push_back("vector,component,data"     );
-                    lines.push_back("angular_velocity,x,lb"     );
-                    lines.push_back("angular_velocity,x,ub"     );
-                    lines.push_back("angular_velocity,x,mid"    );
-                    lines.push_back("angular_velocity,x,mean"   );
-                    lines.push_back("angular_velocity,y,lb"     );
-                    lines.push_back("angular_velocity,y,ub"     );
-                    lines.push_back("angular_velocity,y,mid"    );
-                    lines.push_back("angular_velocity,y,mean"   );
-                    lines.push_back("angular_velocity,z,lb"     );
-                    lines.push_back("angular_velocity,z,ub"     );
-                    lines.push_back("angular_velocity,z,mid"    );
-                    lines.push_back("angular_velocity,z,mean"   );
-                    lines.push_back("linear_acceleration,x,lb"  );
-                    lines.push_back("linear_acceleration,x,ub"  );
-                    lines.push_back("linear_acceleration,x,mid" );
-                    lines.push_back("linear_acceleration,x,mean");
-                    lines.push_back("linear_acceleration,y,lb"  );
-                    lines.push_back("linear_acceleration,y,ub"  );
-                    lines.push_back("linear_acceleration,y,mid" );
-                    lines.push_back("linear_acceleration,y,mean");
-                    lines.push_back("linear_acceleration,z,lb"  );
-                    lines.push_back("linear_acceleration,z,ub"  );
-                    lines.push_back("linear_acceleration,z,mid" );
-                    lines.push_back("linear_acceleration,z,mean");
-                }
-                else
-                {
-                    read_calibration_file(&lines, &file);
-                }
-
-                lines[0] += "," + to_string(ros::Time::now().toSec());
-                for(auto i = 0; i < size_; ++i)
-                {
-                    lines[i*4+1] += "," + to_string(lb_[i]);
-                    lines[i*4+2] += "," + to_string(ub_[i]);
-                    lines[i*4+3] += "," + to_string(mid_[i]);
-                    lines[i*4+4] += "," + to_string(mean_[i]);
-                }
-
-                file.clear(); file.seekp(0, file.beg);
-                for(auto i = 0; i < lines.size(); ++i)
-                {
-                    file << lines[i];
-                    if(i != lines.size()-1) file << "\n";
-                }
-            }
-            else
-            {
-                ROS_ASSERT_MSG(false, "File can't be open, please create it");
-            }
-
-            file.close();
-            ROS_INFO_STREAM("End to write calibration file");
+            calibration_data_format_.push_back("angular_velocity,x");
+            calibration_data_format_.push_back("angular_velocity,y");
+            calibration_data_format_.push_back("angular_velocity,z");
+            calibration_data_format_.push_back("linear_acceleration,x");
+            calibration_data_format_.push_back("linear_acceleration,y");
+            calibration_data_format_.push_back("linear_acceleration,z");
         }
 };
 
