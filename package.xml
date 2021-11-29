@@ -50,12 +50,15 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>roscpp</build_depend>
+  <build_depend>interval_msgs</build_depend>
   <build_depend>roslib</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>gtest</build_depend>
   <build_depend>message_generation</build_depend>
 
   <exec_depend>roscpp</exec_depend>
+  <exec_depend>interval_msgs</exec_depend>
+  <exec_depend>interval_rviz_plugin</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>message_runtime</exec_depend>

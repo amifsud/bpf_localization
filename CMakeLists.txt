@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   roslib
   rostest
+  interval_msgs
   std_msgs
   nav_msgs
   message_generation
@@ -61,11 +62,10 @@ catkin_python_setup()
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(DIRECTORY msg
+   FILES
+   IntervalIMU.msg
+ )
 
 ## Generate services in the 'srv' folder
 add_service_files(DIRECTORY srv
@@ -85,6 +85,7 @@ add_service_files(DIRECTORY srv
  generate_messages(
    DEPENDENCIES
    std_msgs  # Or other packages containing msgs
+   interval_msgs
  )
 
 ################################################
@@ -120,6 +121,7 @@ catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS message_runtime
   std_msgs
+  interval_msgs
 #  LIBRARIES bpf_localization
 #  CATKIN_DEPENDS roscpp
 )

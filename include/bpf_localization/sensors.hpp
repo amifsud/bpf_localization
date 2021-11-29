@@ -8,6 +8,7 @@
 #include "bpf_localization/utils.hpp"
 #include "bpf_localization/StartCalibration.h"
 #include "bpf_localization/GetDiameters.h"
+#include "bpf_localization/IntervalIMU.h"
 
 // FIXME: Make this file independant from ROS except for logging
 
