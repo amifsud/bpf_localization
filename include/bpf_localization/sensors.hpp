@@ -16,7 +16,7 @@
 //  * midpoint offset : 0
 //  * mean offset     : 1
 
-#define CALIBRATION_POLICY 0
+//#define CALIBRATION_POLICY 0
 
 class Calibrable
 {
@@ -93,11 +93,11 @@ class Calibrable
 
         inline double getHalfDiameter(unsigned int i)
         {
-            #if CALIBRATION_POLICY == 0 
+            //#if CALIBRATION_POLICY == 0 
             return (ub_[i]-lb_[i]);
-            #elif CALIBRATION_POLICY == 1
-            return 2*std::max(ub_[i]-mean_[i], mean_[i]-lb_[i]);
-            #endif
+            //#elif CALIBRATION_POLICY == 1
+            //return 2*std::max(ub_[i]-mean_[i], mean_[i]-lb_[i]);
+            //#endif
         }
 
         void update()
