@@ -211,11 +211,7 @@ class Calibrable
             ROS_INFO_STREAM("End to write calibration file");
         }
 
-        virtual void calibration_data_format()
-        {
-            ROS_ASSERT_MSG(false, 
-                "You have to implement the update_calibration_data method in your sensor");
-        }
+        virtual void calibration_data_format() = 0;
 
         void endingCalibration()
         {
@@ -232,8 +228,7 @@ class Calibrable
             data_.push_back(Vector(vect));
             update();
 
-            if(time_ >= until_)
-                endingCalibration();
+            if(time_ >= until_) endingCalibration();
         }
 
         bool is_calibrating()
@@ -295,8 +290,7 @@ class Sensor: public Calibrable
         void feed(const Vector& data)
         {
             buffer_.push_back(interval_from_vector(data));
-            if(is_calibrating())
-                Calibrable::feed(data);
+            if(is_calibrating()) Calibrable::feed(data);
         }
 };
 
