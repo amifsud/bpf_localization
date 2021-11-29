@@ -300,6 +300,8 @@ class Sensor: public Calibrable
         // ROS
         ros::ServiceServer diameters_server_;
         ros::Subscriber sub_;
+        ros::Publisher pub_;
+
         Vector tmp_;
 
         // Interval
@@ -367,6 +369,7 @@ class IMUInterface: public Sensor
             Sensor(nh, name, size, decimal)
         {
             sub_ = nh->subscribe(name + "_in", 50, &IMUInterface::callback, this);
+            pub_ = nh->advertise<bpf_localization::IntervalIMU>(name+"_out", 1000);
         }
 
     protected:
@@ -379,6 +382,25 @@ class IMUInterface: public Sensor
             tmp_[4] = imu_data.linear_acceleration.y;
             tmp_[5] = imu_data.linear_acceleration.z;
             feed(tmp_);
+
+            IntervalVector interval = interval_from_vector(tmp_);
+
+            bpf_localization::IntervalIMU msg;
+            msg.header = imu_data.header;
+            msg.angular_velocity.x.lb    = interval[0].lb();
+            msg.angular_velocity.x.ub    = interval[0].ub();
+            msg.angular_velocity.y.lb    = interval[1].lb();
+            msg.angular_velocity.y.ub    = interval[1].ub();
+            msg.angular_velocity.z.lb    = interval[2].lb();
+            msg.angular_velocity.z.ub    = interval[2].ub();
+            msg.linear_acceleration.x.lb = interval[3].lb();
+            msg.linear_acceleration.x.ub = interval[3].ub();
+            msg.linear_acceleration.y.lb = interval[4].lb();
+            msg.linear_acceleration.y.ub = interval[4].ub();
+            msg.linear_acceleration.z.lb = interval[5].lb();
+            msg.linear_acceleration.z.ub = interval[5].ub();
+
+            pub_.publish(msg);
         }
 
         void calibration_data_format()
