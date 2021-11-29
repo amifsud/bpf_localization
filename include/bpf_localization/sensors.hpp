@@ -142,6 +142,17 @@ class Calibrable
             }
         }
 
+        void split_to_double(std::string* line, std::string* format,
+                                            std::vector<double>* values)
+        {
+            values->clear();
+            std::string number;
+            line->erase(0, format->size());
+            std::stringstream stream(*line);
+            while(getline(stream, number, ','))
+                values->push_back(std::stod(number));
+        }
+
         bool open_calibration_file()
         {
             // Try to open file twice
@@ -169,6 +180,35 @@ class Calibrable
         {
             calibration_file_->close();
             calibration_data_format_.clear();
+        }
+
+        void load_from_file()
+        {
+            if(open_calibration_file())
+            {
+                // If file open
+                std:vector<std::string> lines;
+                read_calibration_file(&lines);
+                std::string line, format;
+                std::vector<double> values;
+
+                for(auto u = 0; u < calibration_data_format_.size()-1; ++u)
+                {
+                    line   = lines[u*4+1];
+                    format = calibration_data_format_[u+1]+",lb,";
+                    split_to_double(&line, &format, &values);
+                    lb_[u] = *std::min_element(values.begin(), values.end());
+
+                    line   = lines[u*4+2];
+                    format = calibration_data_format_[u+1]+",ub,";
+                    split_to_double(&line, &format, &values);
+                    ub_[u] = *std::max_element(values.begin(), values.end());
+
+                    mid_[u] = (ub_[u]+lb_[u])/2.;
+                }
+            }
+
+            close_calibration_file();
         }
 
         void write_calibration_file()
@@ -279,6 +319,7 @@ class Sensor: public Calibrable
         bool getDiameters(bpf_localization::GetDiameters::Request  &req,
                           bpf_localization::GetDiameters::Response &res)
         {
+            load_from_file();
             for(auto i = 0; i < size_; ++i)
                 res.diameters.push_back(2*getHalfDiameter(i));
         }
@@ -294,6 +335,7 @@ class Sensor: public Calibrable
         IntervalVector interval_from_vector(const Vector& data)
         {
             IntervalVector interval(size_);
+            load_from_file();
 
             for(auto i = 0; i < size_; ++i)
             {
@@ -341,6 +383,7 @@ class IMUInterface: public Sensor
 
         void calibration_data_format()
         {
+            calibration_data_format_.push_back("vector,component,data");
             calibration_data_format_.push_back("angular_velocity,x");
             calibration_data_format_.push_back("angular_velocity,y");
             calibration_data_format_.push_back("angular_velocity,z");
