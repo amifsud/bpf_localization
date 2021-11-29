@@ -142,10 +142,8 @@ class Calibrable
             }
         }
 
-        void write_calibration_file(std::string filename)
+        bool open_calibration_file()
         {
-            ROS_INFO_STREAM("Begin to write calibration file");
-
             // Try to open file twice
             calibration_file_ = 
                 new std::fstream(calibration_file_name_, std::ios::out | std::ios::in);
@@ -155,7 +153,29 @@ class Calibrable
                     new std::fstream(calibration_file_name_, std::ios::out | std::ios::in);
             }
 
-            if(calibration_file_->is_open())
+            if(calibration_file_->is_open()) 
+            {
+                calibration_data_format();
+            }
+            else
+            {
+                ROS_ASSERT_MSG(false, "File can't be open, please create it");
+            }
+
+            return calibration_file_->is_open();
+        }
+
+        bool close_calibration_file()
+        {
+            calibration_file_->close();
+            calibration_data_format_.clear();
+        }
+
+        void write_calibration_file()
+        {
+            ROS_INFO_STREAM("Begin to write calibration file");
+
+            if(open_calibration_file())
             {
                 // If file open
                 std:vector<std::string> lines;
@@ -201,12 +221,9 @@ class Calibrable
                     *calibration_file_ << lines[i];
                     if(i != lines.size()-1) *calibration_file_ << "\n";
                 }
-                calibration_file_->close();
             }
-            else
-            {
-                ROS_ASSERT_MSG(false, "File can't be open, please create it");
-            }
+
+            close_calibration_file();
 
             ROS_INFO_STREAM("End to write calibration file");
         }
@@ -218,7 +235,7 @@ class Calibrable
             ROS_INFO_STREAM("Stoppping calibration");
             calibration_ = false;
             update();
-            write_calibration_file(calibration_file_name_);
+            write_calibration_file();
         }
 
         void feed(const Vector& vect)
