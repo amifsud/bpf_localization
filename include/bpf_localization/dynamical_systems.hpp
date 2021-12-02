@@ -221,7 +221,7 @@ class IMUDynamicalModel: public DynamicalModel
 
     public:
         IMUDynamicalModel(  const double dt              = NaN,  // dt
-                            const bool   guaranted             = false, // IVP or not
+                            const bool   guaranted       = false, // guaranted or not
                             const Method method          = HEUN,  // method       
                             const double precision       = 1e-4, // precision
                             Vector measures_noise_diams

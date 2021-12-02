@@ -4,6 +4,8 @@
 
 #include "bpf_localization/box_particle_filter.hpp"
 
+#define DEFAULT_PARTICLES_NUMBER 16
+
 class BoatBPFLocalization : public BoxParticleFilter
 {
     protected:
@@ -13,7 +15,7 @@ class BoatBPFLocalization : public BoxParticleFilter
     public:
         BoatBPFLocalization(const IntervalVector& initial_box,
                             bool parallelize = false,
-                            unsigned int N = 10,
+                            unsigned int N = DEFAULT_PARTICLES_NUMBER,
                             double dt = 1.)
             :BoxParticleFilter(N, initial_box, parallelize),
              imu_measures_(IMUDynamicalModel::control_size), 
@@ -24,8 +26,8 @@ class BoatBPFLocalization : public BoxParticleFilter
 
         BoatBPFLocalization(double pos, double vel, double theta,
                             bool parallelize = false, 
-                            unsigned int N = 20,
-                            double dt = 1.)
+                            unsigned int N = DEFAULT_PARTICLES_NUMBER,
+                            double dt = .2)
             :BoxParticleFilter(N, get_init(pos, vel, theta), parallelize),
              imu_measures_(IMUDynamicalModel::control_size), 
              gps_measures_(IMUDynamicalModel::measures_size)
@@ -35,7 +37,7 @@ class BoatBPFLocalization : public BoxParticleFilter
 
         BoatBPFLocalization(Particles& particles,
                             bool parallelize = false, 
-                            unsigned int N = 20,
+                            unsigned int N = DEFAULT_PARTICLES_NUMBER,
                             double dt = 1.)
             :BoxParticleFilter(N, particles, parallelize),
              imu_measures_(IMUDynamicalModel::control_size), 
