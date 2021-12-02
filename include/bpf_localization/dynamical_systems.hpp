@@ -30,7 +30,7 @@ class DynamicalModel
         // Simulation with dynibex
         Method integration_method_;
         double precision_;
-        bool ivp_;
+        bool guaranted_;
         bool adaptative_timestep_;
         double h_;
 
@@ -43,13 +43,13 @@ class DynamicalModel
         DynamicalModel( unsigned int state_size, unsigned int control_size, 
                         unsigned int measures_size, double dt,
                         Vector measures_noise_diams, Vector process_noise_diams,
-                        Method method, double precision, bool ivp)
+                        Method method, double precision, bool guaranted)
             :dt_(dt), state_size_(state_size), 
              control_size_(control_size), measures_size_(measures_size),
              measures_noise_diams_(measures_noise_diams),
              process_noise_diams_(process_noise_diams),
              integration_method_(method), precision_(precision),
-             ivp_(ivp), adaptative_timestep_(false)
+             guaranted_(guaranted), adaptative_timestep_(false)
         {
             ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
         }
@@ -60,7 +60,7 @@ class DynamicalModel
             assert_ready();
             IntervalVector result(state_size_, Interval(0., 0.));
             std::shared_ptr<Function> dynamical_model = getDynamicalModel(control);
-            if(ivp_)
+            if(guaranted_)
             {
                 ivp_ode problem = ivp_ode(*dynamical_model, 0.0, box);
 
@@ -142,7 +142,7 @@ class TurtleBotDynamicalModel: public DynamicalModel
         TurtleBotDynamicalModel(const double dt              = 0.01,   // dt
                                 const double wheels_radius   = 3.5e-2, // wheels radius
                                 const double wheels_distance = 23e-2,  // wheels distance
-                                const bool   ivp             = false,  // IVP or not
+                                const bool   guaranted             = true,  // IVP or not
                                 const Method method          = RK4,    // method       
                                 const double precision       = 1e-6,   // precision
                                 Vector measures_noise_diams
@@ -157,7 +157,7 @@ class TurtleBotDynamicalModel: public DynamicalModel
                             process_noise_diams,  
                             method,                  
                             precision,
-                            ivp),
+                            guaranted),
             wheels_radius_(wheels_radius),
             wheels_distance_(wheels_distance)
         {
@@ -221,7 +221,7 @@ class IMUDynamicalModel: public DynamicalModel
 
     public:
         IMUDynamicalModel(  const double dt              = NaN,  // dt
-                            const bool   ivp             = false, // IVP or not
+                            const bool   guaranted             = false, // IVP or not
                             const Method method          = HEUN,  // method       
                             const double precision       = 1e-4, // precision
                             Vector measures_noise_diams
@@ -236,7 +236,7 @@ class IMUDynamicalModel: public DynamicalModel
                             process_noise_diams,  
                             method,                  
                             precision,
-                            ivp),
+                            guaranted),
             guz_(3, guz)
         {
             if(process_noise_diams == Vector(state_size_, NaN))
