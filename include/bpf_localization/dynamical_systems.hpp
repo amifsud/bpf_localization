@@ -13,6 +13,9 @@
 
 using namespace ibex;
 
+#define STATE(x) state->operator[](x)
+#define CONTROL(x) control->operator[](x)
+
 class DynamicalModel
 {
     protected:
@@ -57,16 +60,18 @@ class DynamicalModel
         IntervalVector applyDynamics(const IntervalVector& box, 
                                      const IntervalVector& control)
         {
-            assert_ready();
+            //assert_ready();
             IntervalVector result(state_size_, Interval(0., 0.));
-            std::shared_ptr<Function> dynamical_model = getDynamicalModel(control);
+            Variable state(state_size_);
+            Function* dynamical_model = getDynamicalModel(&control, &state);
+
             if(guaranted_)
             {
                 ivp_ode problem = ivp_ode(*dynamical_model, 0.0, box);
 
-                simulation simu 
-                    = simulation(&problem, dt_, integration_method_, precision_, h_);
+                simulation simu(&problem, dt_, integration_method_, precision_, h_);
                 simu.run_simulation();
+
                 if(adaptative_timestep_) 
                     h_ = simu.list_solution_g.back().time_j.diam();
                 result = simu.get_last();
@@ -89,13 +94,16 @@ class DynamicalModel
                 IntervalVector k2 = dynamical_model->eval_vector(box+h*k1);
                 result = box + (0.5*h)*(k1+k2);
             }
+
+            delete dynamical_model;
             return result;
         }
 
         IntervalVector applyMeasures(const IntervalVector& box)
         {
-            assert_ready();
-            std::shared_ptr<Function> measures_model = getMeasuresModel();
+            //assert_ready();
+            Variable state(state_size_);
+            Function* measures_model = getMeasuresModel(&state);
             return measures_model->eval_vector(box);
         }
 
@@ -107,17 +115,20 @@ class DynamicalModel
         const Vector& measuresNoiseDiams() const { return measures_noise_diams_; }
 
     protected:
-        virtual std::shared_ptr<Function> getDynamicalModel(const IntervalVector& control) = 0;
-        virtual std::shared_ptr<Function> getMeasuresModel() = 0;
+        virtual Function* getDynamicalModel
+            (const IntervalVector* control, Variable* state) = 0;
+        virtual Function* getMeasuresModel(Variable* state) = 0;
 
         void assert_ready()
         {
-            std::shared_ptr<Function> dynamical_model 
-                    = getDynamicalModel(IntervalVector(state_size_, Interval(0.,0.)));
+            Variable state(state_size_);
+            IntervalVector control(state_size_, Interval(0.,0.));
+
+            Function* dynamical_model = getDynamicalModel( &control, &state);
 
             assert(dynamical_model != NULL && "dynamical_model_ not set");
 
-            dynamical_model = getMeasuresModel();
+            dynamical_model = getMeasuresModel(&state);
             assert(dynamical_model != NULL  && "measures_model_ not set");
 
             assert(state_size_ != 0         && "state_size not set");
@@ -142,7 +153,7 @@ class TurtleBotDynamicalModel: public DynamicalModel
         TurtleBotDynamicalModel(const double dt              = 0.01,   // dt
                                 const double wheels_radius   = 3.5e-2, // wheels radius
                                 const double wheels_distance = 23e-2,  // wheels distance
-                                const bool   guaranted             = true,  // IVP or not
+                                const bool   guaranted       = false,  // guaranted or not
                                 const Method method          = RK4,    // method       
                                 const double precision       = 1e-6,   // precision
                                 Vector measures_noise_diams
@@ -184,26 +195,24 @@ class TurtleBotDynamicalModel: public DynamicalModel
         }
 
     protected:
-        std::shared_ptr<Function> getDynamicalModel(const IntervalVector& control)
+        Function* getDynamicalModel(const IntervalVector* control, Variable* state)
         {
             ROS_DEBUG_STREAM("set IVP dynamical model begin");
-            Variable state(state_size_);
-            auto dynamical_model = std::shared_ptr<Function>(           
-                  new Function(state, 
-                        Return( wheels_radius_/2*(control[0]+control[1])*cos(state[2]),
-                                wheels_radius_/2*(control[0]+control[1])*sin(state[2]),
-                                wheels_radius_/wheels_distance_*(control[0]-control[1]))));
+            auto dynamical_model =            
+                  new Function(*state, 
+                        Return( wheels_radius_/2*(CONTROL(0)+CONTROL(1))*cos(STATE(2)),
+                                wheels_radius_/2*(CONTROL(0)+CONTROL(1))*sin(STATE(2)),
+                                wheels_radius_/wheels_distance_*(CONTROL(0)-CONTROL(1))));
             ROS_DEBUG_STREAM("set IVP dynamical model end");
             return dynamical_model;
         }
 
-        std::shared_ptr<Function> getMeasuresModel()
+        Function* getMeasuresModel(Variable* state)
         {
             ROS_DEBUG_STREAM("set measures model begin");
-            Variable state(state_size_);
-            auto measures_model = std::shared_ptr<Function>( 
-                  new Function(state, Return( state[0],
-                                              state[1]+state[2])));
+            auto measures_model =  
+                  new Function(*state, Return( STATE(0),
+                                              STATE(1)+STATE(2)));
             ROS_DEBUG_STREAM("set measures model end");
             return measures_model;
         }
@@ -261,50 +270,48 @@ class IMUDynamicalModel: public DynamicalModel
             #endif
 
             h_ = 0.1; // initial timestep for dynibex simulations
-            adaptative_timestep_ = true;
+            adaptative_timestep_ = false;
         }
 
     protected:
-        std::shared_ptr<Function> getDynamicalModel(const IntervalVector& control)
+        Function* getDynamicalModel(const IntervalVector* control, Variable* state)
         {
             ROS_DEBUG_STREAM("set IVP dynamical model begin");
 
-            Variable state(state_size_);
-            auto dynamical_model = std::shared_ptr<Function>( 
-                new Function(state, 
-                    ReturnIMU( 0.5*(-state[1]*control[0]-state[2]*control[1]-state[3]*control[2]),
-                            0.5*( state[0]*control[0]-state[3]*control[1]+state[2]*control[2]),
-                            0.5*( state[3]*control[0]+state[0]*control[1]-state[1]*control[2]),
-                            0.5*(-state[2]*control[0]+state[1]*control[1]+state[0]*control[2]),
-                            state[7],
-                            state[8],
-                            state[9],
-                            2*( (-state[2]*state[2] - state[3]*state[3])*control[3] 
-                              + ( state[1]*state[2] - state[0]*state[3])*control[4] 
-                              + ( state[0]*state[2] + state[1]*state[3])*control[5] ) 
-                                    + control[3] ,
-                            2*( ( state[0]*state[3] + state[1]*state[2])*control[3] 
-                              + (-state[1]*state[1] - state[3]*state[3])*control[4] 
-                              + ( state[2]*state[3] - state[0]*state[1])*control[5] ) 
-                                    + control[4] ,
-                            2*( ( state[1]*state[3] - state[0]*state[2])*control[3] 
-                              + ( state[0]*state[1] + state[2]*state[3])*control[4] 
-                              + (-state[1]*state[1] - state[2]*state[2])*control[5] ) 
-                                    + control[5] - guz[2])));
+            auto dynamical_model =  
+                new Function(*state, 
+                    ReturnIMU( 0.5*(-STATE(1)*CONTROL(0)-STATE(2)*CONTROL(1)-STATE(3)*CONTROL(2)),
+                            0.5*( STATE(0)*CONTROL(0)-STATE(3)*CONTROL(1)+STATE(2)*CONTROL(2)),
+                            0.5*( STATE(3)*CONTROL(0)+STATE(0)*CONTROL(1)-STATE(1)*CONTROL(2)),
+                            0.5*(-STATE(2)*CONTROL(0)+STATE(1)*CONTROL(1)+STATE(0)*CONTROL(2)),
+                            STATE(7),
+                            STATE(8),
+                            STATE(9),
+                            2*( (-STATE(2)*STATE(2) - STATE(3)*STATE(3))*CONTROL(3) 
+                              + ( STATE(1)*STATE(2) - STATE(0)*STATE(3))*CONTROL(4) 
+                              + ( STATE(0)*STATE(2) + STATE(1)*STATE(3))*CONTROL(5) ) 
+                                    + CONTROL(3) ,
+                            2*( ( STATE(0)*STATE(3) + STATE(1)*STATE(2))*CONTROL(3) 
+                              + (-STATE(1)*STATE(1) - STATE(3)*STATE(3))*CONTROL(4) 
+                              + ( STATE(2)*STATE(3) - STATE(0)*STATE(1))*CONTROL(5) ) 
+                                    + CONTROL(4) ,
+                            2*( ( STATE(1)*STATE(3) - STATE(0)*STATE(2))*CONTROL(3) 
+                              + ( STATE(0)*STATE(1) + STATE(2)*STATE(3))*CONTROL(4) 
+                              + (-STATE(1)*STATE(1) - STATE(2)*STATE(2))*CONTROL(5) ) 
+                                    + CONTROL(5) - guz[2]));
 
             ROS_DEBUG_STREAM("set IVP dynamical model end");
             return dynamical_model;
         }
 
-        std::shared_ptr<Function> getMeasuresModel()
+        Function* getMeasuresModel(Variable* state)
         {
             ROS_DEBUG_STREAM("set measures model begin");
 
-            Variable state(state_size_);
-            auto measures_model = std::shared_ptr<Function>(
-                    new Function(state, Return( state[4],
-                                                state[5],
-                                                state[6])));
+            auto measures_model = 
+                    new Function(*state, Return( STATE(4),
+                                                 STATE(5),
+                                                 STATE(6)));
 
             ROS_DEBUG_STREAM("set measures model end");
             return measures_model;
