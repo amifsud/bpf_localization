@@ -1,0 +1,20 @@
+<launch>
+    <arg name="bag_file" default="calibration_tests/imu_static_2.bag"/>
+
+    <node   pkg="bpf_localization" 
+            type="boat_bpf_localization" 
+            name="boat"  
+            output="screen">
+        <remap from="/boat_imu_in" to="/imu"/>
+        <remap from="/boat_mag_in" to="/mag"/>
+    </node>
+
+    <node pkg="rosbag" 
+          type="play" 
+          name="rosbag" 
+          args="$(find bpf_localization)/data/rosbag/$(arg bag_file)"
+          output="screen">
+        <remap from="/imu1" to="/imu"/>
+        <remap from="/mag1" to="/mag"/>
+    </node>
+</launch>

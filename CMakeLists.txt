@@ -151,7 +151,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
- add_executable(bpf_localization src/bpf_localization.cpp)
+ add_executable(boat_bpf_localization src/boat_bpf_localization.cpp)
  add_executable(imu_standalone src/imu_standalone.cpp)
 
 ## Rename C++ executable without prefix
@@ -162,11 +162,11 @@ include_directories(
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
- add_dependencies(bpf_localization ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+ add_dependencies(boat_bpf_localization ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
  add_dependencies(imu_standalone ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(bpf_localization
+target_link_libraries(boat_bpf_localization
     ${catkin_LIBRARIES}
     ${IBEX_DEPENDENCIES}
 )

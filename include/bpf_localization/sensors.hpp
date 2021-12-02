@@ -333,6 +333,20 @@ class Sensor: public Calibrable
             return buffer;
         }
 
+        IntervalVector getFirstIntervalValue()
+        {
+            if(!buffer_.empty())
+            {
+                auto interval = IntervalVector(buffer_.front());
+                buffer_.pop_front();
+                return interval;
+            }
+            else
+            {
+                throw 1;
+            }
+        }
+
     protected:
         IntervalVector interval_from_vector(const Vector& data)
         {
