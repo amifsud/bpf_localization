@@ -13,6 +13,11 @@ int main(int argc, char** argv)
 
     while(nh.ok())
     {
+        std::deque<IntervalVector> data = imu.getIntervalData();
+        for(auto i = 0; i < data.size(); ++i)
+        {
+            ROS_INFO_STREAM(data[i]);
+        }
         ros::spinOnce();
         r.sleep();
     }
