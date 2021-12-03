@@ -280,6 +280,30 @@ endif()
 #    )
 #endif()
 
+catkin_add_gtest(guaranted_integration_tests tests/guaranted_integration_tests.cpp)
+if(TARGET guaranted_integration_tests)
+    target_link_libraries(guaranted_integration_tests
+        ${catkin_LIBRARIES}
+        ${IBEX_DEPENDENCIES}
+    )
+endif()
+
+catkin_add_gtest(non_guaranted_interval_HEUN_integration_tests tests/non_guaranted_interval_HEUN_integration_tests.cpp)
+if(TARGET non_guaranted_interval_HEUN_integration_tests)
+    target_link_libraries(non_guaranted_interval_HEUN_integration_tests
+        ${catkin_LIBRARIES}
+        ${IBEX_DEPENDENCIES}
+    )
+endif()
+
+catkin_add_gtest(non_guaranted_affine_HEUN_integration_tests tests/non_guaranted_affine_HEUN_integration_tests.cpp)
+if(TARGET non_guaranted_affine_HEUN_integration_tests)
+    target_link_libraries(non_guaranted_affine_HEUN_integration_tests
+        ${catkin_LIBRARIES}
+        ${IBEX_DEPENDENCIES}
+    )
+endif()
+
 catkin_add_gtest(imu_dynamical_model_tests tests/imu_dynamical_model_tests.cpp)
 if(TARGET imu_dynamical_model_tests)
     target_link_libraries(imu_dynamical_model_tests
