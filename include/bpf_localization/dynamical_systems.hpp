@@ -9,6 +9,15 @@
 #ifndef DYNAMICAL_SYSTEMS
 #define DYNAMICAL_SYSTEMS
 
+/*** Integrations methods ***/
+//  * guaranted with Dynibex IVPs                       : 0
+//  * Non guaranted interval integration                : 1
+//  * Non guaranted integration with affine arithmetic  : 2
+
+#ifndef INTEGRATION_METHOD
+    #define INTEGRATION_METHOD 1
+#endif
+
 #include "bpf_localization/utils.hpp"
 
 using namespace ibex;
@@ -46,13 +55,13 @@ class DynamicalModel
         DynamicalModel( unsigned int state_size, unsigned int control_size, 
                         unsigned int measures_size, double dt,
                         Vector measures_noise_diams, Vector process_noise_diams,
-                        Method method, double precision, bool guaranted)
+                        Method method, double precision)
             :dt_(dt), state_size_(state_size), 
              control_size_(control_size), measures_size_(measures_size),
              measures_noise_diams_(measures_noise_diams),
              process_noise_diams_(process_noise_diams),
              integration_method_(method), precision_(precision),
-             guaranted_(guaranted), adaptative_timestep_(false)
+             adaptative_timestep_(false)
         {
             ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
         }
@@ -61,12 +70,11 @@ class DynamicalModel
                                      const IntervalVector& control)
         {
             //assert_ready();
-            IntervalVector result(state_size_, Interval(0., 0.));
             Variable state(state_size_);
+            IntervalVector result(state_size_, Interval(0., 0.));
             Function* dynamical_model = getDynamicalModel(&control, &state);
 
-            if(guaranted_)
-            {
+            #if INTEGRATION_METHOD == 0
                 ivp_ode problem = ivp_ode(*dynamical_model, 0.0, box);
 
                 simulation simu(&problem, dt_, integration_method_, precision_, h_);
@@ -75,25 +83,25 @@ class DynamicalModel
                 if(adaptative_timestep_) 
                     h_ = simu.list_solution_g.back().time_j.diam();
                 result = simu.get_last();
-            }
-            else
-            {
-                double h = dt_;
-                /*AF_fAFFullI::setAffineNoiseNumber (2);
+            #elif INTEGRATION_METHOD == 1
+                AF_fAFFullI::setAffineNoiseNumber (2);
                 Affine2Vector result_affine(box);
 
                 Affine2Vector k1 
                     = dynamical_model->eval_affine2_vector(result_affine);
                 Affine2Vector k2 
-                    = dynamical_model->eval_affine2_vector(result_affine+h*k1);
-                result_affine = result_affine + (0.5*h)*(k1+k2);
+                    = dynamical_model->eval_affine2_vector(result_affine+dt_*k1);
+                result_affine = result_affine + (0.5*dt_)*(k1+k2);
                 result_affine.compact();
 
-                result = result_affine.itv();*/
+                result = result_affine.itv();
+            #elif INTEGRATION_METHOD == 2
                 IntervalVector k1 = dynamical_model->eval_vector(box);
-                IntervalVector k2 = dynamical_model->eval_vector(box+h*k1);
-                result = box + (0.5*h)*(k1+k2);
-            }
+                IntervalVector k2 = dynamical_model->eval_vector(box+dt_*k1);
+                result = box + (0.5*dt_)*(k1+k2);
+            #else 
+                ROS_ASSERT_MSG(false && "Wrong integration method in preprocessor configuration");
+            #endif
 
             delete dynamical_model;
             return result;
@@ -153,7 +161,6 @@ class TurtleBotDynamicalModel: public DynamicalModel
         TurtleBotDynamicalModel(const double dt              = 0.01,   // dt
                                 const double wheels_radius   = 3.5e-2, // wheels radius
                                 const double wheels_distance = 23e-2,  // wheels distance
-                                const bool   guaranted       = false,  // guaranted or not
                                 const Method method          = RK4,    // method       
                                 const double precision       = 1e-6,   // precision
                                 Vector measures_noise_diams
@@ -167,8 +174,7 @@ class TurtleBotDynamicalModel: public DynamicalModel
                             measures_noise_diams, 
                             process_noise_diams,  
                             method,                  
-                            precision,
-                            guaranted),
+                            precision),
             wheels_radius_(wheels_radius),
             wheels_distance_(wheels_distance)
         {
@@ -230,7 +236,6 @@ class IMUDynamicalModel: public DynamicalModel
 
     public:
         IMUDynamicalModel(  const double dt              = NaN,  // dt
-                            const bool   guaranted       = false, // guaranted or not
                             const Method method          = HEUN,  // method       
                             const double precision       = 1e-4, // precision
                             Vector measures_noise_diams
@@ -244,8 +249,7 @@ class IMUDynamicalModel: public DynamicalModel
                             measures_noise_diams, 
                             process_noise_diams,  
                             method,                  
-                            precision,
-                            guaranted),
+                            precision),
             guz_(3, guz)
         {
             if(process_noise_diams == Vector(state_size_, NaN))
