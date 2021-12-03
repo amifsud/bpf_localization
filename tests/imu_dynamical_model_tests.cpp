@@ -1,5 +1,6 @@
 #define LOG_LEVEL Info
 #define INIT_METHOD     1
+#define INTEGRATION_METHOD 1
 
 #include <gtest/gtest.h>
 #include <bpf_localization/dynamical_systems.hpp>
