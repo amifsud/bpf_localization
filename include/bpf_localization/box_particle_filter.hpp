@@ -565,7 +565,7 @@ class BoxParticleFilter
                 }
             }
             end = omp_get_wtime();
-            //ROS_INFO_STREAM("prediction duration = " << (end - start)); 
+            ROS_INFO_STREAM("prediction duration = " << (end - start)); 
 
             ROS_DEBUG_STREAM("prediction end");
         }

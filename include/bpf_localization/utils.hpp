@@ -29,8 +29,8 @@ class ReturnIMU
                 in_rows)) 
         {}
 
-        operator const ExprVector&() const { return vec; }
-        operator const ExprNode&() const { return vec; }
+        operator const ExprVector&() const     { return vec; }
+        operator const ExprNode&() const       { return vec; }
         const ExprIndex& operator[](int index) { return vec[index]; }
         const ExprVector& vec;
 };
