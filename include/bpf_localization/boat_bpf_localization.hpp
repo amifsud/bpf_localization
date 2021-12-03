@@ -27,7 +27,7 @@ class BoatBPFLocalization : public BoxParticleFilter
         BoatBPFLocalization(double pos, double vel, double theta,
                             bool parallelize = false, 
                             unsigned int N = DEFAULT_PARTICLES_NUMBER,
-                            double dt = .2)
+                            double dt = 1.)
             :BoxParticleFilter(N, get_init(pos, vel, theta), parallelize),
              imu_measures_(IMUDynamicalModel::control_size), 
              gps_measures_(IMUDynamicalModel::measures_size)

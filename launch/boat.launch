@@ -3,7 +3,7 @@
 
     <node   pkg="bpf_localization" 
             type="boat_bpf_localization" 
-            name="boat"  
+            name="boat"
             output="screen">
         <remap from="/boat_imu_in" to="/imu"/>
         <remap from="/boat_mag_in" to="/mag"/>
