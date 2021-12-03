@@ -14,20 +14,35 @@ int main(int argc, char **argv)
     double vel = 0.1;
     double theta = 10./180.*3.14;
 
-    BoatBPFLocalization boat(pos, vel, theta, false);
+    BoatBPFLocalization boat_localization(pos, vel, theta, false);
     IMUInterface        imu(&nh, "boat_imu", 3);
+    GPSInterface        gps(&nh, "boat_gps", 3);
 
     IntervalVector control(INSDynamicalModel::control_size);
+    IntervalVector position(3);
 
+    unsigned int i = 0;
     while (ros::ok()) 
     {
         try
         {
             control = imu.getFirstIntervalValue();
-            boat.IMUCallback(control);
-            ROS_INFO_STREAM(control);
+            boat_localization.IMUCallback(control);
+            ROS_INFO_STREAM("Control = " << control);
         }
         catch(int i) {}
+
+        if(i >= 5)
+        {
+            try
+            {
+                position = gps.getFirstIntervalValue();
+                boat_localization.GPSCallback(position);
+                ROS_INFO_STREAM("Position = " << position);
+                i = 0;
+            }
+            catch(int i) {}
+        }
 
         ros::spinOnce();
     }
