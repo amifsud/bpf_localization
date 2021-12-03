@@ -10,7 +10,7 @@ TEST(BoatBPFLocalizationTest, testBoatBPFLocalization)
     double vel = 0.1;
     double theta = 10./180.*3.14;
 
-    IntervalVector imu(IMUDynamicalModel::control_size);
+    IntervalVector imu(INSDynamicalModel::control_size);
     imu[0] = Interval(0., 0.); // gyrometer
     imu[1] = Interval(0., 0.);
     imu[2] = Interval(0., 0.);
@@ -49,7 +49,7 @@ TEST(BoatBPFLocalizationTest, testBoatBPFLocalization)
 
 TEST(BoatBPFLocalizationTest, testBoatBPFLocalization1)
 {
-    IntervalVector gps(IMUDynamicalModel::measures_size);
+    IntervalVector gps(INSDynamicalModel::measures_size);
     gps[0] = Interval(-0.2, 0.2); // gps
     gps[1] = Interval(-0.2, 0.2);
     gps[2] = Interval(-0.2, 0.2);

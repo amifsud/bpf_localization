@@ -289,7 +289,9 @@ class TurtleBotDynamicalModel: public DynamicalModel
         }
 };
 
-class IMUDynamicalModel: public DynamicalModel
+/*** Inertial Navigation System (INS) ***/
+
+class INSDynamicalModel: public DynamicalModel
 {
     public:
         static const unsigned int state_size       = 3*3+1; // state_size
@@ -300,7 +302,7 @@ class IMUDynamicalModel: public DynamicalModel
 	    Vector guz_;
 
     public:
-        IMUDynamicalModel(  const double dt              = NaN,  // dt
+        INSDynamicalModel(  const double dt              = NaN,  // dt
                             Vector measures_noise_diams
                                 = Vector(TurtleBotDynamicalModel::measures_size, NaN),
                             Vector process_noise_diams

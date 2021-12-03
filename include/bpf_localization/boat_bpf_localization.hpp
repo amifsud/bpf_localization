@@ -18,10 +18,10 @@ class BoatBPFLocalization : public BoxParticleFilter
                             unsigned int N = DEFAULT_PARTICLES_NUMBER,
                             double dt = 1.)
             :BoxParticleFilter(N, initial_box, parallelize),
-             imu_measures_(IMUDynamicalModel::control_size), 
-             gps_measures_(IMUDynamicalModel::measures_size)
+             imu_measures_(INSDynamicalModel::control_size), 
+             gps_measures_(INSDynamicalModel::measures_size)
         {
-            dynamical_model_ = std::shared_ptr<DynamicalModel>(new IMUDynamicalModel(dt));
+            dynamical_model_ = std::shared_ptr<DynamicalModel>(new INSDynamicalModel(dt));
         }
 
         BoatBPFLocalization(double pos, double vel, double theta,
@@ -29,10 +29,10 @@ class BoatBPFLocalization : public BoxParticleFilter
                             unsigned int N = DEFAULT_PARTICLES_NUMBER,
                             double dt = 1.)
             :BoxParticleFilter(N, get_init(pos, vel, theta), parallelize),
-             imu_measures_(IMUDynamicalModel::control_size), 
-             gps_measures_(IMUDynamicalModel::measures_size)
+             imu_measures_(INSDynamicalModel::control_size), 
+             gps_measures_(INSDynamicalModel::measures_size)
         {
-            dynamical_model_ = std::shared_ptr<DynamicalModel>(new IMUDynamicalModel(dt));
+            dynamical_model_ = std::shared_ptr<DynamicalModel>(new INSDynamicalModel(dt));
         }
 
         BoatBPFLocalization(Particles& particles,
@@ -40,10 +40,10 @@ class BoatBPFLocalization : public BoxParticleFilter
                             unsigned int N = DEFAULT_PARTICLES_NUMBER,
                             double dt = 1.)
             :BoxParticleFilter(N, particles, parallelize),
-             imu_measures_(IMUDynamicalModel::control_size), 
-             gps_measures_(IMUDynamicalModel::measures_size)
+             imu_measures_(INSDynamicalModel::control_size), 
+             gps_measures_(INSDynamicalModel::measures_size)
         {
-            dynamical_model_ = std::shared_ptr<DynamicalModel>(new IMUDynamicalModel(dt));
+            dynamical_model_ = std::shared_ptr<DynamicalModel>(new INSDynamicalModel(dt));
         }
 
         const IntervalVector get_init(double pos, double vel, double theta)
@@ -52,7 +52,7 @@ class BoatBPFLocalization : public BoxParticleFilter
             assert(vel > 0. && "initial incertitude on velocity must be > 0");
             assert(theta > 0. && "initial incertitude on orientation must be > 0");
 
-            IntervalVector initial_box(IMUDynamicalModel::state_size);
+            IntervalVector initial_box(INSDynamicalModel::state_size);
             initial_box[0] = Interval(cos(theta), 1.);
             initial_box[1] = Interval(sin(-theta)/sqrt(3), sin(theta)/sqrt(3));
             initial_box[2] = Interval(sin(-theta)/sqrt(3), sin(theta)/sqrt(3));

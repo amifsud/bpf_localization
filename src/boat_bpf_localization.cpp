@@ -17,7 +17,7 @@ int main(int argc, char **argv)
     BoatBPFLocalization boat(pos, vel, theta, false);
     IMUInterface        imu(&nh, "boat_imu", 3);
 
-    IntervalVector control(IMUDynamicalModel::control_size);
+    IntervalVector control(INSDynamicalModel::control_size);
 
     while (ros::ok()) 
     {
