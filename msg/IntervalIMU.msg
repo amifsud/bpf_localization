@@ -1,0 +1,3 @@
+Header header
+interval_msgs/Vector3Interval angular_velocity
+interval_msgs/Vector3Interval linear_acceleration
