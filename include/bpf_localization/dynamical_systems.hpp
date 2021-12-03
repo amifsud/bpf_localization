@@ -39,12 +39,25 @@ class DynamicalModel
         Vector measures_noise_diams_;
         unsigned int measures_size_;
 
-        // Simulation with dynibex
-        Method integration_method_;
-        double precision_;
-        bool guaranted_;
-        bool adaptative_timestep_;
-        double h_;
+    #if INTEGRATION_METHOD == 0
+    protected:
+        Method integration_method_ = RK4;
+        bool adaptative_timestep_  = false;
+        double precision_          = 1e-6;
+        double h_                  = 0.1;
+
+    public:
+        void configureGuarantedIntegration( Method integration_method = RK4, 
+                                            double precision = 1e-6, 
+                                            bool adaptative_timestep = false, 
+                                            double h = 0.1)
+        {
+            adaptative_timestep_ = adaptative_timestep;
+            integration_method_  = integration_method;
+            precision_           = precision;
+            h_                   = h;
+        }
+    #endif
 
     #if RESAMPLING_DIRECTION == 1
     public:
@@ -54,14 +67,11 @@ class DynamicalModel
     public:
         DynamicalModel( unsigned int state_size, unsigned int control_size, 
                         unsigned int measures_size, double dt,
-                        Vector measures_noise_diams, Vector process_noise_diams,
-                        Method method, double precision)
+                        Vector measures_noise_diams, Vector process_noise_diams)
             :dt_(dt), state_size_(state_size), 
              control_size_(control_size), measures_size_(measures_size),
              measures_noise_diams_(measures_noise_diams),
-             process_noise_diams_(process_noise_diams),
-             integration_method_(method), precision_(precision),
-             adaptative_timestep_(false)
+             process_noise_diams_(process_noise_diams) 
         {
             ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
         }
@@ -75,6 +85,7 @@ class DynamicalModel
             Function* dynamical_model = getDynamicalModel(&control, &state);
 
             #if INTEGRATION_METHOD == 0
+                ROS_DEBUG_STREAM("guaranted integration method");
                 ivp_ode problem = ivp_ode(*dynamical_model, 0.0, box);
 
                 simulation simu(&problem, dt_, integration_method_, precision_, h_);
@@ -84,6 +95,7 @@ class DynamicalModel
                     h_ = simu.list_solution_g.back().time_j.diam();
                 result = simu.get_last();
             #elif INTEGRATION_METHOD == 1
+                ROS_DEBUG_STREAM("non guaranted interval HEUN integration method");
                 AF_fAFFullI::setAffineNoiseNumber (2);
                 Affine2Vector result_affine(box);
 
@@ -96,11 +108,12 @@ class DynamicalModel
 
                 result = result_affine.itv();
             #elif INTEGRATION_METHOD == 2
+                ROS_DEBUG_STREAM("non guaranted affine HEUN integration method");
                 IntervalVector k1 = dynamical_model->eval_vector(box);
                 IntervalVector k2 = dynamical_model->eval_vector(box+dt_*k1);
                 result = box + (0.5*dt_)*(k1+k2);
             #else 
-                ROS_ASSERT_MSG(false && "Wrong integration method in preprocessor configuration");
+                ROS_ASSERT(false && "Wrong integration method in preprocessor configuration");
             #endif
 
             delete dynamical_model;
@@ -161,8 +174,6 @@ class TurtleBotDynamicalModel: public DynamicalModel
         TurtleBotDynamicalModel(const double dt              = 0.01,   // dt
                                 const double wheels_radius   = 3.5e-2, // wheels radius
                                 const double wheels_distance = 23e-2,  // wheels distance
-                                const Method method          = RK4,    // method       
-                                const double precision       = 1e-6,   // precision
                                 Vector measures_noise_diams
                                     = Vector(TurtleBotDynamicalModel::measures_size, NaN),
                                 Vector process_noise_diams
@@ -172,12 +183,17 @@ class TurtleBotDynamicalModel: public DynamicalModel
                             measures_size,        
                             dt,                            
                             measures_noise_diams, 
-                            process_noise_diams,  
-                            method,                  
-                            precision),
+                            process_noise_diams),
             wheels_radius_(wheels_radius),
             wheels_distance_(wheels_distance)
         {
+            #if INTEGRATION_METHOD == 0
+            configureGuarantedIntegration(RK4,      // integration method 
+                                          1e-6,     // precision
+                                          false,    // adaptative_timestep
+                                          0.1);     // initial timestep
+            #endif
+
             if(process_noise_diams == Vector(state_size_, NaN))
                 // process noise diameters
             {
@@ -217,7 +233,7 @@ class TurtleBotDynamicalModel: public DynamicalModel
         {
             ROS_DEBUG_STREAM("set measures model begin");
             auto measures_model =  
-                  new Function(*state, Return( STATE(0),
+                  new Function(*state, Return(STATE(0),
                                               STATE(1)+STATE(2)));
             ROS_DEBUG_STREAM("set measures model end");
             return measures_model;
@@ -236,8 +252,6 @@ class IMUDynamicalModel: public DynamicalModel
 
     public:
         IMUDynamicalModel(  const double dt              = NaN,  // dt
-                            const Method method          = HEUN,  // method       
-                            const double precision       = 1e-4, // precision
                             Vector measures_noise_diams
                                 = Vector(TurtleBotDynamicalModel::measures_size, NaN),
                             Vector process_noise_diams
@@ -247,11 +261,16 @@ class IMUDynamicalModel: public DynamicalModel
                             measures_size,        
                             dt,                            
                             measures_noise_diams, 
-                            process_noise_diams,  
-                            method,                  
-                            precision),
+                            process_noise_diams),
             guz_(3, guz)
         {
+            #if INTEGRATION_METHOD == 0
+            configureGuarantedIntegration(HEUN,     // integration method 
+                                          1e-4,     // precision
+                                          false,    // adaptative_timestep
+                                          0.1);     // initial timestep
+            #endif
+
             if(process_noise_diams == Vector(state_size_, NaN))
                 // process noise diameters
             {
@@ -272,9 +291,6 @@ class IMUDynamicalModel: public DynamicalModel
             normalization_values_.push_back(std::make_tuple(1, 1, 1.));
             normalization_values_.push_back(std::make_tuple(2, 1, 1.));
             #endif
-
-            h_ = 0.1; // initial timestep for dynibex simulations
-            adaptative_timestep_ = false;
         }
 
     protected:
@@ -284,7 +300,7 @@ class IMUDynamicalModel: public DynamicalModel
 
             auto dynamical_model =  
                 new Function(*state, 
-                    ReturnIMU( 0.5*(-STATE(1)*CONTROL(0)-STATE(2)*CONTROL(1)-STATE(3)*CONTROL(2)),
+                    ReturnIMU(0.5*(-STATE(1)*CONTROL(0)-STATE(2)*CONTROL(1)-STATE(3)*CONTROL(2)),
                             0.5*( STATE(0)*CONTROL(0)-STATE(3)*CONTROL(1)+STATE(2)*CONTROL(2)),
                             0.5*( STATE(3)*CONTROL(0)+STATE(0)*CONTROL(1)-STATE(1)*CONTROL(2)),
                             0.5*(-STATE(2)*CONTROL(0)+STATE(1)*CONTROL(1)+STATE(0)*CONTROL(2)),
