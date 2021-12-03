@@ -3,7 +3,8 @@
 #include <ros/package.h>
 #include <message_filters/subscriber.h>
 #include <sensor_msgs/Imu.h>
-#include <geometry_msgs/Point.h>
+#include <geometry_msgs/PointStamped.h>
+#include <interval_msgs/Vector3IntervalStamped.h>
 
 #include "bpf_localization/utils.hpp"
 #include "bpf_localization/StartCalibration.h"
@@ -439,14 +440,36 @@ class GPSInterface: public Sensor
             Sensor(nh, name, size, decimal)
         {
             sub_ = nh->subscribe(name + "_in", 50, &GPSInterface::callback, this);    
+            pub_ = nh->advertise<interval_msgs::Vector3IntervalStamped>(name+"_out", 1000);
         }
 
     protected:
-        void callback(const geometry_msgs::Point& gps_data)
+        void callback(const geometry_msgs::PointStamped& gps_data)
         {
-            tmp_[0] = gps_data.x;
-            tmp_[1] = gps_data.y;
-            tmp_[2] = gps_data.z;
+            tmp_[0] = gps_data.point.x;
+            tmp_[1] = gps_data.point.y;
+            tmp_[2] = gps_data.point.z;
             feed(tmp_);
+
+            IntervalVector interval = interval_from_vector(tmp_);
+
+            interval_msgs::Vector3IntervalStamped msg;
+            msg.header = gps_data.header;
+            msg.vector.x.lb = interval[0].lb();
+            msg.vector.x.ub = interval[0].ub();
+            msg.vector.y.lb = interval[1].lb();
+            msg.vector.y.ub = interval[1].ub();
+            msg.vector.z.lb = interval[2].lb();
+            msg.vector.z.ub = interval[2].ub();
+
+            pub_.publish(msg);
+        }
+
+        void calibration_data_format()
+        {
+            calibration_data_format_.push_back("component");
+            calibration_data_format_.push_back("x");
+            calibration_data_format_.push_back("y");
+            calibration_data_format_.push_back("z");
         }
 };
