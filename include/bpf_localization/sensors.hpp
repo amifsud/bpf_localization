@@ -38,14 +38,15 @@ class Calibrable
         ros::ServiceServer stop_calibration_server_;
 
         std::vector<Vector> data_;
-        Vector sum_;
-        double nb_;
         Vector lb_;
         Vector ub_;
         Vector mid_;
+        Vector half_diameters_;
+
+        Vector sum_;
+        double nb_;
         Vector mean_;
 
-        Vector half_diameters_;
         double precision_;
 
     public:
@@ -88,17 +89,14 @@ class Calibrable
         {
             endingCalibration();
             for(auto i = 0; i < size_; ++i)
-                res.diameters.push_back(2*getHalfDiameter(i));
+                res.diameters.push_back(2*half_diameters_[i]);
             return true;
         }
 
-        inline double getHalfDiameter(unsigned int i)
+        void computeHalfDiameters()
         {
-            //#if CALIBRATION_POLICY == 0 
-            return (ub_[i]-lb_[i]);
-            //#elif CALIBRATION_POLICY == 1
-            //return 2*std::max(ub_[i]-mean_[i], mean_[i]-lb_[i]);
-            //#endif
+            mid_ = 0.5*(ub_ + lb_);
+            half_diameters_ = ub_ - lb_;
         }
 
         void update()
@@ -111,23 +109,21 @@ class Calibrable
                     {
                         ub_[i] = roundf(vect->operator[](i) * precision_) 
                             / precision_ + 1./precision_;
-                        mid_[i] = ub_[i] - lb_[i];
                     }
 
                     if(vect->operator[](i) < lb_[i] - 1./precision_) 
                     {
                         lb_[i] = roundf(vect->operator[](i) * precision_) 
                             / precision_ + 1./precision_;
-                        mid_[i] = ub_[i] - lb_[i];
                     }
                 }
-
                 sum_ += *vect;
                 nb_ += 1.;
             }
 
-            time_ = ros::Time::now() - init_time_; 
+            computeHalfDiameters();
             mean_ = 1./nb_*sum_;
+            time_ = ros::Time::now() - init_time_; 
             data_.clear();
         }
 
@@ -204,9 +200,9 @@ class Calibrable
                     format = calibration_data_format_[u+1]+",ub,";
                     spliToDouble(&line, &format, &values);
                     ub_[u] = *std::max_element(values.begin(), values.end());
-
-                    mid_[u] = (ub_[u]+lb_[u])/2.;
                 }
+
+                computeHalfDiameters();
             }
 
             closeCalibrationFile();
@@ -322,9 +318,9 @@ class Sensor: public Calibrable
         bool getDiameters(bpf_localization::GetDiameters::Request  &req,
                           bpf_localization::GetDiameters::Response &res)
         {
-            loadFromFile();
+            if(half_diameters_.max() < 1e-7) loadFromFile();
             for(auto i = 0; i < size_; ++i)
-                res.diameters.push_back(2*getHalfDiameter(i));
+                res.diameters.push_back(2*half_diameters_[i]);
         }
 
         std::deque<IntervalVector> getIntervalData()
@@ -352,12 +348,12 @@ class Sensor: public Calibrable
         IntervalVector intervalFromVector(const Vector& data)
         {
             IntervalVector interval(size_);
-            loadFromFile();
+            if(half_diameters_.max() < 1e-7) loadFromFile();
 
             for(auto i = 0; i < size_; ++i)
             {
-                interval[i] = Interval( data[i]-getHalfDiameter(i),
-                                        data[i]+getHalfDiameter(i));
+                interval[i] = Interval( data[i]-half_diameters_[i],
+                                        data[i]+half_diameters_[i]);
             }
 
             return interval;
@@ -441,6 +437,7 @@ class GPSInterface: public Sensor
         {
             sub_ = nh->subscribe(name + "_in", 50, &GPSInterface::callback, this);    
             pub_ = nh->advertise<interval_msgs::Vector3IntervalStamped>(name+"_out", 1000);
+            half_diameters_ = 1e-1*Vector(size_, 1.);
         }
 
     protected:
