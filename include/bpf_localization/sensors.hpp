@@ -11,7 +11,10 @@
 #include "bpf_localization/GetDiameters.h"
 #include "bpf_localization/IntervalIMU.h"
 
-// FIXME: Make this file independant from ROS except for logging
+/** FIXME: 
+ * Make this file independant from ROS except for logging
+ * Make unit tests for the file
+**/
 
 /*** Available calibrations ***/
 //  * midpoint offset : 0

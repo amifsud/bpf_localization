@@ -1,7 +1,7 @@
 /*** FIXME 
  *
  *  - implement maximum likelihood resqmpling direction choice
- *  - particles are composed of AND/OR(IntervalVector, kerneli, maps, ...) and weights
+ *  - particles are composed of AND/OR(IntervalVector, kernel, maps, ...) and weights
  *
  */
 

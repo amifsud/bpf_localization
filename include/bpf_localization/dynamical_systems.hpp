@@ -2,9 +2,8 @@
  *
  *  - control in state to not reconstruct objects ?
  *  - specific dynamcal models witht there tests and examples are plugins ?
- *  - integration from IVP to define dynamical model by default (ibex finctions composition)
- *
- */
+ *  - function composition to define model when we don't use dynibex
+**/
 
 #ifndef DYNAMICAL_SYSTEMS
 #define DYNAMICAL_SYSTEMS
@@ -79,7 +78,7 @@ class DynamicalModel
         IntervalVector applyDynamics(const IntervalVector& box, 
                                      const IntervalVector& control)
         {
-            //assert_ready();
+            //assertReady();
             Variable state(state_size_);
             IntervalVector result(state_size_, Interval(0., 0.));
             Function* dynamical_model = getDynamicalModel(&control, &state);
@@ -122,7 +121,7 @@ class DynamicalModel
 
         IntervalVector applyMeasures(const IntervalVector& box)
         {
-            //assert_ready();
+            //assertReady();
             Variable state(state_size_);
             Function* measures_model = getMeasuresModel(&state);
             return measures_model->eval_vector(box);
