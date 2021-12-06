@@ -131,7 +131,7 @@ class Calibrable
             data_.clear();
         }
 
-        void read_calibration_file( std::vector<std::string>* lines)
+        void readCalibrationFile( std::vector<std::string>* lines)
         {
             std::string line;
             calibration_file_->seekp(0, calibration_file_->beg);
@@ -143,7 +143,7 @@ class Calibrable
             }
         }
 
-        void split_to_double(std::string* line, std::string* format,
+        void spliToDouble(std::string* line, std::string* format,
                                             std::vector<double>* values)
         {
             values->clear();
@@ -154,7 +154,7 @@ class Calibrable
                 values->push_back(std::stod(number));
         }
 
-        bool open_calibration_file()
+        bool openCalibrationFile()
         {
             // Try to open file twice
             calibration_file_ = 
@@ -167,7 +167,7 @@ class Calibrable
 
             if(calibration_file_->is_open()) 
             {
-                calibration_data_format();
+                calibrationDataFormat();
             }
             else
             {
@@ -177,19 +177,19 @@ class Calibrable
             return calibration_file_->is_open();
         }
 
-        bool close_calibration_file()
+        bool closeCalibrationFile()
         {
             calibration_file_->close();
             calibration_data_format_.clear();
         }
 
-        void load_from_file()
+        void loadFromFile()
         {
-            if(open_calibration_file())
+            if(openCalibrationFile())
             {
                 // If file open
                 std:vector<std::string> lines;
-                read_calibration_file(&lines);
+                readCalibrationFile(&lines);
                 std::string line, format;
                 std::vector<double> values;
 
@@ -197,26 +197,26 @@ class Calibrable
                 {
                     line   = lines[u*4+1];
                     format = calibration_data_format_[u+1]+",lb,";
-                    split_to_double(&line, &format, &values);
+                    spliToDouble(&line, &format, &values);
                     lb_[u] = *std::min_element(values.begin(), values.end());
 
                     line   = lines[u*4+2];
                     format = calibration_data_format_[u+1]+",ub,";
-                    split_to_double(&line, &format, &values);
+                    spliToDouble(&line, &format, &values);
                     ub_[u] = *std::max_element(values.begin(), values.end());
 
                     mid_[u] = (ub_[u]+lb_[u])/2.;
                 }
             }
 
-            close_calibration_file();
+            closeCalibrationFile();
         }
 
-        void write_calibration_file()
+        void writeCalibrationFile()
         {
             ROS_INFO_STREAM("Begin to write calibration file");
 
-            if(open_calibration_file())
+            if(openCalibrationFile())
             {
                 // If file open
                 std:vector<std::string> lines;
@@ -225,7 +225,7 @@ class Calibrable
                 {
                     // If file empty : create lines with sensor format
                     ROS_INFO_STREAM("New file");
-                    calibration_data_format();
+                    calibrationDataFormat();
                     lines.push_back("vector,component,data");
                     for(auto u = 0; u < calibration_data_format_.size(); ++u)
                     {
@@ -241,7 +241,7 @@ class Calibrable
                 else
                 {
                     // If file not empty : read lines from file
-                    read_calibration_file(&lines);
+                    readCalibrationFile(&lines);
                 }
 
                 // Update calibration data
@@ -264,19 +264,19 @@ class Calibrable
                 }
             }
 
-            close_calibration_file();
+            closeCalibrationFile();
 
             ROS_INFO_STREAM("End to write calibration file");
         }
 
-        virtual void calibration_data_format() = 0;
+        virtual void calibrationDataFormat() = 0;
 
         void endingCalibration()
         {
             ROS_INFO_STREAM("Stoppping calibration");
             calibration_ = false;
             update();
-            write_calibration_file();
+            writeCalibrationFile();
         }
 
         void feed(const Vector& vect)
@@ -289,7 +289,7 @@ class Calibrable
             if(time_ >= until_) endingCalibration();
         }
 
-        bool is_calibrating()
+        bool isCalibrating()
         {
             return calibration_;
         }
@@ -322,7 +322,7 @@ class Sensor: public Calibrable
         bool getDiameters(bpf_localization::GetDiameters::Request  &req,
                           bpf_localization::GetDiameters::Response &res)
         {
-            load_from_file();
+            loadFromFile();
             for(auto i = 0; i < size_; ++i)
                 res.diameters.push_back(2*getHalfDiameter(i));
         }
@@ -349,10 +349,10 @@ class Sensor: public Calibrable
         }
 
     protected:
-        IntervalVector interval_from_vector(const Vector& data)
+        IntervalVector intervalFromVector(const Vector& data)
         {
             IntervalVector interval(size_);
-            load_from_file();
+            loadFromFile();
 
             for(auto i = 0; i < size_; ++i)
             {
@@ -365,8 +365,8 @@ class Sensor: public Calibrable
 
         void feed(const Vector& data)
         {
-            buffer_.push_back(interval_from_vector(data));
-            if(is_calibrating()) Calibrable::feed(data);
+            buffer_.push_back(intervalFromVector(data));
+            if(isCalibrating()) Calibrable::feed(data);
         }
 };
 
@@ -398,7 +398,7 @@ class IMUInterface: public Sensor
             tmp_[5] = imu_data.linear_acceleration.z;
             feed(tmp_);
 
-            IntervalVector interval = interval_from_vector(tmp_);
+            IntervalVector interval = intervalFromVector(tmp_);
 
             bpf_localization::IntervalIMU msg;
             msg.header = imu_data.header;
@@ -418,7 +418,7 @@ class IMUInterface: public Sensor
             pub_.publish(msg);
         }
 
-        void calibration_data_format()
+        void calibrationDataFormat()
         {
             calibration_data_format_.push_back("vector,component,data");
             calibration_data_format_.push_back("angular_velocity,x");
@@ -451,7 +451,7 @@ class GPSInterface: public Sensor
             tmp_[2] = gps_data.point.z;
             feed(tmp_);
 
-            IntervalVector interval = interval_from_vector(tmp_);
+            IntervalVector interval = intervalFromVector(tmp_);
 
             interval_msgs::Vector3IntervalStamped msg;
             msg.header = gps_data.header;
@@ -465,7 +465,7 @@ class GPSInterface: public Sensor
             pub_.publish(msg);
         }
 
-        void calibration_data_format()
+        void calibrationDataFormat()
         {
             calibration_data_format_.push_back("component");
             calibration_data_format_.push_back("x");

@@ -140,7 +140,7 @@ class DynamicalModel
             (const IntervalVector* control, Variable* state) = 0;
         virtual Function* getMeasuresModel(Variable* state) = 0;
 
-        void assert_ready()
+        void assertReady()
         {
             Variable state(state_size_);
             IntervalVector control(state_size_, Interval(0.,0.));
