@@ -1,13 +1,5 @@
 <launch>
-    <arg name="bag_file" default="calibration_tests/imu_static_2.bag"/>
-
-    <node   pkg="bpf_localization" 
-            type="boat_bpf_localization" 
-            name="boat"
-            output="screen">
-        <remap from="/boat_imu_in" to="/imu"/>
-        <remap from="/boat_mag_in" to="/mag"/>
-    </node>
+    <arg name="bag_file" default="lake/2021_07_19_begining.bag"/>
 
     <node pkg="rosbag" 
           type="play" 
@@ -15,6 +7,21 @@
           args="$(find bpf_localization)/data/rosbag/$(arg bag_file)"
           output="screen">
         <remap from="/imu1" to="/imu"/>
-        <remap from="/mag1" to="/mag"/>
+    </node>
+
+    <node   pkg="gps_common"
+            type="utm_odometry_node"
+            name="navsat_to_utm"
+            output="screen">
+        <remap from="/odom" to="/gps"/>
+    </node>
+
+    <node   pkg="bpf_localization" 
+            type="boat_bpf_localization" 
+            name="boat"
+            launch-prefix="xterm -e gdb --args"
+            output="screen">
+        <remap from="/boat_gps_in" to="/gps"/>
+        <remap from="/boat_imu_in" to="/imu"/>
     </node>
 </launch>

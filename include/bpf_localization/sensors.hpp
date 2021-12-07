@@ -4,6 +4,7 @@
 #include <message_filters/subscriber.h>
 #include <sensor_msgs/Imu.h>
 #include <geometry_msgs/PointStamped.h>
+#include <nav_msgs/Odometry.h>
 #include <interval_msgs/Vector3IntervalStamped.h>
 
 #include "bpf_localization/utils.hpp"
@@ -433,22 +434,47 @@ class GPSInterface: public Sensor
 {
     public:
         static const unsigned int size = 3;
+        Vector initial_pose_;
+        bool initialized_;
 
     public:
         GPSInterface(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-            Sensor(nh, name, size, decimal)
+            Sensor(nh, name, size, decimal),
+            initial_pose_(Vector(3,0.)), initialized_(false)
         {
-            sub_ = nh->subscribe(name + "_in", 50, &GPSInterface::callback, this);    
+            sub_ = nh->subscribe(name + "_in", 50, &GPSInterface::callbackOdom, this);    
             pub_ = nh->advertise<interval_msgs::Vector3IntervalStamped>(name+"_out", 1000);
             half_diameters_ = 1e-1*Vector(size_, 1.);
         }
 
     protected:
-        void callback(const geometry_msgs::PointStamped& gps_data)
+        void callbackOdom(const nav_msgs::Odometry& gps_data)
         {
-            tmp_[0] = gps_data.point.x;
-            tmp_[1] = gps_data.point.y;
-            tmp_[2] = gps_data.point.z;
+            geometry_msgs::PointStamped msg;
+            msg.header = gps_data.header;
+            msg.point  = gps_data.pose.pose.position;
+            callbackPoint(msg);
+        }
+
+        void callbackPoint(const geometry_msgs::PointStamped& gps_data)
+        {
+            ROS_INFO_STREAM("In callback");
+            if(!initialized_)
+            {
+                if( gps_data.point.x != 0. | 
+                    gps_data.point.y != 0. |
+                    gps_data.point.z != 0. )
+                {
+                    initial_pose_[0] = gps_data.point.x;
+                    initial_pose_[1] = gps_data.point.y;
+                    initial_pose_[2] = gps_data.point.z;
+                    initialized_ = true;
+                }
+            }
+
+            tmp_[0] = gps_data.point.x - initial_pose_[0];
+            tmp_[1] = gps_data.point.y - initial_pose_[1];
+            tmp_[2] = gps_data.point.z - initial_pose_[2];
             feed(tmp_);
 
             IntervalVector interval = intervalFromVector(tmp_);

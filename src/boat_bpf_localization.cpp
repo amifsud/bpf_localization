@@ -21,28 +21,30 @@ int main(int argc, char **argv)
     IntervalVector control(INSDynamicalModel::control_size);
     IntervalVector position(3);
 
-    unsigned int i = 0;
+    unsigned int u = 0;
     while (ros::ok()) 
     {
         try
         {
             control = imu.getFirstIntervalValue();
             boat_localization.IMUCallback(control);
-            ROS_INFO_STREAM("Control = " << control);
+            //ROS_INFO_STREAM("Control = " << control);
         }
         catch(int i) {}
 
-        if(i >= 5)
+        if(u >= 5)
         {
             try
             {
                 position = gps.getFirstIntervalValue();
-                boat_localization.GPSCallback(position);
+                //boat_localization.GPSCallback(position);
                 ROS_INFO_STREAM("Position = " << position);
-                i = 0;
+                u = 0;
             }
             catch(int i) {}
         }
+
+        u++;
 
         ros::spinOnce();
     }
