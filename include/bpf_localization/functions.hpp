@@ -142,6 +142,25 @@ const ExprApply& operator+(SubVariable* x, TranslationFunction& t)
     return t.operator()(x, x->index()); 
 }
 
+
+class CrossProductFunction: public MatrixFunction
+{
+    protected:
+        IntervalVector v_;
+
+    public:
+        CrossProductFunction(const IntervalVector& vect)
+            : MatrixFunction(3, 3), v_(3, Interval(0., 0.))
+        {
+            mat_[0][1] = -v_[2];
+            mat_[0][2] =  v_[1];
+            mat_[1][2] = -v_[0];
+            mat_[1][0] =  v_[2];
+            mat_[2][0] = -v_[1];
+            mat_[2][1] =  v_[0];
+        }
+};
+
 class QuaternionFunction: public MatrixFunction
 {
     protected :
