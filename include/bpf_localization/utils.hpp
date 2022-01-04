@@ -18,6 +18,8 @@
 #include "ibex/ibex.h"
 using namespace ibex;
 
+#include "bpf_localization/functions.hpp"
+
 class ReturnIMU
 {
     public:
