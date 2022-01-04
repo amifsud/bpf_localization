@@ -117,7 +117,17 @@ class TranslationFunction: public SpecializedFunction
             for(unsigned int u = 0; u < trans_.size(); ++u)
                 nodes_.add(x->operator[](i+u)+trans_[u]);
         }
+
+        const ExprApply& operator+(SubVariable* x)
+        {
+            return this->operator()(x, x->index()); 
+        }
 };
+
+const ExprApply& operator+(SubVariable* x, TranslationFunction& t)
+{
+    return t.operator()(x, x->index()); 
+}
 
 class QuaternionFunction: public MatrixFunction
 {

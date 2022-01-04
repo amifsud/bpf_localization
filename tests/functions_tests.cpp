@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include "bpf_localization/utils.hpp"
 
-TEST(FunctionsTest, testFunctions)
+TEST(FunctionsTest, testMatrixFunction)
 {
     IntervalMatrix m(3,2);
     m[0][0] = 1.;
@@ -32,6 +32,66 @@ TEST(FunctionsTest, testFunctions)
     x1_result[0] = Interval(5., 5.);
     x1_result[1] = Interval(11., 11.);
     x1_result[2] = Interval(17., 17.);
+
+    EXPECT_TRUE(x1 == x1_result) << "wrong matrix multiplication";
+}
+
+TEST(FunctionsTest, testTranslationFunction1)
+{
+    IntervalVector t(3);
+    t[0] = 1.;
+    t[1] = 2.;
+    t[2] = 3.;
+
+    TranslationFunction translation(t);
+
+    SubVariable x(5, 2, 3);
+    SubVariable* px = &x;
+
+    IntervalVector x0(5);
+    x0[0] = 1.;
+    x0[1] = 2.;
+    x0[2] = 1.;
+    x0[3] = 2.;
+    x0[4] = 5.;
+
+    Function function(*px, translation+px);
+    IntervalVector x1 = function.eval_vector(x0);
+
+    IntervalVector x1_result(3);
+    x1_result[0] = Interval(2., 2.);
+    x1_result[1] = Interval(4., 4.);
+    x1_result[2] = Interval(8., 8.);
+
+    EXPECT_TRUE(x1 == x1_result) << "wrong matrix multiplication";
+}
+
+TEST(FunctionsTest, testTranslationFunction2)
+{
+    IntervalVector t(3);
+    t[0] = 1.;
+    t[1] = 2.;
+    t[2] = 3.;
+
+    TranslationFunction translation(t);
+
+    SubVariable x(5, 2, 3);
+    SubVariable* px = &x;
+
+    IntervalVector x0(5);
+    x0[0] = 1.;
+    x0[1] = 2.;
+    x0[2] = 1.;
+    x0[3] = 2.;
+    x0[4] = 5.;
+
+    Function function(*px, px+translation);
+    IntervalVector x1 = function.eval_vector(x0);
+
+    IntervalVector x1_result(3);
+    x1_result[0] = Interval(2., 2.);
+    x1_result[1] = Interval(4., 4.);
+    x1_result[2] = Interval(8., 8.);
 
     EXPECT_TRUE(x1 == x1_result) << "wrong matrix multiplication";
 }

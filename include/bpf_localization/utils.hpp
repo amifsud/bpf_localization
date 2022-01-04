@@ -8,8 +8,6 @@
 #include <random>
 #include <memory>
 #include <math.h>
-//#include <Eigen/Core>
-//#include <Eigen/Cholesky>
 
 #define NaN std::numeric_limits<double>::quiet_NaN()
 
