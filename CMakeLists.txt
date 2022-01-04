@@ -320,6 +320,14 @@ if(TARGET boat_bpf_localization_tests)
     )
 endif()
 
+catkin_add_gtest(functions_tests tests/functions_tests.cpp)
+if(TARGET functions_tests)
+    target_link_libraries(functions_tests
+        ${catkin_LIBRARIES}
+        ${IBEX_DEPENDENCIES}
+    )
+endif()
+
 ## ROSTESTS
 
 add_rostest_gtest(tests_imu_standalone rostests/imu_standalone.test tests/rostest_imu_standalone.cpp)
