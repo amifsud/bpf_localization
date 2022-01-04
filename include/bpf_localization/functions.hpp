@@ -6,7 +6,6 @@ class SpecializedFunction
     protected:
         Function* func_;
         Array<const ExprNode> nodes_;
-        bool func_defined_;
 
     protected:
         virtual void computeNodes(Variable* x, unsigned int i) = 0;
@@ -16,17 +15,16 @@ class SpecializedFunction
             computeNodes(x, i);
 	        const ExprVector& vec = ExprVector::new_(nodes_, false);
             func_ = new Function(*x, vec);
-            func_defined_ = true;
         }
 
     public:
-        SpecializedFunction(): func_defined_(false)
+        SpecializedFunction()
         {
         }
 
         const ExprApply& operator()(Variable* state, unsigned int i)
         {
-            if(!func_defined_) define_func(state, i);
+            define_func(state, i);
             return func_->operator()(*state);
         }
 };
