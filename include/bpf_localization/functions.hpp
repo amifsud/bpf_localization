@@ -67,7 +67,8 @@ class MatrixFunction: public SpecializedFunction
             mat_ = mat;
         }
 
-        MatrixFunction(unsigned int rows, unsigned int cols): mat_(rows, cols, Interval(0., 0.))
+        MatrixFunction(unsigned int rows, unsigned int cols)
+            : mat_(rows, cols, Interval(0., 0.))
         {
         }
 
@@ -97,6 +98,20 @@ class MatrixFunction: public SpecializedFunction
         const ExprApply& operator*(SubVariable* x)
         {
             return this->operator()(x, x->index()); 
+        }
+
+        IntervalMatrix getIntervalMatrix()
+        {
+            return mat_;
+        }
+
+        static MatrixFunction identity(unsigned int size)
+        {
+            IntervalMatrix m(size, size, Interval(0., 0.));
+
+            for(auto i = 0; i < size; i++) m[i][i] = Interval(1., 1.);
+
+            return MatrixFunction(m); 
         }
 };
 
