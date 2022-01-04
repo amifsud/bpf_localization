@@ -1,6 +1,31 @@
 #ifndef GEOMETRY
 #define GEOMETRY
 
+class SubVariable: public Variable
+{
+    protected:
+        unsigned int index_;
+        unsigned int sub_size_;
+
+    public:
+        SubVariable(unsigned int size, unsigned int i, unsigned int sub_size)
+            : Variable(size)
+        {
+            index_ = i;
+            sub_size_ = sub_size;
+        }
+
+        unsigned int index()
+        {
+            return index_;
+        }
+
+        unsigned int sub_size()
+        {
+            return sub_size_;
+        }
+};
+
 class SpecializedFunction
 {
     protected:
@@ -26,31 +51,6 @@ class SpecializedFunction
         {
             define_func(state, i);
             return func_->operator()(*state);
-        }
-};
-
-class SubVariable: public Variable
-{
-    protected:
-        unsigned int index_;
-        unsigned int sub_size_;
-
-    public:
-        SubVariable(unsigned int size, unsigned int i, unsigned int sub_size)
-            : Variable(size)
-        {
-            index_ = i;
-            sub_size_ = sub_size;
-        }
-
-        unsigned int index()
-        {
-            return index_;
-        }
-
-        unsigned int sub_size()
-        {
-            return sub_size_;
         }
 };
 
