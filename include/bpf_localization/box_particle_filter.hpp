@@ -417,7 +417,7 @@ class BoxParticleFilter
 
         #if RESAMPLING_DIRECTION == 0
         // Random
-        unsigned int getDirection(IntervalVector& box)
+        unsigned int getRandomDirection(IntervalVector& box)
         {
             ROS_DEBUG_STREAM("Get random direction for resampling begin");
             std::default_random_engine generator;
@@ -428,7 +428,7 @@ class BoxParticleFilter
 
         #if RESAMPLING_DIRECTION == 1
         // Geometrical
-        unsigned int getDirection(IntervalVector& box)
+        unsigned int getGeometricalDirection(IntervalVector& box)
         {
             ROS_DEBUG_STREAM("Get geometrical direction for resampling begin");
             double norm;
@@ -455,7 +455,7 @@ class BoxParticleFilter
 
         #if RESAMPLING_DIRECTION == 2
         // Maximum Likelihood
-        unsigned int getDirection(IntervalVector& box)
+        unsigned int getMaximumLikelihoodDirection(IntervalVector& box)
         {
             ROS_DEBUG_STREAM("Get maximum likelihood direction for resampling begin");
             ROS_ERROR_STREAM("Not implemented yet");
@@ -463,6 +463,17 @@ class BoxParticleFilter
             return 0;
         }
         #endif
+
+        unsigned int getDirection(IntervalVector& box)
+        {
+            #if RESAMPLING_DIRECTION == 0
+            return getRandomDirection(box);
+            #elif RESAMPLING_DIRECTION == 1
+            return getGeometricalDirection(box);
+            #elif RESAMPLING_DIRECTION == 2
+            retrun getMaximumLikelihoodDirection(box);
+            #endif
+        }
 
         void resampling(BOXES_TYPE input_boxes_type = BOXES_TYPE::CORRECTION)
         {
