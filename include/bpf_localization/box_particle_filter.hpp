@@ -289,45 +289,54 @@ class BoxParticleFilter
         /*** Paving ***/
 
         #if INIT_METHOD == 0
-        void initializeBoxes(const IntervalVector& initial_box)
+        Particles uniformSubpaving(Particle particle, unsigned int N)
         {
             ROS_DEBUG_STREAM("Uniformly choosen paving initialization begin");
-            // We choose to subdvise the initial box with equal size boxes (1)
-
-            Particles* particles = getParticlesPtr();
-            particles->clear();
-            particles->append(Particle(initial_box, 1.));
-            particles->subdivise(0, SUBDIVISION_TYPE::RANDOM, N_);
-            particles->resetWeightsUniformly();
-
+            Particles particles(particle.subdivise(SUBDIVISION_TYPE::RANDOM, N));
             ROS_DEBUG_STREAM("Uniformly choosen paving initialization end");
+            return particles;
         }
         #endif
 
         #if INIT_METHOD == 1
-        void initializeBoxes(const IntervalVector& initial_box)
+        Particles allDimensionsSubpaving(Particle particle, unsigned int N)
         {
             ROS_DEBUG_STREAM("Uniform paving initialization begin");
-
-            Particles* particles = getParticlesPtr();
-            particles->clear();
-            particles->append(Particle(initial_box, 1.));
+            Particles particles(particle);
 
             unsigned int current_particles_nb = 1;
 
-            while(current_particles_nb*pow(2,dynamical_model_->stateSize()) <= N_)
+            while(current_particles_nb*pow(2,dynamical_model_->stateSize()) <= N)
             {
                 for(unsigned int box_i = 0; box_i < current_particles_nb; ++box_i)
-                    particles->subdivise
-                        (0, SUBDIVISION_TYPE::ALL_DIMENSIONS, dynamical_model_->stateSize());
-                current_particles_nb = particles->size();
+                {
+                    particles.append(
+                        particles[0].subdivise(SUBDIVISION_TYPE::ALL_DIMENSIONS));
+                    particles.erase(particles.begin());
+                }
+                current_particles_nb = particles.size();
             }
 
-            particles->resetWeightsUniformly();
-
             ROS_DEBUG_STREAM("Uniform paving initialization end");
+
+            return particles;
         }
         #endif
+
+        void initializeParticles(const IntervalVector& initial_box)
+        {
+            Particles* particles = getParticlesPtr();
+            particles->clear();
+
+            #if INIT_METHOD == 0
+            particles->append(uniformSubpaving(Particle(initial_box, 1.), N_));
+            #endif
+            #if INIT_METHOD == 1
+            particles->append(allDimensionsSubpaving(Particle(initial_box, 1.), N_));
+            #endif
+
+            particles->resetWeightsUniformly();
+        }
 
         /*** Contraction ***/
 
@@ -515,7 +524,7 @@ class BoxParticleFilter
  
             dynamical_model_ = dynamical_model;            
             N_ = N;
-            initializeBoxes(initial_box);
+            initializeParticles(initial_box);
             parallelize_ = parallelize;
         }
 
@@ -525,7 +534,7 @@ class BoxParticleFilter
             : uniform_distribution_(0.0, 1.0)
         {
             N_ = N;
-            initializeBoxes(initial_box);
+            initializeParticles(initial_box);
             parallelize_ = parallelize;
         }
 
