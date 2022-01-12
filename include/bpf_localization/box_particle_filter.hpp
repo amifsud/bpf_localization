@@ -2,6 +2,7 @@
  *
  *  - implement maximum likelihood resqmpling direction choice
  *  - particles are composed of AND/OR(IntervalVector, kernel, maps, ...) and weights
+ *  - stop keeping memory of Particles (heavy, to useful)
  *
  */
 
@@ -61,11 +62,6 @@ class Particle : public IntervalVector
         // Random
         std::uniform_real_distribution<double> uniform_distribution_;
 
-        // For subdivisions
-        std::deque<Particle> boxes, boxes_tmp;
-        std::pair<IntervalVector, IntervalVector> pair;
-        unsigned int direction;
-
         double          weight_;
 
     protected:
@@ -75,10 +71,9 @@ class Particle : public IntervalVector
         std::deque<Particle> subdiviseOverAllDimensions(unsigned int dim = 0)
         {
             ROS_DEBUG("Subdivise over all dimensions begin");
-            boxes.clear();
-            boxes_tmp.clear();
+            std::deque<Particle> boxes, boxes_tmp;
 
-            pair = this->bisect(dim); 
+            std::pair<IntervalVector, IntervalVector> pair = this->bisect(dim);
 
             if(dim < this->size() - 1)
             {
@@ -103,12 +98,13 @@ class Particle : public IntervalVector
             (const unsigned int dim, const unsigned int N = 1)
         {
             ROS_DEBUG("Subdivise over given dimension begin");
-            boxes.clear();
+            std::deque<Particle> boxes;
             if(N > 0) boxes.push_back(*this);
 
             for(unsigned int i = 0; i < N-1; ++i)
             {
-                pair = boxes[0].bisect(dim, 1.-1./(N-i)); 
+                std::pair<IntervalVector, IntervalVector> pair
+                    = boxes[0].bisect(dim, 1.-1./(N-i));
                 boxes.erase(boxes.begin());
                 boxes.push_front(Particle(std::get<0>(pair), 1.));
                 boxes.push_back(Particle(std::get<1>(pair), this->weight_/N));
@@ -122,15 +118,18 @@ class Particle : public IntervalVector
         std::deque<Particle> subdiviseOverRandomDimensions(unsigned int N = 1)
         {
             ROS_DEBUG("Subdivise over random dimension begin");
-            boxes.clear();
+            std::deque<Particle> boxes;
             if(N > 0) boxes.push_back(*this);
             std::random_device rd;
             std::default_random_engine generator(rd());
 
+            unsigned int direction;
+
             while (boxes.size() < N)
             {
                 direction = int(uniform_distribution_(generator) * this->size());
-                pair = boxes[0].bisect(direction, 0.5); 
+                std::pair<IntervalVector, IntervalVector> pair
+                    = boxes[0].bisect(direction, 0.5);
                 boxes.push_back(Particle(std::get<0>(pair), boxes[0].weight_/2.));
                 boxes.push_back(Particle(std::get<1>(pair), boxes[0].weight_/2.));
                 boxes.pop_front();
@@ -144,7 +143,6 @@ class Particle : public IntervalVector
         Particle(const IntervalVector& box, const double weight): 
                 IntervalVector(box),
                 weight_(weight),
-                pair(std::pair<IntervalVector, IntervalVector>(box, box)),
                 uniform_distribution_(0.0,1.0)
         {
             for(auto i = 0; i < box.size(); i++)
