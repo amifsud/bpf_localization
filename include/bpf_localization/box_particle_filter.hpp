@@ -246,7 +246,7 @@ class Particles: public std::deque<Particle>
                         unsigned int N = 1, unsigned int dim = 0)
         {
             this->append(this->operator[](i).subdivise(sub_type, N, dim));
-            this->erase (this->begin());
+            this->erase (this->begin()+i);
         }
 
         /*** Appending ***/
