@@ -475,40 +475,6 @@ class BoxParticleFilter
             #endif
         }
 
-        void resampling(BOXES_TYPE input_boxes_type = BOXES_TYPE::CORRECTION)
-        {
-            ROS_DEBUG_STREAM("Will we resample");
-            Particles* particles = getParticlesPtr(input_boxes_type);
-            resampled_particles_.clear();
-
-            // Check that we need to resample
-            double Neff = 0;
-            for(unsigned int i = 0; i < particles->size(); ++i)
-                Neff += 1./pow((*particles)[i].weight(), 2);
-            if(Neff <= 0.7 * particles->size())
-            {
-                ROS_DEBUG_STREAM("We will resample");
-
-                // Compute number of subdivisions per boxes
-                std::vector<unsigned int> n 
-                    = chooseSubdivisions(particles);
-
-                // Subdivise boxes with ni boxes (delete box if ni=0) 
-                unsigned int i = 0;
-                unsigned int dir;
-                for(auto it = particles->begin(); it < particles->end(); it++, i++)
-                {
-                    dir = getDirection(*it);
-                    resampled_particles_
-                        .append(it->subdivise(SUBDIVISION_TYPE::GIVEN, n[i], dir));
-                }
-
-                resampled_particles_.weigthsNormalization();
-                ROS_DEBUG_STREAM("End resampling");
-            }
-            else{ ROS_DEBUG_STREAM("We don't resample"); }
-        }
-
         Particles* getParticlesPtr(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT)
         {
             switch(boxes_type)
@@ -619,9 +585,43 @@ class BoxParticleFilter
             }
 
             // Resampling (if necessary)
-            resampling(BOXES_TYPE::CORRECTION);
+            //resampling(BOXES_TYPE::CORRECTION);
 
             ROS_DEBUG_STREAM("End correction");
+        }
+
+        void resampling(BOXES_TYPE input_boxes_type = BOXES_TYPE::CORRECTION)
+        {
+            ROS_DEBUG_STREAM("Will we resample");
+            Particles* particles = getParticlesPtr(input_boxes_type);
+            resampled_particles_.clear();
+
+            // Check that we need to resample
+            double Neff = 0;
+            for(unsigned int i = 0; i < particles->size(); ++i)
+                Neff += 1./pow((*particles)[i].weight(), 2);
+            if(Neff <= 0.7 * particles->size())
+            {
+                ROS_DEBUG_STREAM("We will resample");
+
+                // Compute number of subdivisions per boxes
+                std::vector<unsigned int> n
+                    = chooseSubdivisions(particles);
+
+                // Subdivise boxes with ni boxes (delete box if ni=0) 
+                unsigned int i = 0;
+                unsigned int dir;
+                for(auto it = particles->begin(); it < particles->end(); it++, i++)
+                {
+                    dir = getDirection(*it);
+                    resampled_particles_
+                        .append(it->subdivise(SUBDIVISION_TYPE::GIVEN, n[i], dir));
+                }
+
+                resampled_particles_.weigthsNormalization();
+                ROS_DEBUG_STREAM("End resampling");
+            }
+            else{ ROS_DEBUG_STREAM("We don't resample"); }
         }
 
         const Particles& getParticles(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT) const
