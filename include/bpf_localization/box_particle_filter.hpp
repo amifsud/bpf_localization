@@ -221,7 +221,7 @@ class Particles: public std::deque<Particle>
                 it->weight() = 1./this->size();
         }
 
-        std::vector<float> getCumulatedWeights()
+        std::vector<float> getCumulativeWeights()
         {
             std::vector<float> cumulated_weights;
             cumulated_weights.push_back(this->begin()->weight());
@@ -347,17 +347,17 @@ class BoxParticleFilter
         {
             ROS_DEBUG_STREAM("Begin multinomial resampling");
 
-            std::vector<float> cumulated_weights = particles->getCumulatedWeights();
+            std::vector<float> cumulative_weights = particles->getCumulativeWeights();
 
             double ui;
             unsigned int j;
-            std::vector<unsigned int> n(cumulated_weights.size(), 0.0);
+            std::vector<unsigned int> n(cumulative_weights.size(), 0.0);
             for(unsigned int i = 0; i < N_; ++i)
             {
                 std::default_random_engine generator;
                 ui = uniform_distribution_(generator);
                 j=0;
-                while(ui >= cumulated_weights[j]) j++;
+                while(ui >= cumulative_weights[j]) j++;
                 n[j] += 1;
             }
 
@@ -372,9 +372,9 @@ class BoxParticleFilter
         {
             ROS_DEBUG_STREAM("Begin guaranted resampling");
 
-            std::vector<float> cumulated_weights = particles->getCumulatedWeights();
+            std::vector<float> cumulative_weights = particles->getCumulativeWeights();
 
-            std::vector<unsigned int> n(cumulated_weights.size(), 1.0);
+            std::vector<unsigned int> n(cumulative_weights.size(), 1.0);
             unsigned int M = 0;
             for(unsigned int i = 0; n.size(); ++i)
             {
@@ -390,7 +390,7 @@ class BoxParticleFilter
             {
                 ui = uniform_distribution_(generator);
                 j=0;
-                while(ui >= cumulated_weights[j]) j++;
+                while(ui >= cumulative_weights[j]) j++;
                 n[j] += 1;
             }
 
