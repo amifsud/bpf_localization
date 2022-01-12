@@ -351,8 +351,7 @@ class BoxParticleFilter
         /*** Resampling ***/
 
         #if RESAMPLING_METHOD == 0
-        std::vector<unsigned int> 
-            chooseSubdivisions(Particles* particles)
+        std::vector<unsigned int> multinomialSubdivisions(Particles* particles)
         {
             ROS_DEBUG_STREAM("Begin multinomial resampling");
 
@@ -376,8 +375,7 @@ class BoxParticleFilter
         #endif
 
         #if RESAMPLING_METHOD == 1
-        std::vector<unsigned int> 
-            chooseSubdivisions(Particles* particles)
+        std::vector<unsigned int> guarantedSubdivisions(Particles* particles)
         {
             ROS_DEBUG_STREAM("Begin guaranted resampling");
 
@@ -407,6 +405,15 @@ class BoxParticleFilter
             return n;
         }
         #endif
+
+        std::vector<unsigned int> chooseSubdivisions(Particles* particles)
+        {
+            #if RESAMPLING_METHOD == 0
+            return multinomialSubdivisions(particles);
+            #elif RESAMPLING_METHOD == 1
+            return guarantedSubdivisions(particles);
+            #endif
+        }
 
         #if RESAMPLING_DIRECTION == 0
         // Random
