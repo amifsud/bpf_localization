@@ -6,6 +6,13 @@
  *
  */
 
+/**
+ * \file   box_particle_filter.hpp
+ * \brief  Box particle filter
+ * \author Alexis Mifsud
+ * \date   2022 January
+ */
+
 #ifndef BOX_PARTICLE_FILTER
 #define BOX_PARTICLE_FILTER
 
@@ -54,20 +61,42 @@
 using namespace ibex;
 
 enum BOXES_TYPE{PREDICTION, CORRECTION, RESAMPLING, DEFAULT};
-enum SUBDIVISION_TYPE{GIVEN, ALL_DIMENSIONS, RANDOM};
 
+/*! \enum SUBDIVISION_TYPE */
+enum SUBDIVISION_TYPE
+{
+    GIVEN,          /*!< use Particle::subdiviseOverGivenDirection() method */
+    ALL_DIMENSIONS, /*!< use Particle::subdiviseOverAllDimensions() method */
+    RANDOM          /*!< use Particle::subdiviseOverRandomDimensions() method */
+};
+
+/*!
+ * \class Particle
+ * \brief Particle for the box particle filter 
+ *
+ * A particle inherit of an interval vector and has a #weight_. 
+ * It contains several methods to subdivise it, generating Particles object.
+ */
 class Particle : public IntervalVector
 {
     protected:
-        // Random
-        std::uniform_real_distribution<double> uniform_distribution_;
+        /*! weight of the particle */
+        double weight_;
 
-        double          weight_;
+        /*! uniform distribution used to randomly subdivise particles */
+        std::uniform_real_distribution<double> uniform_distribution_;
 
     protected:
         /*** Boxes processing ***/
 
         #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
+        /*! \fn std::deque<Particle> subdiviseOverAllDimensions(unsigned int dim = 0)
+         *
+         *  \brief Recusively subdivise over all dimensions of the particle, begining by dim
+         *
+         *  \param dim dimension we start subdivising
+         *  \return list of particles
+         * */
         std::deque<Particle> subdiviseOverAllDimensions(unsigned int dim = 0)
         {
             ROS_DEBUG("Subdivise over all dimensions begin");
@@ -94,6 +123,15 @@ class Particle : public IntervalVector
         #endif
 
         #ifdef SUBDIVISE_OVER_GIVEN_DIRECTION
+        /*! \fn std::deque<Particle> subdiviseOverGivenDirection(const unsigned int dim, const unsigned int N = 1)
+         *
+         *  \brief Subdivise the dim dimension of the particle (interval vector) N times
+         *
+         *  \param dim dimension to subdivise
+         *  \param N number of subdivisions to make
+         *
+         *  \return list of particles
+         * */
         std::deque<Particle> subdiviseOverGivenDirection
             (const unsigned int dim, const unsigned int N = 1)
         {
@@ -115,6 +153,14 @@ class Particle : public IntervalVector
         }
         #endif
 
+        /*! \fn std::deque<Particle> subdiviseOverRandomDimensions(unsigned int N = 1)
+         *
+         *  \brief Subdivise over random dimensions of the particle (interval vector) N times
+         *
+         *  \param N number of subdivisions to make
+         *
+         *  \return list of particles
+         * */
         std::deque<Particle> subdiviseOverRandomDimensions(unsigned int N = 1)
         {
             ROS_DEBUG("Subdivise over random dimension begin");
@@ -140,6 +186,14 @@ class Particle : public IntervalVector
         }
 
     public:
+        /*! \fn Particle(const IntervalVector& box, const double weight) 
+         *
+         *  \brief Particle constructor
+         *
+         *  \param box interval vector which is the particle
+         *  \param weight weight of the particle
+         *
+         * */
         Particle(const IntervalVector& box, const double weight): 
                 IntervalVector(box),
                 weight_(weight),
@@ -152,6 +206,17 @@ class Particle : public IntervalVector
             }
         }
 
+        /*! \fn std::deque<Particle> subdivise
+            (SUBDIVISION_TYPE sub_type = SUBDIVISION_TYPE::RANDOM,
+             unsigned int N = 1, unsigned int dim = 0) 
+        *   
+        *   \brief Generic subdivise method, where we can select the subdivision method
+        *
+        *   \param sub_type subdivision method defined in #SUBDIVISION_TYPE enum
+        *   \param N (usefullness depending on the choosed method) number of subdivisions
+        *   \param dim (usefullness depending on the choosed method) dimension to subdivise 
+        *
+        */
         std::deque<Particle> subdivise
             (SUBDIVISION_TYPE sub_type = SUBDIVISION_TYPE::RANDOM,
              unsigned int N = 1, unsigned int dim = 0)
@@ -184,14 +249,29 @@ class Particle : public IntervalVector
             return particles;
         }
 
+        /*! \fn double& weight() 
+         *
+         *  \return weight of the particle
+         *
+         * */
         double& weight() { return weight_; }
 };
 
+/*! \class Particles
+ *
+ *  \brief List of Particle
+ *
+ *  Particles inherit of a std::vector of Particle objects.
+ *
+ */
 class Particles: public std::deque<Particle>
 {
     protected:
-        /*** Weights processing ***/
-
+        /*! float sumOfWeights() 
+         *
+         *  \return sum of the weights of the Particle objects in the list
+         *
+         * */
         float sumOfWeights()
         {
             float sum = 0;
@@ -201,26 +281,47 @@ class Particles: public std::deque<Particle>
         }
 
     public:
-        /*** Constructors ***/
-
-        Particles(std::deque<Particle> particles): 
-            std::deque<Particle>(particles)
+        /*! Particles(std::deque<Particle> particles) 
+         *
+         *  \brief Constructor from existing particles
+         *
+         *  \param particles init particles in a std::deque of Particle objects
+         *
+         * */
+        Particles(std::deque<Particle> particles): std::deque<Particle>(particles)
         {
         }
 
-        Particles(): 
-            std::deque<Particle>()
+        /*! Particle() 
+         *
+         *  \brief Constructor for empty list of particles
+         *
+         * */
+        Particles(): std::deque<Particle>()
         {
         }
 
         /*** Weight processing **/
 
+        /*! resetWeightsUniformly() 
+         *
+         *  \brief Reset the weights of the Particle objects to a constant value so that the 
+         *         sum over the list is one
+         *
+         * */
         void resetWeightsUniformly()
         {
             for(auto it = this->begin(); it != this->end(); it++)
                 it->weight() = 1./this->size();
         }
 
+        /*! std::deque<float> getCumulativeWeights() 
+         *
+         *  \brief Get cumulative weights as described in \cite merlinge2018thesis page 19 
+         *
+         *  \return cumulative weights
+         *
+         * */
         std::vector<float> getCumulativeWeights()
         {
             std::vector<float> cumulated_weights;
@@ -232,6 +333,11 @@ class Particles: public std::deque<Particle>
             return cumulated_weights;
         }
 
+        /*! weigthsNormalization() 
+         *
+         *  \brief Normalize the weights of the Particle objects so that their sum is one
+         *
+         * */
         void weigthsNormalization()
         {
             float sum_of_weights = sumOfWeights();
@@ -241,6 +347,17 @@ class Particles: public std::deque<Particle>
 
         /*** Boxes processing **/
 
+        /*! void subdivise( unsigned int i = 0, 
+                        SUBDIVISION_TYPE sub_type = SUBDIVISION_TYPE::RANDOM,
+                        unsigned int N = 1, unsigned int dim = 0) 
+        *
+        *   \brief Subdivise the ith element of the list and delete it
+        *
+        *   \param sub_type #SUBDIVISION_TYPE
+        *   \param N (usefullness determined by the #SUBDIVISION_TYPE) number of subdivisions
+        *   \param dim (usefullness determined by the #SUBDIVISION_TYPE) dimension of subdivision 
+        *
+        */
         void subdivise( unsigned int i = 0, 
                         SUBDIVISION_TYPE sub_type = SUBDIVISION_TYPE::RANDOM,
                         unsigned int N = 1, unsigned int dim = 0)
@@ -251,12 +368,26 @@ class Particles: public std::deque<Particle>
 
         /*** Appending ***/
 
+        /*! void append(std::deque<Particle> particles) 
+         *
+         *  \brief Append a list of particles
+         *
+         *  \param particles std::deque of Particle objects to append
+         *
+         * */
         void append(std::deque<Particle> particles)
         {
             #pragma omp critical
             this->insert(this->end(), particles.begin(), particles.end());
         }
 
+        /*! void append(Particle particles) 
+         *
+         *  \brief Append a particle
+         *
+         *  \param particle Particle to append
+         *
+         * */
         void append(Particle particle)
         {
             #pragma omp critical
@@ -264,31 +395,61 @@ class Particles: public std::deque<Particle>
         }
 };
 
+
+/*! \class BoxParticleFilter
+ *
+ *  \brief Box particle filter, mainly implemented from \cite merlinge2018thesis
+ *
+ *  This a base class which has to be specialized for your system. 
+ *  This class only use the DynamicalModel base class from which particular systems inherit.
+ *
+ * */
 class BoxParticleFilter
 {
     protected:
-        unsigned int N_;                                // Number of particles
+        /*! N maximum number of particles of the box particle filter */
+        unsigned int N_;
 
-        //Random
+        /*! uniform distribution used to randomly subdivise particles */
         std::uniform_real_distribution<double> uniform_distribution_;
 
-        // Dynamical model
+        /*! dynamical model base class from which particular systems inherit */
         std::shared_ptr<DynamicalModel> dynamical_model_;
 
-        // Particles
+        /*! Particles of the box particle filter */
         Particles particles_;
+
         Particles predicted_particles_;
         Particles corrected_particles_;
         Particles resampled_particles_;
 
-        // Booleans
+        /*! Is the particles been resampled or not */
         bool resampled_;
+
+        /*! Do we parallelize prediction or not 
+         *
+         *  **WARNING : DynIbex doesn't seem thread safe, so parallelization don't work**
+         *
+         * */
         bool parallelize_;
 
     protected:
-        /*** Paving ***/
+        /*! \name Initial paving */
 
-        #if INIT_METHOD == 0
+        ///@{
+        #if INIT_METHOD == 0 | DOXYGEN
+        /*! \fn void uniformSubpaving(Particles* particles) 
+         *
+         *  \brief Particles subpaving from the subdivision of an initial box
+         *
+         *  Used if INIT_METHOD == 0
+         *
+         *  **Uniform subpaving method**
+         *
+         *  \param N exact number of resulting particles
+         *  \param particles the Particles object that contains the init Particle
+         *
+         * */
         Particles uniformSubpaving(Particle particle, unsigned int N)
         {
             ROS_DEBUG_STREAM("Uniformly choosen paving initialization begin");
@@ -298,7 +459,19 @@ class BoxParticleFilter
         }
         #endif
 
-        #if INIT_METHOD == 1
+        #if INIT_METHOD == 1 | DOXYGEN
+        /*! \fn void allDimensionsSubpaving(Particles* particles) 
+         *
+         *  \brief Particles subpaving from the subdivision of an initial box
+         *
+         *  Used if INIT_METHOD == 1
+         *
+         *  **Subpaving over all dimensions method**
+         *  
+         *  \param N maximum of resulting particles
+         *  \param particles the Particles object that contains the initial Particle objects
+         *
+         * */
         Particles allDimensionsSubpaving(Particle particle, unsigned int N)
         {
             ROS_DEBUG_STREAM("Uniform paving initialization begin");
@@ -323,6 +496,13 @@ class BoxParticleFilter
         }
         #endif
 
+        /*! void initializeParticles(const IntervalVector& initial_box)
+         *
+         *  \brief Initialization of the Particles from an initial interval vector
+         *
+         *  \param initial_box initial interval vector to subpave
+         *
+         * */
         void initializeParticles(const IntervalVector& initial_box)
         {
             Particles* particles = getParticlesPtr();
@@ -337,20 +517,39 @@ class BoxParticleFilter
 
             particles->resetWeightsUniformly();
         }
+        ///@}
 
-        /*** Contraction ***/
-
+        /*! virtual IntervalVector contract(IntervalVector& innovation, IntervalVector& box)
+         *
+         *  \brief Contract box according to the innovation
+         *
+         *  \param innovation
+         *  \param box box to contract
+         *
+         *  Use a contractor to found the box subset that give the innovation 
+         *  (i.e. (predicted measures) & (measures)) by the measures dynamics
+         *
+         */
         virtual IntervalVector contract(IntervalVector& innovation, IntervalVector& box)
         {
-            // Use a contractor to found the box subset that give the innovation 
-            // (i.e. (predicted measures) & (measures)) by the measures dynamics
             ROS_ASSERT_MSG(false, "Contraction with respect to innovation not set");
             return box;
         }
 
-        /*** Resampling ***/
+        /*! \name Number of subdivision choice */
+        ///@{
 
-        #if RESAMPLING_METHOD == 0
+        #if RESAMPLING_METHOD == 0 | DOXYGEN
+        /*!  std::vector<unsigned int> multinomialSubdivisions(Particles* particles)
+         *
+         *  \brief Multinomial algorithm to determine the number of Particle subdivision
+         *
+         *  Used if RESAMPLING_METHOD == 0
+         *
+         *  For each particle, determine the number of subdivision to perform, using the multinomial 
+         *  algortihm in \cite merlinge2018thesis (algorithm 3 page 19)
+         *
+         * */
         std::vector<unsigned int> multinomialSubdivisions(Particles* particles)
         {
             ROS_DEBUG_STREAM("Begin multinomial resampling");
@@ -374,7 +573,17 @@ class BoxParticleFilter
         }
         #endif
 
-        #if RESAMPLING_METHOD == 1
+        #if RESAMPLING_METHOD == 1 | DOXYGEN
+        /*!  std::vector<unsigned int> gurantedSubdivisions(Particles* particles)
+         *
+         *  \brief Guaranted algorithm to determine the number of Particle subdivision
+         *
+         *  Used if RESAMPLING_METHOD == 1
+         *
+         *  For each particle, determine the number of subdivision to perform, using the guaranted 
+         *  algortihm in \cite merlinge2018thesis (algorithm 6 page 72)
+         *
+         * */
         std::vector<unsigned int> guarantedSubdivisions(Particles* particles)
         {
             ROS_DEBUG_STREAM("Begin guaranted resampling");
@@ -406,6 +615,15 @@ class BoxParticleFilter
         }
         #endif
 
+        /*!  std::vector<unsigned int> gurantedSubdivisions(Particles* particles)
+         *
+         *  \brief Determine the number of Particle subdivision
+         *
+         *  For each particle, determine the number of subdivision to perform
+         *
+         *  \param particles Particles to subdivise
+         *
+         * */
         std::vector<unsigned int> chooseSubdivisions(Particles* particles)
         {
             #if RESAMPLING_METHOD == 0
@@ -414,9 +632,24 @@ class BoxParticleFilter
             return guarantedSubdivisions(particles);
             #endif
         }
+        ///@}
 
-        #if RESAMPLING_DIRECTION == 0
-        // Random
+        /*! \name Resampling direction */
+
+        ///@{
+        #if RESAMPLING_DIRECTION == 0 | DOXYGEN
+        /*! unsigned int getRandomDirection(IntervalVector& box)
+         * 
+         *  \brief Get random direction for subdivision
+         *
+         *  Used if RESAMPLING_DIRECTION == 0
+         *
+         *  The direction is choosed randomly with an uniform distribution
+         *
+         *  \param size size of the box to subdivise
+         *  \result the dimension to subdivise
+         *
+         */
         unsigned int getRandomDirection(IntervalVector& box)
         {
             ROS_DEBUG_STREAM("Get random direction for resampling begin");
@@ -426,8 +659,19 @@ class BoxParticleFilter
         }
         #endif
 
-        #if RESAMPLING_DIRECTION == 1
-        // Geometrical
+        #if RESAMPLING_DIRECTION == 1 | DOXYGEN
+        /*! unsigned int getGeometricalDirection(IntervalVector& box)
+         * 
+         *  \brief Get geometrical direction for subdivision
+         *
+         *  Used if RESAMPLING_DIRECTION == 1
+         *
+         *  The direction is choosed geometrically like in \cite merlinge2018thesis (section 4.3.1 page 87)
+         *
+         *  \param size size of the box to subdivise
+         *  \result the dimension to subdivise
+         *
+         */
         unsigned int getGeometricalDirection(IntervalVector& box)
         {
             ROS_DEBUG_STREAM("Get geometrical direction for resampling begin");
@@ -453,8 +697,20 @@ class BoxParticleFilter
         }
         #endif
 
-        #if RESAMPLING_DIRECTION == 2
-        // Maximum Likelihood
+        #if RESAMPLING_DIRECTION == 2 | DOXYGEN
+        /*! unsigned int getMaximumlikelihoodDirection(IntervalVector& box)
+         * 
+         *  \brief Get maximum likelihood direction for subdivision
+         *
+         *  Used if RESAMPLING_DIRECTION == 2
+         *
+         *  The direction is choosed maximizing the likelihood like in 
+         *  \cite merlinge2018thesis (section 4.3.2 page 88)
+         *
+         *  \param size size of the box to subdivise
+         *  \result the dimension to subdivise
+         *
+         */
         unsigned int getMaximumLikelihoodDirection(IntervalVector& box)
         {
             ROS_DEBUG_STREAM("Get maximum likelihood direction for resampling begin");
@@ -464,6 +720,17 @@ class BoxParticleFilter
         }
         #endif
 
+        /*! unsigned int getDirection(IntervalVector& box)
+         * 
+         *  \brief Get maximum likelihood direction for subdivision
+         *
+         *  The direction is choosed maximizing the likelihood like in 
+         *  \cite merlinge2018thesis (section 4.3.2 page 88)
+         *
+         *  \param size size of the box to subdivise
+         *  \result the dimension to subdivise
+         *
+         */
         unsigned int getDirection(IntervalVector& box)
         {
             #if RESAMPLING_DIRECTION == 0
@@ -474,6 +741,7 @@ class BoxParticleFilter
             retrun getMaximumLikelihoodDirection(box);
             #endif
         }
+        ///@}
 
         Particles* getParticlesPtr(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT)
         {
@@ -487,6 +755,11 @@ class BoxParticleFilter
             }
         }
 
+        /*! assertReady()
+         *
+         *  \brief Assert that the box particle filter can be used
+         *
+         */
         void assertReady()
         {
             assert(dynamical_model_ != NULL && "Dynamical model not set");
@@ -495,8 +768,22 @@ class BoxParticleFilter
         }
 
     public:
-        /*** Box particle filter steps ***/
+        /*! \name Constructors */
 
+        ///@{
+        /*! BoxParticleFilter(  unsigned int N, 
+                            IntervalVector& initial_box,
+                            std::shared_ptr<DynamicalModel> dynamical_model,
+                            bool parallelize = false)
+        *
+        *   \brief Constructor
+        *
+        *   \param N number of particles
+        *   \param initial_box initial interval vector that encapsulate all possible states
+        *   \param dynamical dynamical model on which to apply the filter
+        *   \param parallelize use parallelization or not (**WARNING : DynIbex is not thread safe**)
+        *
+        */
         BoxParticleFilter(  unsigned int N, 
                             IntervalVector& initial_box,
                             std::shared_ptr<DynamicalModel> dynamical_model,
@@ -512,6 +799,20 @@ class BoxParticleFilter
             parallelize_ = parallelize;
         }
 
+        /*! BoxParticleFilter(  unsigned int N, 
+                            IntervalVector& initial_box,
+                            bool parallelize = false)
+        *
+        *   \brief Constructor 
+        *
+        *   Constructor without dynamical model (to be set after, assertReady() will prevent 
+        *   using the filter without it)
+        *
+        *   \param N number of particles
+        *   \param initial_box initial interval vector that encapsulate all possible states
+        *   \param parallelize use parallelization or not (**WARNING : DynIbex is not thread safe**)
+        *
+        */
         BoxParticleFilter(  unsigned int N, 
                             const IntervalVector& initial_box,
                             bool parallelize = false)
@@ -522,6 +823,20 @@ class BoxParticleFilter
             parallelize_ = parallelize;
         }
 
+        /*! BoxParticleFilter(  unsigned int N, 
+                            const Particles& particles,
+                            bool parallelize = false)
+        *
+        *   \brief Constructor 
+        *
+        *   Constructor without dynamical model (to be set after, assertReady() will prevent 
+        *   using the filter without it) and from an existing set of particles
+        *
+        *   \param N number of particles
+        *   \param particles initial set of Particles
+        *   \param parallelize use parallelization or not (**WARNING : DynIbex is not thread safe**)
+        *
+        */
         BoxParticleFilter(  unsigned int N, 
                             const Particles& particles,
                             bool parallelize = false)
@@ -531,9 +846,22 @@ class BoxParticleFilter
             particles_ = particles;
             parallelize_ = parallelize;
         }
+        ///@}
 
-        void prediction(IntervalVector& control, 
-                        BOXES_TYPE input_boxes_type = BOXES_TYPE::DEFAULT)
+        /*! \name Box particle filter workflow */
+
+        ///@{
+        /*! void prediction(IntervalVector& control, BOXES_TYPE input_boxes_type = BOXES_TYPE::DEFAULT)
+         *
+         *  \brief Predict the Particles evolution using the control
+         *
+         *  \param control control to apply to each Particle in #particles_
+         *
+         *  Use the #dynamical_model_ to predict the evolution of each Particle in #particles_ when we 
+         *  apply the control
+         *
+         */
+        void prediction(IntervalVector& control, BOXES_TYPE input_boxes_type = BOXES_TYPE::DEFAULT)
         {
             ROS_DEBUG_STREAM("prediction begin");
             assertReady();
@@ -560,8 +888,17 @@ class BoxParticleFilter
             ROS_DEBUG_STREAM("prediction end");
         }
 
-        void correction(const IntervalVector& measures,
-                        BOXES_TYPE input_boxes_type = BOXES_TYPE::PREDICTION) 
+        /*! void correction(const IntervalVector& measures, BOXES_TYPE input_boxes_type = BOXES_TYPE::PREDICTION) 
+         *
+         *  \brief Correct the prediction by contracting with the measures
+         *
+         *  \param measures measures used to contract
+         *
+         *  Use the #dynamical_model_ to link the predicted #particles_ to the measures and contract using the 
+         *  contract() method to correct them.
+         *
+         * */
+        void correction(const IntervalVector& measures, BOXES_TYPE input_boxes_type = BOXES_TYPE::PREDICTION)
         {   
             ROS_DEBUG_STREAM("Begin correction");
             assertReady();
@@ -590,6 +927,14 @@ class BoxParticleFilter
             ROS_DEBUG_STREAM("End correction");
         }
 
+        /*! void resampling(BOXES_TYPE input_boxes_type = BOXES_TYPE::CORRECTION)
+         *
+         *  \brief Resampling the Particles in particles_ if necessary
+         *
+         *  Use the preprocessor definitions RESAMPLING_METHOD and RESAMPLING_DIRECTION 
+         *  to choose the resampling scheme
+         *
+         */
         void resampling(BOXES_TYPE input_boxes_type = BOXES_TYPE::CORRECTION)
         {
             ROS_DEBUG_STREAM("Will we resample");
@@ -623,7 +968,16 @@ class BoxParticleFilter
             }
             else{ ROS_DEBUG_STREAM("We don't resample"); }
         }
+        ///@}
 
+        /*! \name Getters */
+        ///@{
+
+        /*! const unsigned int& N() const */
+        const unsigned int& N() const { return N_; }
+        /*! std::shared_ptr<DynamicalModel> dynamicalModel() const */
+        std::shared_ptr<DynamicalModel> dynamicalModel() const { return dynamical_model_; }
+        /*! const Particles& getParticles(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT) const */
         const Particles& getParticles(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT) const
         {
             switch(boxes_type)
@@ -636,8 +990,7 @@ class BoxParticleFilter
             }
         }
 
-        const unsigned int& N() const { return N_; }
-        std::shared_ptr<DynamicalModel> dynamicalModel() const { return dynamical_model_; }
+        ///@}
 };
 
 #endif
