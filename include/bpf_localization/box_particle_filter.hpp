@@ -66,7 +66,7 @@
 
 #include <omp.h>
 #include "bpf_localization/particles.hpp"
-#include "bpf_localization/dynamical_systems.hpp"
+#include "bpf_localization/dynamical_systems/dynamical_systems.hpp"
 
 using namespace ibex;
 

@@ -264,7 +264,8 @@ if(TARGET bpf_init_tests_uniform_paving)
     )
 endif()
 
-catkin_add_gtest(bpf_init_tests_uniformly_choosen_paving tests/bpf_init_tests_uniformly_choosen_paving.cpp)
+catkin_add_gtest(   bpf_init_tests_uniformly_choosen_paving 
+                    tests/bpf_init_tests_uniformly_choosen_paving.cpp)
 if(TARGET bpf_init_tests_uniformly_choosen_paving)
     target_link_libraries(bpf_init_tests_uniformly_choosen_paving
         ${catkin_LIBRARIES}
@@ -280,7 +281,8 @@ endif()
 #    )
 #endif()
 
-catkin_add_gtest(guaranted_integration_tests tests/guaranted_integration_tests.cpp)
+catkin_add_gtest(   guaranted_integration_tests
+                    tests/dynamical_systems/guaranted_integration_tests.cpp)
 if(TARGET guaranted_integration_tests)
     target_link_libraries(guaranted_integration_tests
         ${catkin_LIBRARIES}
@@ -288,7 +290,8 @@ if(TARGET guaranted_integration_tests)
     )
 endif()
 
-catkin_add_gtest(non_guaranted_interval_HEUN_integration_tests tests/non_guaranted_interval_HEUN_integration_tests.cpp)
+catkin_add_gtest(   non_guaranted_interval_HEUN_integration_tests
+                    tests/dynamical_systems/non_guaranted_interval_HEUN_integration_tests.cpp)
 if(TARGET non_guaranted_interval_HEUN_integration_tests)
     target_link_libraries(non_guaranted_interval_HEUN_integration_tests
         ${catkin_LIBRARIES}
@@ -296,7 +299,8 @@ if(TARGET non_guaranted_interval_HEUN_integration_tests)
     )
 endif()
 
-catkin_add_gtest(non_guaranted_affine_HEUN_integration_tests tests/non_guaranted_affine_HEUN_integration_tests.cpp)
+catkin_add_gtest(   non_guaranted_affine_HEUN_integration_tests
+                    tests/dynamical_systems/non_guaranted_affine_HEUN_integration_tests.cpp)
 if(TARGET non_guaranted_affine_HEUN_integration_tests)
     target_link_libraries(non_guaranted_affine_HEUN_integration_tests
         ${catkin_LIBRARIES}
@@ -304,7 +308,8 @@ if(TARGET non_guaranted_affine_HEUN_integration_tests)
     )
 endif()
 
-catkin_add_gtest(imu_dynamical_model_tests tests/imu_dynamical_model_tests.cpp)
+catkin_add_gtest(   imu_dynamical_model_tests 
+                    tests/dynamical_systems/imu_dynamical_model_tests.cpp)
 if(TARGET imu_dynamical_model_tests)
     target_link_libraries(imu_dynamical_model_tests
         ${catkin_LIBRARIES}
@@ -320,7 +325,7 @@ if(TARGET boat_bpf_localization_tests)
     )
 endif()
 
-catkin_add_gtest(functions_tests tests/functions_tests.cpp)
+catkin_add_gtest(functions_tests tests/dynamical_systems/functions_tests.cpp)
 if(TARGET functions_tests)
     target_link_libraries(functions_tests
         ${catkin_LIBRARIES}

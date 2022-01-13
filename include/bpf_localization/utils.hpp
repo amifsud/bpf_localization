@@ -16,7 +16,7 @@
 #include "ibex/ibex.h"
 using namespace ibex;
 
-#include "bpf_localization/functions.hpp"
+#include "bpf_localization/dynamical_systems/functions.hpp"
 
 class ReturnIMU
 {

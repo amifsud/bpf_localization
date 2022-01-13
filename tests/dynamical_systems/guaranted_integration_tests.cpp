@@ -1,8 +1,8 @@
 #define LOG_LEVEL Info
-#define INTEGRATION_METHOD  2
+#define INTEGRATION_METHOD  0
 
 #include <gtest/gtest.h>
-#include "bpf_localization/dynamical_systems.hpp"
+#include "bpf_localization/dynamical_systems/dynamical_systems.hpp"
 
 TEST(GuarantedIntegrationTest, testDynamics1)
 {
