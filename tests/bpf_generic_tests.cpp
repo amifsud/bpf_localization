@@ -42,7 +42,7 @@ TEST(GenericTests, testCase1)
     BoxParticleFilter bpf(N, initial_box, turtlebot);
 
     bpf.prediction(control);
-    Particles particles = bpf.getParticles(BOXES_TYPE::PREDICTION);
+    Particles particles = bpf.getParticles();
 
     EXPECT_TRUE(particles.size() == N) << "Wrong particles number";
 

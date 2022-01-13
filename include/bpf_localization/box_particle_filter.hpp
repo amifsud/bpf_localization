@@ -2,7 +2,6 @@
  *
  *  - implement maximum likelihood resqmpling direction choice
  *  - particles are composed of AND/OR(IntervalVector, kernel, maps, ...) and weights
- *  - stop keeping memory of Particles (heavy, to useful)
  *
  */
 
@@ -39,8 +38,10 @@
  *
  *  \brief Resampling method
  *
- *  * 0 : Multinomial resampling : For each particle, determine the number of subdivision to perform, using the multinomial algortihm in \cite merlinge2018thesis (algorithm 3 page 19)
- *  * 1 : Guaranted resampling : For each particle, determine the number of subdivision to perform, using the guaranted  algortihm in \cite merlinge2018thesis (algorithm 6 page 72)
+ *  * 0 : Multinomial resampling : For each particle, determine the number of subdivision to perform, 
+ *        using the multinomial algortihm in \cite merlinge2018thesis (algorithm 3 page 19)
+ *  * 1 : Guaranted resampling : For each particle, determine the number of subdivision to perform, 
+ *        using the guaranted  algortihm in \cite merlinge2018thesis (algorithm 6 page 72)
  *
  */
 #ifndef RESAMPLING_METHOD
@@ -52,8 +53,10 @@
  * \brief Resamplinmg direction
  *
  * * 0 : Random direction : The direction is choosed randomly with an uniform distribution
- * * 1 : Geometrical direction : The direction is choosed geometrically like in \cite merlinge2018thesis (section 4.3.1 page 87)
- * * 2 : Maximum likelihood : The direction is choosed maximizing the likelihood like in \cite merlinge2018thesis (section 4.3.2 page 88)
+ * * 1 : Geometrical direction : The direction is choosed geometrically like in \cite merlinge2018thesis 
+ *       (section 4.3.1 page 87)
+ * * 2 : Maximum likelihood : The direction is choosed maximizing the likelihood like in 
+ *       \cite merlinge2018thesis (section 4.3.2 page 88)
  *
  */
 #ifndef RESAMPLING_DIRECTION
@@ -69,8 +72,6 @@ using namespace ibex;
 
 namespace bpf
 {
-    enum BOXES_TYPE{PREDICTION, CORRECTION, RESAMPLING, DEFAULT};
-
     /*! \class BoxParticleFilter
      *
      *  \brief Box particle filter, mainly implemented from \cite merlinge2018thesis
@@ -93,10 +94,6 @@ namespace bpf
 
             /*! Particles of the box particle filter */
             Particles particles_;
-
-            Particles predicted_particles_;
-            Particles corrected_particles_;
-            Particles resampled_particles_;
 
             /*! Is the particles been resampled or not */
             bool resampled_;
@@ -180,17 +177,14 @@ namespace bpf
              * */
             void initializeParticles(const IntervalVector& initial_box)
             {
-                Particles* particles = getParticlesPtr();
-                particles->clear();
-
                 #if INIT_METHOD == 0
-                particles->append(uniformSubpaving(Particle(initial_box, 1.), N_));
+                particles_.append(uniformSubpaving(Particle(initial_box, 1.), N_));
                 #endif
                 #if INIT_METHOD == 1
-                particles->append(allDimensionsSubpaving(Particle(initial_box, 1.), N_));
+                particles_.append(allDimensionsSubpaving(Particle(initial_box, 1.), N_));
                 #endif
 
-                particles->resetWeightsUniformly();
+                particles_.resetWeightsUniformly();
             }
             ///@}
 
@@ -341,7 +335,8 @@ namespace bpf
              *
              *  Used if RESAMPLING_DIRECTION == 1
              *
-             *  The direction is choosed geometrically like in \cite merlinge2018thesis (section 4.3.1 page 87)
+             *  The direction is choosed geometrically like in \cite merlinge2018thesis 
+             *  (section 4.3.1 page 87)
              *
              *  \param size size of the box to subdivise
              *  \result the dimension to subdivise
@@ -417,18 +412,6 @@ namespace bpf
                 #endif
             }
             ///@}
-
-            Particles* getParticlesPtr(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT)
-            {
-                switch(boxes_type)
-                {
-                    case DEFAULT:    return &particles_;           break;
-                    case PREDICTION: return &predicted_particles_; break;
-                    case CORRECTION: return &corrected_particles_; break;
-                    case RESAMPLING: return &resampled_particles_; break;
-                    default: ASSERT("Wrong specified boxes type");
-                }
-            }
 
             /*! assertReady()
              *
@@ -526,35 +509,29 @@ namespace bpf
             /*! \name Box particle filter workflow */
 
             ///@{
-            /*! void prediction(IntervalVector& control, BOXES_TYPE input_boxes_type = BOXES_TYPE::DEFAULT)
+            /*! void prediction(IntervalVector& control)
              *
              *  \brief Predict the Particles evolution using the control
              *
              *  \param control control to apply to each Particle in #particles_
              *
-             *  Use the #dynamical_model_ to predict the evolution of each Particle in #particles_ when we 
-             *  apply the control
+             *  Use the #dynamical_model_ to predict the evolution of each Particle in #particles_ 
+             *  when we apply the control
              *
              */
-            void prediction(IntervalVector& control, BOXES_TYPE input_boxes_type = BOXES_TYPE::DEFAULT)
+            void prediction(IntervalVector& control)
             {
                 ROS_DEBUG_STREAM("prediction begin");
                 assertReady();
 
-                Particles* particles = getParticlesPtr(input_boxes_type);
-                predicted_particles_.clear();
-
                 double start, end;
                 start = omp_get_wtime();
                 #pragma omp parallel for if(parallelize_)
-                for(auto it = particles->begin(); it < particles->end(); it++)
+                for(auto it = particles_.begin(); it < particles_.end(); it++)
                 {
                     {
-                    //ROS_INFO_STREAM("Particle in thread : " << omp_get_thread_num());
-                    predicted_particles_.append(
-                          Particle(
-                                dynamical_model_->applyDynamics(*it, control),
-                                it->weight()));
+                        //ROS_INFO_STREAM("Particle in thread : " << omp_get_thread_num());
+                        it->updateBox(dynamical_model_->applyDynamics(*it, control));
                     }
                 }
                 end = omp_get_wtime();
@@ -563,46 +540,39 @@ namespace bpf
                 ROS_DEBUG_STREAM("prediction end");
             }
 
-            /*! void correction(const IntervalVector& measures, BOXES_TYPE input_boxes_type = BOXES_TYPE::PREDICTION) 
+            /*! void correction(const IntervalVector& measures) 
              *
              *  \brief Correct the prediction by contracting with the measures
              *
              *  \param measures measures used to contract
              *
-             *  Use the #dynamical_model_ to link the predicted #particles_ to the measures and contract using the 
-             *  contract() method to correct them.
+             *  Use the #dynamical_model_ to link the predicted #particles_ to the measures and 
+             *  contract using the contract() method to correct them.
              *
              * */
-            void correction(const IntervalVector& measures, BOXES_TYPE input_boxes_type = BOXES_TYPE::PREDICTION)
+            void correction(const IntervalVector& measures)
             {   
                 ROS_DEBUG_STREAM("Begin correction");
                 assertReady();
 
-                Particles* particles = getParticlesPtr(input_boxes_type);
-                corrected_particles_.clear();
-
                 #pragma omp parallel for
-                for(auto it = particles->begin(); it < particles->end(); it++)
+                for(auto it = particles_.begin(); it < particles_.end(); it++)
                 {
                     IntervalVector predicted_measures  = dynamical_model_->applyMeasures(*it);
                     IntervalVector innovation          = predicted_measures & measures;
 
                     if(innovation.volume() > 0)
                     {
-                        corrected_particles_.append(
-                                Particle(contract(innovation, *it),
-                                         it->weight() * (innovation.volume()
-                                            /predicted_measures.volume()))); 
+                        it->updateBox(contract(innovation, *it));
+                        it->updateWeight(it->weight() 
+                                            * (innovation.volume()/predicted_measures.volume()));
                     }
                 }
-
-                // Resampling (if necessary)
-                //resampling(BOXES_TYPE::CORRECTION);
 
                 ROS_DEBUG_STREAM("End correction");
             }
 
-            /*! void resampling(BOXES_TYPE input_boxes_type = BOXES_TYPE::CORRECTION)
+            /*! void resampling()
              *
              *  \brief Resampling the Particles in particles_ if necessary
              *
@@ -610,35 +580,32 @@ namespace bpf
              *  to choose the resampling scheme
              *
              */
-            void resampling(BOXES_TYPE input_boxes_type = BOXES_TYPE::CORRECTION)
+            void resampling()
             {
                 ROS_DEBUG_STREAM("Will we resample");
-                Particles* particles = getParticlesPtr(input_boxes_type);
-                resampled_particles_.clear();
 
                 // Check that we need to resample
                 double Neff = 0;
-                for(unsigned int i = 0; i < particles->size(); ++i)
-                    Neff += 1./pow((*particles)[i].weight(), 2);
-                if(Neff <= 0.7 * particles->size())
+                for(unsigned int i = 0; i < particles_.size(); ++i)
+                    Neff += 1./pow(particles_[i].weight(), 2);
+                if(Neff <= 0.7 * particles_.size())
                 {
                     ROS_DEBUG_STREAM("We will resample");
 
                     // Compute number of subdivisions per boxes
-                    std::vector<unsigned int> n
-                        = chooseSubdivisions(particles);
+                    std::vector<unsigned int> n = chooseSubdivisions(&particles_);
 
                     // Subdivise boxes with ni boxes (delete box if ni=0) 
                     unsigned int i = 0;
                     unsigned int dir;
-                    for(auto it = particles->begin(); it < particles->end(); it++, i++)
+                    for(auto it = particles_.begin(); it < particles_.end(); it++, i++)
                     {
                         dir = getDirection(*it);
-                        resampled_particles_
-                            .append(it->subdivise(SUBDIVISION_TYPE::GIVEN, n[i], dir));
+                        particles_.append(it->subdivise(SUBDIVISION_TYPE::GIVEN, n[i], dir));
+                        particles_.erase(it);
                     }
 
-                    resampled_particles_.weigthsNormalization();
+                    particles_.weigthsNormalization();
                     ROS_DEBUG_STREAM("End resampling");
                 }
                 else{ ROS_DEBUG_STREAM("We don't resample"); }
@@ -652,17 +619,10 @@ namespace bpf
             const unsigned int& N() const { return N_; }
             /*! std::shared_ptr<DynamicalModel> dynamicalModel() const */
             std::shared_ptr<DynamicalModel> dynamicalModel() const { return dynamical_model_; }
-            /*! const Particles& getParticles(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT) const */
-            const Particles& getParticles(BOXES_TYPE boxes_type = BOXES_TYPE::DEFAULT) const
+            /*! const Particles& getParticles() const */
+            const Particles& getParticles() const
             {
-                switch(boxes_type)
-                {
-                    case DEFAULT:    return particles_;           break;
-                    case PREDICTION: return predicted_particles_; break;
-                    case CORRECTION: return corrected_particles_; break;
-                    case RESAMPLING: return resampled_particles_; break;
-                    default: ASSERT("Wrong specified boxes type");
-                }
+                return particles_;
             }
 
             ///@}

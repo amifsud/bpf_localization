@@ -208,6 +208,16 @@ namespace bpf
                 return particles;
             }
 
+            void updateBox(IntervalVector box)
+            {
+                this->put(0, box);
+            }
+
+            void updateWeight(double weight)
+            {
+                weight_ = weight;
+            }
+
             /*! \fn double& weight() 
              *
              *  \return weight of the particle

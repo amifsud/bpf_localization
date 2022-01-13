@@ -25,7 +25,7 @@ TEST(BoatBPFLocalizationTest, testBoatBPFLocalization)
     boat->IMUCallback(imu);
 
     Particles mono_threaded_particles 
-        = Particles(boat->getParticles(BOXES_TYPE::PREDICTION));
+        = Particles(boat->getParticles());
  
     boat = std::shared_ptr<BoatBPFLocalization>(
             new BoatBPFLocalization(initial_particles, true));
@@ -33,7 +33,7 @@ TEST(BoatBPFLocalizationTest, testBoatBPFLocalization)
     boat->IMUCallback(imu);
  
     Particles multi_threaded_particles 
-        = Particles(boat->getParticles(BOXES_TYPE::PREDICTION));
+        = Particles(boat->getParticles());
 
     bool equal_particles 
         = compareParticles(&mono_threaded_particles, &multi_threaded_particles);
