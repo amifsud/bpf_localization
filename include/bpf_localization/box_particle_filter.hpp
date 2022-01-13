@@ -70,6 +70,7 @@
 
 using namespace ibex;
 
+/*! Contains everithing related to the box particle filter*/
 namespace bpf
 {
     /*! \class BoxParticleFilter
