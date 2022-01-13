@@ -273,13 +273,13 @@ if(TARGET bpf_init_tests_uniformly_choosen_paving)
     )
 endif()
 
-#catkin_add_gtest(turtlebot_tests tests/turtlebot/turtlebot_tests.cpp)
-#if(TARGET turtlebot_tests)
-#    target_link_libraries(turtlebot_tests
-#        ${catkin_LIBRARIES}
-#        ${IBEX_DEPENDENCIES}
-#    )
-#endif()
+catkin_add_gtest(turtlebot_tests tests/dynamical_systems/turtlebot_tests.cpp)
+if(TARGET turtlebot_tests)
+    target_link_libraries(turtlebot_tests
+        ${catkin_LIBRARIES}
+        ${IBEX_DEPENDENCIES}
+    )
+endif()
 
 catkin_add_gtest(   guaranted_integration_tests
                     tests/dynamical_systems/guaranted_integration_tests.cpp)

@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 #include <bpf_localization/tests.hpp>
+#include <bpf_localization/dynamical_systems/turtlebot2.hpp>
 
 // Declare a test
 TEST(UniformPavingInitTest, testCase1)
