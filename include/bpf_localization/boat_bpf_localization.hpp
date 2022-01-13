@@ -3,6 +3,7 @@
 #define RESAMPLING_DIRECTION 1
 
 #include "bpf_localization/box_particle_filter.hpp"
+#include "bpf_localization/dynamical_systems/ins.hpp"
 
 #define DEFAULT_PARTICLES_NUMBER 16
 

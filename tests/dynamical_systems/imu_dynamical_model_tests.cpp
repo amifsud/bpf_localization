@@ -3,7 +3,7 @@
 #define INTEGRATION_METHOD 1
 
 #include <gtest/gtest.h>
-#include <bpf_localization/dynamical_systems/dynamical_systems.hpp>
+#include <bpf_localization/dynamical_systems/ins.hpp>
 #include <bpf_localization/tests.hpp>
 
 TEST(IMUDynamicalModelTest, testDynamicsTranslationZ)
