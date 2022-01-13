@@ -1,4 +1,3 @@
-
 /**
  * \file   particles.hpp
  * \brief  Particles for Box Particle Filter
@@ -6,12 +5,9 @@
  * \date   2022 January
  */
 
-/*** Available particles subdivision ***/
-// * random
-// * all dimensions
-// * given dimensions
+#ifndef PARTICLES
+#define PARTICLES
 
-/*** Algos dependencies ***/
 #if INIT_METHOD == 1
     #define SUBDIVISE_OVER_ALL_DIMENSIONS
 #endif
@@ -243,6 +239,8 @@ class Particles: public std::deque<Particle>
         }
 
     public:
+        /*! \name Constructors */
+        ///@{
         /*! Particles(std::deque<Particle> particles) 
          *
          *  \brief Constructor from existing particles
@@ -274,9 +272,10 @@ class Particles: public std::deque<Particle>
         Particles(): std::deque<Particle>()
         {
         }
+        ///@}
 
-        /*** Weight processing **/
-
+        /*! \name Weights processing */
+        ///@{
         /*! resetWeightsUniformly() 
          *
          *  \brief Reset the weights of the Particle objects to a constant value so that the 
@@ -318,9 +317,10 @@ class Particles: public std::deque<Particle>
             for(auto it = this->begin(); it != this->end(); it++)
                 it->weight() /= sum_of_weights;
         }
+        ///@}
 
-        /*** Boxes processing **/
-
+        /*! \name Boxes processing */
+        ///@{
         /*! void subdivise( unsigned int i = 0, 
                         SUBDIVISION_TYPE sub_type = SUBDIVISION_TYPE::RANDOM,
                         unsigned int N = 1, unsigned int dim = 0) 
@@ -367,6 +367,7 @@ class Particles: public std::deque<Particle>
             #pragma omp critical
             this->insert(this->end(), particle);
         }
+        ///@}
 };
 
-
+#endif
