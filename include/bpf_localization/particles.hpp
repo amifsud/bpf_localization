@@ -254,6 +254,18 @@ class Particles: public std::deque<Particle>
         {
         }
 
+        /*! Particles(Particle particle) 
+         *
+         *  \brief Constructor from an existing particle
+         *
+         *  \param particle init Particle
+         *
+         * */
+        Particles(Particle particle)
+        {
+            this->append(particle);
+        }
+
         /*! Particle() 
          *
          *  \brief Constructor for empty list of particles
