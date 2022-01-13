@@ -83,30 +83,239 @@ namespace bpf
      * */
     class BoxParticleFilter
     {
-        protected:
-            /*! N maximum number of particles of the box particle filter */
-            unsigned int N_;
+        public:
+            /*! \name Constructors */
 
-            /*! uniform distribution used to randomly subdivise particles */
-            std::uniform_real_distribution<double> uniform_distribution_;
+            ///@{
+            /*! BoxParticleFilter(  unsigned int N, 
+                                IntervalVector& initial_box,
+                                std::shared_ptr<DynamicalModel> dynamical_model,
+                                bool parallelize = false)
+            *
+            *   \brief Constructor
+            *
+            *   \param N number of particles
+            *   \param initial_box initial interval vector that encapsulate all possible states
+            *   \param dynamical dynamical model on which to apply the filter
+            *   \param parallelize use parallelization or not 
+            *           (**WARNING : DynIbex is not thread safe**)
+            *
+            */
+            BoxParticleFilter(  unsigned int N, 
+                                IntervalVector& initial_box,
+                                std::shared_ptr<DynamicalModel> dynamical_model,
+                                bool parallelize = false)
+                : uniform_distribution_(0.0, 1.0)
+            {
+                ROS_ASSERT_MSG(dynamical_model->stateSize() == initial_box.size(), 
+                        "State size and initial box size not consistent");
+     
+                dynamical_model_ = dynamical_model;            
+                N_ = N;
+                initializeParticles(initial_box);
+                parallelize_ = parallelize;
+            }
 
-            /*! dynamical model base class from which particular systems inherit */
-            std::shared_ptr<DynamicalModel> dynamical_model_;
+            /*! BoxParticleFilter(  unsigned int N, 
+                                IntervalVector& initial_box,
+                                bool parallelize = false)
+            *
+            *   \brief Constructor 
+            *
+            *   Constructor without dynamical model (to be set after, assertReady() will prevent 
+            *   using the filter without it)
+            *
+            *   \param N number of particles
+            *   \param initial_box initial interval vector that encapsulate all possible states
+            *   \param parallelize use parallelization or not 
+            *           (**WARNING : DynIbex is not thread safe**)
+            *
+            */
+            BoxParticleFilter(  unsigned int N, 
+                                const IntervalVector& initial_box,
+                                bool parallelize = false)
+                : uniform_distribution_(0.0, 1.0)
+            {
+                N_ = N;
+                initializeParticles(initial_box);
+                parallelize_ = parallelize;
+            }
 
-            /*! Particles of the box particle filter */
-            Particles particles_;
+            /*! BoxParticleFilter(  unsigned int N, 
+                                const Particles& particles,
+                                bool parallelize = false)
+            *
+            *   \brief Constructor 
+            *
+            *   Constructor without dynamical model (to be set after, assertReady() will prevent 
+            *   using the filter without it) and from an existing set of particles
+            *
+            *   \param N number of particles
+            *   \param particles initial set of Particles
+            *   \param parallelize use parallelization or not 
+            *           (**WARNING : DynIbex is not thread safe**)
+            *
+            */
+            BoxParticleFilter(  unsigned int N, 
+                                const Particles& particles,
+                                bool parallelize = false)
+                : uniform_distribution_(0.0, 1.0)
+            {
+                N_ = N;
+                particles_ = particles;
+                parallelize_ = parallelize;
+            }
+            ///@}
 
-            /*! Is the particles been resampled or not */
-            bool resampled_;
+            /*! \name Box particle filter workflow */
 
-            /*! Do we parallelize prediction or not 
+            ///@{
+            /*! void prediction(IntervalVector& control)
              *
-             *  **WARNING : DynIbex doesn't seem thread safe, so parallelization don't work**
+             *  \brief Predict the Particles evolution using the control
+             *
+             *  \param control control to apply to each Particle in #particles_
+             *
+             *  Use the #dynamical_model_ to predict the evolution of each Particle in #particles_ 
+             *  when we apply the control
+             *
+             */
+            void prediction(IntervalVector& control)
+            {
+                ROS_DEBUG_STREAM("prediction begin");
+                assertReady();
+
+                double start, end;
+                start = omp_get_wtime();
+                #pragma omp parallel for if(parallelize_)
+                for(auto it = particles_.begin(); it < particles_.end(); it++)
+                {
+                    {
+                        //ROS_INFO_STREAM("Particle in thread : " << omp_get_thread_num());
+                        it->updateBox(dynamical_model_->applyDynamics(*it, control));
+                    }
+                }
+                end = omp_get_wtime();
+                ROS_INFO_STREAM("prediction duration = " << (end - start)); 
+
+                ROS_DEBUG_STREAM("prediction end");
+            }
+
+            /*! void correction(const IntervalVector& measures) 
+             *
+             *  \brief Correct the prediction by contracting with the measures
+             *
+             *  \param measures measures used to contract
+             *
+             *  Use the #dynamical_model_ to link the predicted #particles_ to the measures and 
+             *  contract using the contract() method to correct them.
              *
              * */
-            bool parallelize_;
+            void correction(const IntervalVector& measures)
+            {   
+                ROS_DEBUG_STREAM("Begin correction");
+                assertReady();
+
+                #pragma omp parallel for
+                for(auto it = particles_.begin(); it < particles_.end(); it++)
+                {
+                    IntervalVector predicted_measures  = dynamical_model_->applyMeasures(*it);
+                    IntervalVector innovation          = predicted_measures & measures;
+
+                    if(innovation.volume() > 0)
+                    {
+                        it->updateBox(contract(innovation, *it));
+                        it->updateWeight(it->weight() 
+                                            * (innovation.volume()/predicted_measures.volume()));
+                    }
+                }
+
+                ROS_DEBUG_STREAM("End correction");
+            }
+
+            /*! void resampling()
+             *
+             *  \brief Resampling the Particles in particles_ if necessary
+             *
+             *  Use the preprocessor definitions RESAMPLING_METHOD and RESAMPLING_DIRECTION 
+             *  to choose the resampling scheme
+             *
+             */
+            void resampling()
+            {
+                ROS_DEBUG_STREAM("Will we resample");
+
+                // Check that we need to resample
+                double Neff = 0;
+                for(unsigned int i = 0; i < particles_.size(); ++i)
+                    Neff += 1./pow(particles_[i].weight(), 2);
+                if(Neff <= 0.7 * particles_.size())
+                {
+                    ROS_DEBUG_STREAM("We will resample");
+
+                    // Compute number of subdivisions per boxes
+                    std::vector<unsigned int> n = chooseSubdivisions(&particles_);
+
+                    // Subdivise boxes with ni boxes (delete box if ni=0) 
+                    unsigned int i = 0;
+                    unsigned int dir;
+                    for(auto it = particles_.begin(); it < particles_.end(); it++, i++)
+                    {
+                        dir = getDirection(*it);
+                        particles_.append(it->subdivise(SUBDIVISION_TYPE::GIVEN, n[i], dir));
+                        particles_.erase(it);
+                    }
+
+                    particles_.weigthsNormalization();
+                    ROS_DEBUG_STREAM("End resampling");
+                }
+                else{ ROS_DEBUG_STREAM("We don't resample"); }
+            }
+            ///@}
+
+            /*! \name Getters */
+            ///@{
+
+            /*! const unsigned int& N() const */
+            const unsigned int& N() const { return N_; }
+            /*! std::shared_ptr<DynamicalModel> dynamicalModel() const */
+            std::shared_ptr<DynamicalModel> dynamicalModel() const { return dynamical_model_; }
+            /*! const Particles& getParticles() const */
+            const Particles& getParticles() const { return particles_; }
+
+            ///@}
 
         protected:
+
+            /*! virtual IntervalVector contract(IntervalVector& innovation, IntervalVector& box)
+             *
+             *  \brief Contract box according to the innovation
+             *
+             *  \param innovation
+             *  \param box box to contract
+             *
+             *  Use a contractor to found the box subset that give the innovation 
+             *  (i.e. (predicted measures) & (measures)) by the measures dynamics
+             *
+             */
+            virtual IntervalVector contract(IntervalVector& innovation, IntervalVector& box)
+            {
+                ROS_ASSERT_MSG(false, "Contraction with respect to innovation not set");
+                return box;
+            }
+
+            /*! assertReady()
+             *
+             *  \brief Assert that the box particle filter can be used
+             *
+             */
+            void assertReady()
+            {
+                assert(dynamical_model_ != NULL && "Dynamical model not set");
+                assert(N_ > 0 && "Number of particles not set (should be in constrctor");
+                assert(particles_.size() > 0 && "There is no particles");
+            }
+
             /*! \name Initial paving */
 
             ///@{
@@ -189,23 +398,6 @@ namespace bpf
             }
             ///@}
 
-            /*! virtual IntervalVector contract(IntervalVector& innovation, IntervalVector& box)
-             *
-             *  \brief Contract box according to the innovation
-             *
-             *  \param innovation
-             *  \param box box to contract
-             *
-             *  Use a contractor to found the box subset that give the innovation 
-             *  (i.e. (predicted measures) & (measures)) by the measures dynamics
-             *
-             */
-            virtual IntervalVector contract(IntervalVector& innovation, IntervalVector& box)
-            {
-                ROS_ASSERT_MSG(false, "Contraction with respect to innovation not set");
-                return box;
-            }
-
             /*! \name Number of subdivision choice */
             ///@{
 
@@ -216,8 +408,8 @@ namespace bpf
              *
              *  Used if RESAMPLING_METHOD == 0
              *
-             *  For each particle, determine the number of subdivision to perform, using the multinomial 
-             *  algortihm in \cite merlinge2018thesis (algorithm 3 page 19)
+             *  For each particle, determine the number of subdivision to perform, using the 
+             *  multinomial algortihm in \cite merlinge2018thesis (algorithm 3 page 19)
              *
              * */
             std::vector<unsigned int> multinomialSubdivisions(Particles* particles)
@@ -250,8 +442,8 @@ namespace bpf
              *
              *  Used if RESAMPLING_METHOD == 1
              *
-             *  For each particle, determine the number of subdivision to perform, using the guaranted 
-             *  algortihm in \cite merlinge2018thesis (algorithm 6 page 72)
+             *  For each particle, determine the number of subdivision to perform, using the 
+             *  guaranted algortihm in \cite merlinge2018thesis (algorithm 6 page 72)
              *
              * */
             std::vector<unsigned int> guarantedSubdivisions(Particles* particles)
@@ -414,219 +606,28 @@ namespace bpf
             }
             ///@}
 
-            /*! assertReady()
-             *
-             *  \brief Assert that the box particle filter can be used
-             *
-             */
-            void assertReady()
-            {
-                assert(dynamical_model_ != NULL && "Dynamical model not set");
-                assert(N_ > 0 && "Number of particles not set (should be in constrctor");
-                assert(particles_.size() > 0 && "There is no particles");
-            }
+        protected:
+            /*! N maximum number of particles of the box particle filter */
+            unsigned int N_;
 
-        public:
-            /*! \name Constructors */
+            /*! uniform distribution used to randomly subdivise particles */
+            std::uniform_real_distribution<double> uniform_distribution_;
 
-            ///@{
-            /*! BoxParticleFilter(  unsigned int N, 
-                                IntervalVector& initial_box,
-                                std::shared_ptr<DynamicalModel> dynamical_model,
-                                bool parallelize = false)
-            *
-            *   \brief Constructor
-            *
-            *   \param N number of particles
-            *   \param initial_box initial interval vector that encapsulate all possible states
-            *   \param dynamical dynamical model on which to apply the filter
-            *   \param parallelize use parallelization or not (**WARNING : DynIbex is not thread safe**)
-            *
-            */
-            BoxParticleFilter(  unsigned int N, 
-                                IntervalVector& initial_box,
-                                std::shared_ptr<DynamicalModel> dynamical_model,
-                                bool parallelize = false)
-                : uniform_distribution_(0.0, 1.0)
-            {
-                ROS_ASSERT_MSG(dynamical_model->stateSize() == initial_box.size(), 
-                        "State size and initial box size not consistent");
-     
-                dynamical_model_ = dynamical_model;            
-                N_ = N;
-                initializeParticles(initial_box);
-                parallelize_ = parallelize;
-            }
+            /*! dynamical model base class from which particular systems inherit */
+            std::shared_ptr<DynamicalModel> dynamical_model_;
 
-            /*! BoxParticleFilter(  unsigned int N, 
-                                IntervalVector& initial_box,
-                                bool parallelize = false)
-            *
-            *   \brief Constructor 
-            *
-            *   Constructor without dynamical model (to be set after, assertReady() will prevent 
-            *   using the filter without it)
-            *
-            *   \param N number of particles
-            *   \param initial_box initial interval vector that encapsulate all possible states
-            *   \param parallelize use parallelization or not (**WARNING : DynIbex is not thread safe**)
-            *
-            */
-            BoxParticleFilter(  unsigned int N, 
-                                const IntervalVector& initial_box,
-                                bool parallelize = false)
-                : uniform_distribution_(0.0, 1.0)
-            {
-                N_ = N;
-                initializeParticles(initial_box);
-                parallelize_ = parallelize;
-            }
+            /*! Particles of the box particle filter */
+            Particles particles_;
 
-            /*! BoxParticleFilter(  unsigned int N, 
-                                const Particles& particles,
-                                bool parallelize = false)
-            *
-            *   \brief Constructor 
-            *
-            *   Constructor without dynamical model (to be set after, assertReady() will prevent 
-            *   using the filter without it) and from an existing set of particles
-            *
-            *   \param N number of particles
-            *   \param particles initial set of Particles
-            *   \param parallelize use parallelization or not (**WARNING : DynIbex is not thread safe**)
-            *
-            */
-            BoxParticleFilter(  unsigned int N, 
-                                const Particles& particles,
-                                bool parallelize = false)
-                : uniform_distribution_(0.0, 1.0)
-            {
-                N_ = N;
-                particles_ = particles;
-                parallelize_ = parallelize;
-            }
-            ///@}
+            /*! Is the particles been resampled or not */
+            bool resampled_;
 
-            /*! \name Box particle filter workflow */
-
-            ///@{
-            /*! void prediction(IntervalVector& control)
+            /*! Do we parallelize prediction or not 
              *
-             *  \brief Predict the Particles evolution using the control
-             *
-             *  \param control control to apply to each Particle in #particles_
-             *
-             *  Use the #dynamical_model_ to predict the evolution of each Particle in #particles_ 
-             *  when we apply the control
-             *
-             */
-            void prediction(IntervalVector& control)
-            {
-                ROS_DEBUG_STREAM("prediction begin");
-                assertReady();
-
-                double start, end;
-                start = omp_get_wtime();
-                #pragma omp parallel for if(parallelize_)
-                for(auto it = particles_.begin(); it < particles_.end(); it++)
-                {
-                    {
-                        //ROS_INFO_STREAM("Particle in thread : " << omp_get_thread_num());
-                        it->updateBox(dynamical_model_->applyDynamics(*it, control));
-                    }
-                }
-                end = omp_get_wtime();
-                ROS_INFO_STREAM("prediction duration = " << (end - start)); 
-
-                ROS_DEBUG_STREAM("prediction end");
-            }
-
-            /*! void correction(const IntervalVector& measures) 
-             *
-             *  \brief Correct the prediction by contracting with the measures
-             *
-             *  \param measures measures used to contract
-             *
-             *  Use the #dynamical_model_ to link the predicted #particles_ to the measures and 
-             *  contract using the contract() method to correct them.
+             *  **WARNING : DynIbex doesn't seem thread safe, so parallelization don't work**
              *
              * */
-            void correction(const IntervalVector& measures)
-            {   
-                ROS_DEBUG_STREAM("Begin correction");
-                assertReady();
-
-                #pragma omp parallel for
-                for(auto it = particles_.begin(); it < particles_.end(); it++)
-                {
-                    IntervalVector predicted_measures  = dynamical_model_->applyMeasures(*it);
-                    IntervalVector innovation          = predicted_measures & measures;
-
-                    if(innovation.volume() > 0)
-                    {
-                        it->updateBox(contract(innovation, *it));
-                        it->updateWeight(it->weight() 
-                                            * (innovation.volume()/predicted_measures.volume()));
-                    }
-                }
-
-                ROS_DEBUG_STREAM("End correction");
-            }
-
-            /*! void resampling()
-             *
-             *  \brief Resampling the Particles in particles_ if necessary
-             *
-             *  Use the preprocessor definitions RESAMPLING_METHOD and RESAMPLING_DIRECTION 
-             *  to choose the resampling scheme
-             *
-             */
-            void resampling()
-            {
-                ROS_DEBUG_STREAM("Will we resample");
-
-                // Check that we need to resample
-                double Neff = 0;
-                for(unsigned int i = 0; i < particles_.size(); ++i)
-                    Neff += 1./pow(particles_[i].weight(), 2);
-                if(Neff <= 0.7 * particles_.size())
-                {
-                    ROS_DEBUG_STREAM("We will resample");
-
-                    // Compute number of subdivisions per boxes
-                    std::vector<unsigned int> n = chooseSubdivisions(&particles_);
-
-                    // Subdivise boxes with ni boxes (delete box if ni=0) 
-                    unsigned int i = 0;
-                    unsigned int dir;
-                    for(auto it = particles_.begin(); it < particles_.end(); it++, i++)
-                    {
-                        dir = getDirection(*it);
-                        particles_.append(it->subdivise(SUBDIVISION_TYPE::GIVEN, n[i], dir));
-                        particles_.erase(it);
-                    }
-
-                    particles_.weigthsNormalization();
-                    ROS_DEBUG_STREAM("End resampling");
-                }
-                else{ ROS_DEBUG_STREAM("We don't resample"); }
-            }
-            ///@}
-
-            /*! \name Getters */
-            ///@{
-
-            /*! const unsigned int& N() const */
-            const unsigned int& N() const { return N_; }
-            /*! std::shared_ptr<DynamicalModel> dynamicalModel() const */
-            std::shared_ptr<DynamicalModel> dynamicalModel() const { return dynamical_model_; }
-            /*! const Particles& getParticles() const */
-            const Particles& getParticles() const
-            {
-                return particles_;
-            }
-
-            ///@}
+            bool parallelize_;
     };
 }
 #endif
