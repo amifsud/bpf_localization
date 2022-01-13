@@ -6,80 +6,83 @@
 
 #define DEFAULT_PARTICLES_NUMBER 16
 
-class BoatBPFLocalization : public BoxParticleFilter
+namespace bpf
 {
-    protected:
-        IntervalVector imu_measures_;
-        IntervalVector gps_measures_;
+    class BoatBPFLocalization : public BoxParticleFilter
+    {
+        protected:
+            IntervalVector imu_measures_;
+            IntervalVector gps_measures_;
 
-    public:
-        BoatBPFLocalization(const IntervalVector& initial_box,
-                            bool parallelize = false,
-                            unsigned int N = DEFAULT_PARTICLES_NUMBER,
-                            double dt = 1.)
-            :BoxParticleFilter(N, initial_box, parallelize),
-             imu_measures_(INSDynamicalModel::control_size), 
-             gps_measures_(INSDynamicalModel::measures_size)
-        {
-            dynamical_model_ = std::shared_ptr<DynamicalModel>(new INSDynamicalModel(dt));
-        }
+        public:
+            BoatBPFLocalization(const IntervalVector& initial_box,
+                                bool parallelize = false,
+                                unsigned int N = DEFAULT_PARTICLES_NUMBER,
+                                double dt = 1.)
+                :BoxParticleFilter(N, initial_box, parallelize),
+                 imu_measures_(INSDynamicalModel::control_size), 
+                 gps_measures_(INSDynamicalModel::measures_size)
+            {
+                dynamical_model_ = std::shared_ptr<DynamicalModel>(new INSDynamicalModel(dt));
+            }
 
-        BoatBPFLocalization(double pos, double vel, double theta,
-                            bool parallelize = false, 
-                            unsigned int N = DEFAULT_PARTICLES_NUMBER,
-                            double dt = 1.)
-            :BoxParticleFilter(N, get_init(pos, vel, theta), parallelize),
-             imu_measures_(INSDynamicalModel::control_size), 
-             gps_measures_(INSDynamicalModel::measures_size)
-        {
-            dynamical_model_ = std::shared_ptr<DynamicalModel>(new INSDynamicalModel(dt));
-        }
+            BoatBPFLocalization(double pos, double vel, double theta,
+                                bool parallelize = false, 
+                                unsigned int N = DEFAULT_PARTICLES_NUMBER,
+                                double dt = 1.)
+                :BoxParticleFilter(N, get_init(pos, vel, theta), parallelize),
+                 imu_measures_(INSDynamicalModel::control_size), 
+                 gps_measures_(INSDynamicalModel::measures_size)
+            {
+                dynamical_model_ = std::shared_ptr<DynamicalModel>(new INSDynamicalModel(dt));
+            }
 
-        BoatBPFLocalization(Particles& particles,
-                            bool parallelize = false, 
-                            unsigned int N = DEFAULT_PARTICLES_NUMBER,
-                            double dt = 1.)
-            :BoxParticleFilter(N, particles, parallelize),
-             imu_measures_(INSDynamicalModel::control_size), 
-             gps_measures_(INSDynamicalModel::measures_size)
-        {
-            dynamical_model_ = std::shared_ptr<DynamicalModel>(new INSDynamicalModel(dt));
-        }
+            BoatBPFLocalization(Particles& particles,
+                                bool parallelize = false, 
+                                unsigned int N = DEFAULT_PARTICLES_NUMBER,
+                                double dt = 1.)
+                :BoxParticleFilter(N, particles, parallelize),
+                 imu_measures_(INSDynamicalModel::control_size), 
+                 gps_measures_(INSDynamicalModel::measures_size)
+            {
+                dynamical_model_ = std::shared_ptr<DynamicalModel>(new INSDynamicalModel(dt));
+            }
 
-        const IntervalVector get_init(double pos, double vel, double theta)
-        {
-            assert(pos > 0. && "initial incertitude on position must be > 0");
-            assert(vel > 0. && "initial incertitude on velocity must be > 0");
-            assert(theta > 0. && "initial incertitude on orientation must be > 0");
+            const IntervalVector get_init(double pos, double vel, double theta)
+            {
+                assert(pos > 0. && "initial incertitude on position must be > 0");
+                assert(vel > 0. && "initial incertitude on velocity must be > 0");
+                assert(theta > 0. && "initial incertitude on orientation must be > 0");
 
-            IntervalVector initial_box(INSDynamicalModel::state_size);
-            initial_box[0] = Interval(cos(theta), 1.);
-            initial_box[1] = Interval(sin(-theta)/sqrt(3), sin(theta)/sqrt(3));
-            initial_box[2] = Interval(sin(-theta)/sqrt(3), sin(theta)/sqrt(3));
-            initial_box[3] = Interval(sin(-theta)/sqrt(3), sin(theta)/sqrt(3));
-            initial_box[4] = Interval(-pos, pos);
-            initial_box[5] = Interval(-pos, pos);
-            initial_box[6] = Interval(-pos, pos);
-            initial_box[7] = Interval(-vel, vel);
-            initial_box[8] = Interval(-vel, vel);
-            initial_box[9] = Interval(-vel, vel);
-            return IntervalVector(initial_box);
-        }
+                IntervalVector initial_box(INSDynamicalModel::state_size);
+                initial_box[0] = Interval(cos(theta), 1.);
+                initial_box[1] = Interval(sin(-theta)/sqrt(3), sin(theta)/sqrt(3));
+                initial_box[2] = Interval(sin(-theta)/sqrt(3), sin(theta)/sqrt(3));
+                initial_box[3] = Interval(sin(-theta)/sqrt(3), sin(theta)/sqrt(3));
+                initial_box[4] = Interval(-pos, pos);
+                initial_box[5] = Interval(-pos, pos);
+                initial_box[6] = Interval(-pos, pos);
+                initial_box[7] = Interval(-vel, vel);
+                initial_box[8] = Interval(-vel, vel);
+                initial_box[9] = Interval(-vel, vel);
+                return IntervalVector(initial_box);
+            }
 
-        void IMUCallback(IntervalVector& imu)
-        {
-            imu_measures_ = imu;
-            prediction(imu_measures_);
-        }
+            void IMUCallback(IntervalVector& imu)
+            {
+                imu_measures_ = imu;
+                prediction(imu_measures_);
+            }
 
-        void GPSCallback(IntervalVector& gps)
-        {
-            gps_measures_ = gps;
-            correction(gps_measures_);
-        }
+            void GPSCallback(IntervalVector& gps)
+            {
+                gps_measures_ = gps;
+                correction(gps_measures_);
+            }
 
-        IntervalVector contract(IntervalVector& innovation, IntervalVector& box)
-        {
-            return box;
-        }
-};
+            IntervalVector contract(IntervalVector& innovation, IntervalVector& box)
+            {
+                return box;
+            }
+    };
+}

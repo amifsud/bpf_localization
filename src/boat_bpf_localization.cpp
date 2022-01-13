@@ -14,7 +14,7 @@ int main(int argc, char **argv)
     double vel = 0.1;
     double theta = 10./180.*3.14;
 
-    BoatBPFLocalization boat_localization(pos, vel, theta, false);
+    bpf::BoatBPFLocalization boat_localization(pos, vel, theta, false);
     IMUInterface        imu(&nh, "boat_imu", 3);
     GPSInterface        gps(&nh, "boat_gps", 3);
 

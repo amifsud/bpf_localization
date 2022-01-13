@@ -3,6 +3,8 @@
 
 #include <bpf_localization/box_particle_filter.hpp>
 
+using namespace bpf;
+
 bool compareParticles(const Particles* particles1, const Particles* particles2)
 {
     bool found_particle, already_found;
