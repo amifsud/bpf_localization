@@ -16,30 +16,50 @@
 #ifndef BOX_PARTICLE_FILTER
 #define BOX_PARTICLE_FILTER
 
-/*** Available algos ***/
-// Init
-//  * uniformly choosen : 0
-//  * uniform           : 1
-// Resampling
-//  * multinomial       : 0
-//  * guaranted         : 1
-// Resampling direction
-//  * random            : 0
-//  * geometrical       : 1
-//  * maximum likelihood: 2
-
-/*** Defaults algos versions ***/
+/*! \name Default MACROS
+ *
+ *  \brief Those MACROS are used to define the Box Particle Filter version we use. 
+ * 
+ *  **Values here are default values**
+ *
+ * */
+///@{
+/*! INIT_METHOD
+ *
+ *  \brief Initialization method
+ *
+ *  * 0 : Subpaving defined by choosing directions of bisections randomly with an uniform distribution
+ *  * 1 : Subpaving defined by bisecting over all directions
+ */
 #ifndef INIT_METHOD
     #define INIT_METHOD          0
 #endif
 
+/*! RESAMPLING_METHOD
+ *
+ *  \brief Resampling method
+ *
+ *  * 0 : Multinomial resampling : For each particle, determine the number of subdivision to perform, using the multinomial algortihm in \cite merlinge2018thesis (algorithm 3 page 19)
+ *  * 1 : Guaranted resampling : For each particle, determine the number of subdivision to perform, using the guaranted  algortihm in \cite merlinge2018thesis (algorithm 6 page 72)
+ *
+ */
 #ifndef RESAMPLING_METHOD
     #define RESAMPLING_METHOD    0
 #endif
 
+/*! RESAMPLING_DIRECTION
+ *
+ * \brief Resamplinmg direction
+ *
+ * * 0 : Random direction : The direction is choosed randomly with an uniform distribution
+ * * 1 : Geometrical direction : The direction is choosed geometrically like in \cite merlinge2018thesis (section 4.3.1 page 87)
+ * * 2 : Maximum likelihood : The direction is choosed maximizing the likelihood like in \cite merlinge2018thesis (section 4.3.2 page 88)
+ *
+ */
 #ifndef RESAMPLING_DIRECTION
     #define RESAMPLING_DIRECTION 0
 #endif
+///@}
 
 /*** Available particles subdivision ***/
 // * random
