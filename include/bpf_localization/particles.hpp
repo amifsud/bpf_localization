@@ -37,12 +37,96 @@ namespace bpf
      */
     class Particle : public IntervalVector
     {
-        protected:
-            /*! weight of the particle */
-            double weight_;
+        public:
+            /*! \fn Particle(const IntervalVector& box, const double weight) 
+             *
+             *  \brief Particle constructor
+             *
+             *  \param box interval vector which is the particle
+             *  \param weight weight of the particle
+             *
+             * */
+            Particle(const IntervalVector& box, const double weight): 
+                    IntervalVector(box),
+                    weight_(weight),
+                    uniform_distribution_(0.0,1.0)
+            {
+                for(auto i = 0; i < box.size(); i++)
+                {
+                    ROS_ASSERT_MSG(box[i].diam() != 0., 
+                            "One of the initial box diameter is null");
+                }
+            }
 
-            /*! uniform distribution used to randomly subdivise particles */
-            std::uniform_real_distribution<double> uniform_distribution_;
+            /*! \fn std::deque<Particle> subdivise
+                (SUBDIVISION_TYPE sub_type = SUBDIVISION_TYPE::RANDOM,
+                 unsigned int N = 1, unsigned int dim = 0) 
+            *   
+            *   \brief Generic subdivise method, where we can select the subdivision method
+            *
+            *   \param sub_type subdivision method defined in #SUBDIVISION_TYPE enum
+            *   \param N (usefullness depending on the choosed method) number of subdivisions
+            *   \param dim (usefullness depending on the choosed method) dimension to subdivise 
+            *
+            */
+            std::deque<Particle> subdivise
+                (SUBDIVISION_TYPE sub_type = SUBDIVISION_TYPE::RANDOM,
+                 unsigned int N = 1, unsigned int dim = 0)
+            {
+                std::deque<Particle> particles;
+
+                switch(sub_type)
+                {
+                    case SUBDIVISION_TYPE::RANDOM:
+                        particles = subdiviseOverRandomDimensions(N);
+                        break;
+                    case SUBDIVISION_TYPE::ALL_DIMENSIONS:
+                        #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
+                        particles = subdiviseOverAllDimensions();
+                        #else
+                        ROS_ERROR_STREAM("Not compiled method");
+                        #endif
+                        break;
+                    case SUBDIVISION_TYPE::GIVEN:
+                        #ifdef SUBDIVISE_OVER_GIVEN_DIRECTION
+                        particles = subdiviseOverGivenDirection(dim, N);
+                        #else
+                        ROS_ERROR_STREAM("Not compiled method");
+                        #endif
+                        break;
+                    default:
+                        ROS_ASSERT("Wrong subdivision type");
+                }
+
+                return particles;
+            }
+
+            /*! void updateBox(const IntervalVector& box)
+             *
+             *  \param box IntervalVector to update the box of the Particle
+             *
+             */
+            void updateBox(const IntervalVector& box)
+            {
+                this->put(0, box);
+            }
+
+            /*! void updateWeight(const double& weight)
+             *
+             *  \param weight double to update weight of the Particle
+             *
+             */
+            void updateWeight(const double& weight)
+            {
+                weight_ = weight;
+            }
+
+            /*! \fn double& weight() 
+             *
+             *  \return weight of the particle
+             *
+             * */
+            double& weight() { return weight_; }
 
         protected:
             /*** Boxes processing ***/
@@ -144,96 +228,12 @@ namespace bpf
                 return boxes;
             }
 
-        public:
-            /*! \fn Particle(const IntervalVector& box, const double weight) 
-             *
-             *  \brief Particle constructor
-             *
-             *  \param box interval vector which is the particle
-             *  \param weight weight of the particle
-             *
-             * */
-            Particle(const IntervalVector& box, const double weight): 
-                    IntervalVector(box),
-                    weight_(weight),
-                    uniform_distribution_(0.0,1.0)
-            {
-                for(auto i = 0; i < box.size(); i++)
-                {
-                    ROS_ASSERT_MSG(box[i].diam() != 0., 
-                            "One of the initial box diameter is null");
-                }
-            }
+        protected:
+            /*! weight of the particle */
+            double weight_;
 
-            /*! \fn std::deque<Particle> subdivise
-                (SUBDIVISION_TYPE sub_type = SUBDIVISION_TYPE::RANDOM,
-                 unsigned int N = 1, unsigned int dim = 0) 
-            *   
-            *   \brief Generic subdivise method, where we can select the subdivision method
-            *
-            *   \param sub_type subdivision method defined in #SUBDIVISION_TYPE enum
-            *   \param N (usefullness depending on the choosed method) number of subdivisions
-            *   \param dim (usefullness depending on the choosed method) dimension to subdivise 
-            *
-            */
-            std::deque<Particle> subdivise
-                (SUBDIVISION_TYPE sub_type = SUBDIVISION_TYPE::RANDOM,
-                 unsigned int N = 1, unsigned int dim = 0)
-            {
-                std::deque<Particle> particles;
-
-                switch(sub_type)
-                {
-                    case SUBDIVISION_TYPE::RANDOM:
-                        particles = subdiviseOverRandomDimensions(N);
-                        break;
-                    case SUBDIVISION_TYPE::ALL_DIMENSIONS:
-                        #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
-                        particles = subdiviseOverAllDimensions();
-                        #else
-                        ROS_ERROR_STREAM("Not compiled method");
-                        #endif
-                        break;
-                    case SUBDIVISION_TYPE::GIVEN:
-                        #ifdef SUBDIVISE_OVER_GIVEN_DIRECTION
-                        particles = subdiviseOverGivenDirection(dim, N);
-                        #else
-                        ROS_ERROR_STREAM("Not compiled method");
-                        #endif
-                        break;
-                    default:
-                        ROS_ASSERT("Wrong subdivision type");
-                }
-
-                return particles;
-            }
-
-            /*! void updateBox(const IntervalVector& box)
-             *
-             *  \param box IntervalVector to update the box of the Particle
-             *
-             */
-            void updateBox(const IntervalVector& box)
-            {
-                this->put(0, box);
-            }
-
-            /*! void updateWeight(const double& weight)
-             *
-             *  \param weight double to update weight of the Particle
-             *
-             */
-            void updateWeight(const double& weight)
-            {
-                weight_ = weight;
-            }
-
-            /*! \fn double& weight() 
-             *
-             *  \return weight of the particle
-             *
-             * */
-            double& weight() { return weight_; }
+            /*! uniform distribution used to randomly subdivise particles */
+            std::uniform_real_distribution<double> uniform_distribution_;
     };
 
     /*! \class Particles
@@ -245,20 +245,6 @@ namespace bpf
      */
     class Particles: public std::deque<Particle>
     {
-        protected:
-            /*! float sumOfWeights() 
-             *
-             *  \return sum of the weights of the Particle objects in the list
-             *
-             * */
-            float sumOfWeights()
-            {
-                float sum = 0;
-                for(auto it= this->begin(); it != this->end(); it++)
-                    sum += it->weight();
-                return sum;
-            }
-
         public:
             /*! \name Constructors */
             ///@{
@@ -389,6 +375,20 @@ namespace bpf
                 this->insert(this->end(), particle);
             }
             ///@}
+
+        protected:
+            /*! float sumOfWeights() 
+             *
+             *  \return sum of the weights of the Particle objects in the list
+             *
+             * */
+            float sumOfWeights()
+            {
+                float sum = 0;
+                for(auto it= this->begin(); it != this->end(); it++)
+                    sum += it->weight();
+                return sum;
+            }
     };
 }
 
