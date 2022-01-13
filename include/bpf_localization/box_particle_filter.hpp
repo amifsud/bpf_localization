@@ -89,7 +89,7 @@ class Particle : public IntervalVector
     protected:
         /*** Boxes processing ***/
 
-        #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
+        #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS | DOXYGEN
         /*! \fn std::deque<Particle> subdiviseOverAllDimensions(unsigned int dim = 0)
          *
          *  \brief Recusively subdivise over all dimensions of the particle, begining by dim
@@ -122,7 +122,7 @@ class Particle : public IntervalVector
         }
         #endif
 
-        #ifdef SUBDIVISE_OVER_GIVEN_DIRECTION
+        #ifdef SUBDIVISE_OVER_GIVEN_DIRECTION | DOXYGEN
         /*! \fn std::deque<Particle> subdiviseOverGivenDirection(const unsigned int dim, const unsigned int N = 1)
          *
          *  \brief Subdivise the dim dimension of the particle (interval vector) N times
