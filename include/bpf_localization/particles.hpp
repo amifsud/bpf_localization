@@ -1,3 +1,11 @@
+
+/**
+ * \file   particles.hpp
+ * \brief  Particles for Box Particle Filter
+ * \author Alexis Mifsud
+ * \date   2022 January
+ */
+
 /*** Available particles subdivision ***/
 // * random
 // * all dimensions
