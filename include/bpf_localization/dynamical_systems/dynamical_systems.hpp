@@ -227,11 +227,12 @@ namespace dynamical_systems
             *
             *   \brief Method which provide the dynamics of the state.
             *
-            *   This **virtual method** has to be implemented in the specialized DynamicalSystem.
-            *   It describe the dynamics applied in applyDynamics()
+            *   This **virtual method** has to be implemented in the specialized 
+            *   DynamicalSystem. It describe the dynamics applied in applyDynamics()
             *
             *   \param state Dynibex Variable to be used in the dynamics
-            *   \param control Interval vector that represent the control to apply to the system
+            *   \param control Interval vector that represent the control to apply to 
+            *                   the system
             *
             */
             virtual Function* computeDynamicalModel
@@ -241,8 +242,8 @@ namespace dynamical_systems
             *
             *   \brief Method which provide the measures model of the state.
             *
-            *   This **virtual method** has to be implemented in the specialized DynamicalSystem.
-            *   It describe the measures model applied in applyMeasures()
+            *   This **virtual method** has to be implemented in the specialized 
+            *   DynamicalSystem. It describe the measures model applied in applyMeasures()
             *
             *   \param state Dynibex Variable to be used in the dynamics
             *
@@ -290,7 +291,9 @@ namespace dynamical_systems
             ///@{
             /*! Integration method as a Dynibex Method */
             Method integration_method_ = RK4;
-            /*! Adaptative inner timestep or not, if true #h_ will be adapted over integrations */
+            /*! Adaptative inner timestep or not, if true #h_ will be adapted 
+             *  over integrations 
+             */
             bool adaptative_timestep_  = false;
             /*! Precision allowed in the integration error of the IVP */
             double precision_          = 1e-6;
