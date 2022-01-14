@@ -91,7 +91,26 @@ namespace dynamical_systems
             {
                 ROS_ASSERT_MSG(state_size > 0, "State size has to be greater than 0");
             }
-     
+    
+            /*! \name Apply dynamical sytem
+             *
+             *  \brief Apply methods for dynamics and measures
+             *
+             */
+            ///@{
+
+            /*! IntervalVector applyMeasures(const IntervalVector& state)
+             *
+             *  \brief Apply the state dynamics model
+             *
+             *  \param state interval vector representing the state for 
+             *          which to apply the dynamics
+             *
+             *  Depending on INTEGRATION_METHOD macro, the integration method can be choosed
+             *
+             *  \return next state corresponding to the input state
+             *
+             */
             IntervalVector applyDynamics(const IntervalVector& box, 
                                          const IntervalVector& control)
             {
@@ -136,6 +155,16 @@ namespace dynamical_systems
                 return result;
             }
 
+            /*! IntervalVector applyMeasures(const IntervalVector& state)
+             *
+             *  \brief Apply the measures model
+             *
+             *  \param state interval vector representing the state for 
+             *          which to apply the measures
+             *
+             *  \return measures corresponding to the input state
+             *
+             */
             IntervalVector applyMeasures(const IntervalVector& state)
             {
                 //assertReady();
@@ -143,13 +172,24 @@ namespace dynamical_systems
                 Function* measures_model = computeMeasuresModel(&state_variable);
                 return measures_model->eval_vector(state);
             }
+            ///@}
 
-            const double& dt()                 const { return dt_; }
-            const unsigned int& stateSize()    const { return state_size_; }
-            const unsigned int& controlSize()  const { return control_size_; }
-            const unsigned int& measuresSize() const { return measures_size_; }
-
-            #if INTEGRATION_METHOD == 0
+            #if INTEGRATION_METHOD == 0 | DOXYGEN
+            /*! void configureGuarantedIntegration( Method integration_method = RK4, 
+                                                    double precision = 1e-6, 
+                                                    bool adaptative_timestep = false, 
+                                                    double h = 0.1)
+            *
+            *   \brief Configuration method when guaranted integration is used
+            *
+            *   This methods is compiled if INTEGRATION_METHOD == 0
+            *
+            *   \param integration_method Dynibex Method that select the integration method
+            *   \param precision allowed integration error in ivp
+            *   \param adaptative_timestep boolean to adapt or not the inner timestep #h_
+            *   \param h initial value ofthe inner timestep #h_ (timestep of the ivp on a timestep #dt_) 
+            *
+            */
             void configureGuarantedIntegration( Method integration_method = RK4, 
                                                 double precision = 1e-6, 
                                                 bool adaptative_timestep = false, 
@@ -162,9 +202,50 @@ namespace dynamical_systems
             }
             #endif
 
+            /*! \name Getters */
+            ///@{
+            /*! const double& dt() const */
+            const double& dt()                 const { return dt_; }
+            /*! const unsigned int& stateSize() const */
+            const unsigned int& stateSize()    const { return state_size_; }
+            /*! const unsigned int& controlSize() const */
+            const unsigned int& controlSize()  const { return control_size_; }
+            /*! const unsigned int& measuresSize() const */
+            const unsigned int& measuresSize() const { return measures_size_; }
+            ///@}
+
+        #if RESAMPLING_DIRECTION == 1 | DOXYGEN
+        public:
+            /*! Used in bpf::BoxParticleFilter::getGeometricalDirection() */
+            std::vector<std::tuple<int, int, double>> normalization_values_;
+        #endif
+
         protected:
+            /*! virtual Function* computeDynamicalModel
+                (const IntervalVector* control, Variable* state) = 0
+            *
+            *   \brief Method which provide the measures model of the state.
+            *
+            *   This **virtual method** has to be implemented in the specialized DynamicalSystem.
+            *   It describe the measures model applied in applyMeasures()
+            *
+            *   \param state Dynibex Variable to be used in the dynamics
+            *   \param control Interval vector that represent the control to apply to the system
+            *
+            */
             virtual Function* computeDynamicalModel
                 (const IntervalVector* control, Variable* state) = 0;
+
+            /*! virtual Function* computeMeasuresModel(Variable* state) = 0
+            *
+            *   \brief Method which provide the dynamical model of the state.
+            *
+            *   This **virtual method** has to be implemented in the specialized DynamicalSystem.
+            *   It describe the dynamical model applied in applyDynamics()
+            *
+            *   \param state Dynibex Variable to be used in the dynamics
+            *
+            */
             virtual Function* computeMeasuresModel(Variable* state) = 0;
 
             void assertReady()
@@ -185,23 +266,37 @@ namespace dynamical_systems
             }
 
         protected:
+            /*! Timestep, duration of the integration */
             double dt_; 
 
+            /*! \name Sizes */
+            ///@{
+            /*! State size as a static member */
             unsigned int state_size_;
+            /*! Control size as a static member */
             unsigned int control_size_;
+            /*! Measures size as a static member */
             unsigned int measures_size_;
+            ///@}
 
-            #if INTEGRATION_METHOD == 0
+            #if INTEGRATION_METHOD == 0 | DOXYGEN
+            /*! \name IVP configuration attributes 
+             *
+             *  Compiled if INTEGRATION_METHOD == 0.
+             *  Configured with configureGuarantedIntegration() method.
+             *
+             * */
+            ///@{
+            /*! Integration method as a Dynibex Method */
             Method integration_method_ = RK4;
+            /*! Adaptative inner timestep or not, if true #h_ will be adapted over integrations */
             bool adaptative_timestep_  = false;
+            /*! Precision allowed in the integration error of the IVP */
             double precision_          = 1e-6;
+            /*! Inner timestep to integrate the IVP on the timestep #dt_ */
             double h_                  = 0.1;
+            ///@}
             #endif
-
-        #if RESAMPLING_DIRECTION == 1
-        public:
-            std::vector<std::tuple<int, int, double>> normalization_values_;
-        #endif
 
     };
 
@@ -210,9 +305,9 @@ namespace dynamical_systems
     class DoubleIntegrator: public DynamicalSystem
     {
         public:
-            static const unsigned int state_size       = 2;         // state_size
-            static const unsigned int control_size     = 1;         // control_size 
-            static const unsigned int measures_size    = 1;         // measures_size
+            static const unsigned int state_size       = 2;
+            static const unsigned int control_size     = 1;
+            static const unsigned int measures_size    = 1;
 
         public:
             DoubleIntegrator(const double dt = 0.01): 

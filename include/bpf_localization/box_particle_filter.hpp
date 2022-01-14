@@ -382,6 +382,8 @@ namespace bpf
              *
              *  \brief Initialization of the Particles from an initial interval vector
              *
+             *  Depending on INIT_METHOD macro, the initialization method can be choosed
+             *
              *  \param initial_box initial interval vector to subpave
              *
              * */
