@@ -301,8 +301,6 @@ namespace dynamical_systems
 
     };
 
-    /** Double integrator **/
-
     /*! \class Double integrator 
      *
      *  \brief Specialization of DynamicalSystem that implement a double integrator

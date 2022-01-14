@@ -1,4 +1,11 @@
 
+/*
+ * \file   turtlebot2.hpp
+ * \brief  Turtle Bot
+ * \author Alexis Mifsud
+ * \date   2022 January
+ */
+
 #define INTEGRATION_METHOD 1
 
 #include "bpf_localization/dynamical_systems/dynamical_systems.hpp"
@@ -7,28 +14,19 @@
 
 namespace dynamical_systems
 {
+    /*! \class TurtleBot
+     *
+     *  \brief Specialization od DynamicalSystem that implement a TurtleBot
+     *
+     */
     class TurtleBot: public dynamical_systems::DynamicalSystem
     {
         public:
-            static const unsigned int state_size       = 3;         // state_size
-            static const unsigned int control_size     = 2;         // control_size 
-            static const unsigned int measures_size    = 2;         // measures_size
-
-            const double wheels_radius_;
-            const double wheels_distance_;
-     
-        public:
-            TurtleBot(  const double dt = 0.01):
-                dynamical_systems::DynamicalSystem( state_size,           
-                                                    control_size,         
-                                                    measures_size,        
-                                                    dt)
+            TurtleBot(const double dt = 0.01):
+                dynamical_systems::DynamicalSystem(state_size, control_size, measures_size, dt)
             {
                 #if INTEGRATION_METHOD == 0
-                configureGuarantedIntegration(RK4,      // integration method 
-                                              1e-6,     // precision
-                                              false,    // adaptative_timestep
-                                              0.1);     // initial timestep
+                configureGuarantedIntegration(RK4, 1e-6, false, 0.1);  
                 #endif
 
                 #if RESAMPLING_DIRECTION == 1
@@ -38,6 +36,33 @@ namespace dynamical_systems
                 #endif
             }
 
+        public:
+            /*! \name Static const versions of sizes
+             *
+             *  Attributes which can be used without DoubleIntegrator instanciation 
+             *
+             */
+            ///@{
+            /*! State size */
+            static const unsigned int state_size    = 3;
+            /*! Control size */
+            static const unsigned int control_size  = 2;
+            /*! Measures size */
+            static const unsigned int measures_size = 2;
+            ///@}
+
+            /*! \name TurtleBot geometry 
+             *
+             *  The Turtlebot geometric is constant and public, so static const
+             *
+             * */
+            ///@{
+            /*! Wheels radius */
+            static constexpr double wheels_radius   = 3.5e-2;
+            /*! Distance between wheels */
+            static constexpr double wheels_distance = 23e-2;
+            ///@}
+     
         protected:
             Function* computeDynamicalModel(const IntervalVector* control, Variable* state)
             {

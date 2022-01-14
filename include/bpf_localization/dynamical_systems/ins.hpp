@@ -1,32 +1,31 @@
 
+/*
+ * \file   ins.hpp
+ * \brief  Inertial Navigation System
+ * \author Alexis Mifsud
+ * \date   2022 January
+ */
+
 #define INTEGRATION_METHOD 1
 
 #include "bpf_localization/dynamical_systems/dynamical_systems.hpp"
 
-/*** Inertial Navigation System (INS) ***/
-
 namespace dynamical_systems
 {
+    /*! \class INS 
+     *
+     *  \brief Specialization of DynamicalSystem that implement an Inertial Navigation System
+     *
+     * */
     class INS: public DynamicalSystem
     {
-        public:
-            static const unsigned int state_size       = 3*3+1; // state_size
-            static const unsigned int control_size     = 2*3;   // control_size 
-            static const unsigned int measures_size    = 3;     // measures_size
-
-            double guz[3]={0.,0., -9.81};
-            Vector guz_;
-
         public:
             INS(const double dt = NaN):
                 DynamicalSystem(state_size, control_size, measures_size, dt),
                 guz_(3, guz)
             {
                 #if INTEGRATION_METHOD == 0
-                configureGuarantedIntegration(HEUN,     // integration method 
-                                              1e-4,     // precision
-                                              false,    // adaptative_timestep
-                                              0.1);     // initial timestep
+                configureGuarantedIntegration(HEUN, 1e-4, false, 0.1);
                 #endif
 
                 #if RESAMPLING_DIRECTION == 1
@@ -35,6 +34,30 @@ namespace dynamical_systems
                 normalization_values_.push_back(std::make_tuple(2, 1, 1.));
                 #endif
             }
+
+        public:
+            /*! \name Static const versions of sizes
+             *
+             *  Attributes which can be used without DoubleIntegrator instanciation 
+             *
+             */
+            ///@{
+            /*! State size */
+            static const unsigned int state_size    = 3*3+1;
+            /*! Control size */
+            static const unsigned int control_size  = 2*3;
+            /*! Measures size */
+            static const unsigned int measures_size = 3;
+            ///@}
+
+        public:
+            /*! \name Gravity */
+            ///@{
+            /*! Array of doubles to store gravity values */
+            double guz[3]={0.,0., -9.81};
+            /*! Ibex Vector to store gravity vector */
+            Vector guz_;
+            ///@}
 
         protected:
             Function* computeDynamicalModel(const IntervalVector* control, Variable* state)
