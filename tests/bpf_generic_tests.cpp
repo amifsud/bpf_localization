@@ -10,8 +10,6 @@ TEST(GenericTests, testCase1)
 {
     unsigned int N = pow(pow(2,dynamical_systems::TurtleBot::state_size),1);
     double dt              = 0.1;
-    double wheels_distance = 23e-2;
-    double wheels_radius   = 3.5e-2;
 
     IntervalVector control(dynamical_systems::TurtleBot::control_size);
     control[0] = Interval(0.0, 1.0);
@@ -29,9 +27,7 @@ TEST(GenericTests, testCase1)
     deque<IntervalVector> turtlebot_boxes;
 
     auto turtlebot = std::shared_ptr<dynamical_systems::TurtleBot>(
-            new dynamical_systems::TurtleBot(  dt              = dt,
-                                        wheels_radius   = wheels_radius,
-                                        wheels_distance = wheels_distance));
+            new dynamical_systems::TurtleBot(dt = dt));
 
     unsigned int i = 0;
     for(auto it = turtlebot_particles_in.begin();

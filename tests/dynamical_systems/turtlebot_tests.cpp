@@ -31,8 +31,7 @@ TEST(TurtlebotTest, testDynamics1)
 
     IntervalVector function_box = dynamical_model.eval_vector(initial_box);
 
-    dynamical_systems::TurtleBot turtlebot
-        = dynamical_systems::TurtleBot(dt, wheels_radius, wheels_distance);
+    dynamical_systems::TurtleBot turtlebot = dynamical_systems::TurtleBot(dt);
 
     IntervalVector turtlebot_box = turtlebot.applyDynamics(initial_box, control);
 

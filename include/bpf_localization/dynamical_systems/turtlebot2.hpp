@@ -18,15 +18,11 @@ namespace dynamical_systems
             const double wheels_distance_;
      
         public:
-            TurtleBot(  const double dt              = 0.01,   // dt
-                        const double wheels_radius   = 3.5e-2, // wheels radius
-                        const double wheels_distance = 23e-2): // wheels distance
+            TurtleBot(  const double dt = 0.01):
                 dynamical_systems::DynamicalSystem( state_size,           
                                                     control_size,         
                                                     measures_size,        
-                                                    dt),
-                wheels_radius_(wheels_radius),
-                wheels_distance_(wheels_distance)
+                                                    dt)
             {
                 #if INTEGRATION_METHOD == 0
                 configureGuarantedIntegration(RK4,      // integration method 
@@ -48,9 +44,9 @@ namespace dynamical_systems
                 ROS_DEBUG_STREAM("set dynamical model begin");
                 auto dynamical_model =            
                       new Function(*state, 
-                            Return( wheels_radius_/2*(CONTROL(0)+CONTROL(1))*cos(STATE(2)),
-                                    wheels_radius_/2*(CONTROL(0)+CONTROL(1))*sin(STATE(2)),
-                                    wheels_radius_/wheels_distance_*(CONTROL(0)-CONTROL(1))));
+                            Return( wheels_radius/2*(CONTROL(0)+CONTROL(1))*cos(STATE(2)),
+                                    wheels_radius/2*(CONTROL(0)+CONTROL(1))*sin(STATE(2)),
+                                    wheels_radius/wheels_distance*(CONTROL(0)-CONTROL(1))));
                 ROS_DEBUG_STREAM("set dynamical model end");
                 return dynamical_model;
             }
