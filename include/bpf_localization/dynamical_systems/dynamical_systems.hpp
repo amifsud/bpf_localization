@@ -207,7 +207,7 @@ namespace dynamical_systems
 
     /** Double integrator **/
 
-    class DoubleIntegratorDynamicalModel: public DynamicalSystem
+    class DoubleIntegrator: public DynamicalSystem
     {
         public:
             static const unsigned int state_size       = 2;         // state_size
@@ -215,12 +215,8 @@ namespace dynamical_systems
             static const unsigned int measures_size    = 1;         // measures_size
 
         public:
-            DoubleIntegratorDynamicalModel
-                (const double dt = 0.01): 
-                    DynamicalSystem(state_size,           
-                                control_size,         
-                                measures_size,        
-                                dt)
+            DoubleIntegrator(const double dt = 0.01): 
+                DynamicalSystem(state_size, control_size, measures_size, dt)
             {
                 #if INTEGRATION_METHOD == 0
                 configureGuarantedIntegration(RK4,   // integration method 

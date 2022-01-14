@@ -10,19 +10,19 @@ TEST(GuarantedIntegrationTest, testDynamics1)
 {
     double dt              = 0.1;
 
-    IntervalVector initial_box(DoubleIntegratorDynamicalModel::state_size);
+    IntervalVector initial_box(DoubleIntegrator::state_size);
     initial_box[0]= Interval(0.0, 0.0);
     initial_box[1]= Interval(0.0, 0.0);
 
-    IntervalVector control(DoubleIntegratorDynamicalModel::control_size);
+    IntervalVector control(DoubleIntegrator::control_size);
     control[0] = Interval(1.0, 1.0);
 
-    DoubleIntegratorDynamicalModel double_integrator(dt);
+    DoubleIntegrator double_integrator(dt);
 
     IntervalVector double_integrator_box 
         = double_integrator.applyDynamics(initial_box, control);
 
-    IntervalVector result(DoubleIntegratorDynamicalModel::state_size);
+    IntervalVector result(DoubleIntegrator::state_size);
     result[0] = Interval(0.005, 0.005);
     result[1] = Interval(0.1, 0.1);
 
@@ -33,19 +33,19 @@ TEST(GuarantedIntegrationTest, testDynamics2)
 {
     double dt              = 0.1;
 
-    IntervalVector initial_box(DoubleIntegratorDynamicalModel::state_size);
+    IntervalVector initial_box(DoubleIntegrator::state_size);
     initial_box[0]= Interval(0.0, 0.0);
     initial_box[1]= Interval(0.0, 0.0);
 
-    IntervalVector control(DoubleIntegratorDynamicalModel::control_size);
+    IntervalVector control(DoubleIntegrator::control_size);
     control[0] = Interval(1.0, 2.0);
 
-    DoubleIntegratorDynamicalModel double_integrator(dt);
+    DoubleIntegrator double_integrator(dt);
 
     IntervalVector double_integrator_box 
         = double_integrator.applyDynamics(initial_box, control);
 
-    IntervalVector result(DoubleIntegratorDynamicalModel::state_size);
+    IntervalVector result(DoubleIntegrator::state_size);
     result[0] = Interval(0.005, 0.01);
     result[1] = Interval(0.1, 0.2);
 
@@ -56,19 +56,19 @@ TEST(GuarantedIntegrationTest, testDynamics3)
 {
     double dt              = 0.1;
 
-    IntervalVector initial_box(DoubleIntegratorDynamicalModel::state_size);
+    IntervalVector initial_box(DoubleIntegrator::state_size);
     initial_box[0]= Interval(0.0, 1.0);
     initial_box[1]= Interval(0.0, 0.0);
 
-    IntervalVector control(DoubleIntegratorDynamicalModel::control_size);
+    IntervalVector control(DoubleIntegrator::control_size);
     control[0] = Interval(1.0, 1.0);
 
-    DoubleIntegratorDynamicalModel double_integrator(dt);
+    DoubleIntegrator double_integrator(dt);
 
     IntervalVector double_integrator_box 
         = double_integrator.applyDynamics(initial_box, control);
 
-    IntervalVector result(DoubleIntegratorDynamicalModel::state_size);
+    IntervalVector result(DoubleIntegrator::state_size);
     result[0] = Interval(0.005, 1.005);
     result[1] = Interval(0.1, 0.1);
 
@@ -79,19 +79,19 @@ TEST(GuarantedIntegrationTest, testDynamics4)
 {
     double dt              = 0.1;
 
-    IntervalVector initial_box(DoubleIntegratorDynamicalModel::state_size);
+    IntervalVector initial_box(DoubleIntegrator::state_size);
     initial_box[0]= Interval(0.0, 0.0);
     initial_box[1]= Interval(0.0, 1.0);
 
-    IntervalVector control(DoubleIntegratorDynamicalModel::control_size);
+    IntervalVector control(DoubleIntegrator::control_size);
     control[0] = Interval(1.0, 1.0);
 
-    DoubleIntegratorDynamicalModel double_integrator(dt);
+    DoubleIntegrator double_integrator(dt);
 
     IntervalVector double_integrator_box 
         = double_integrator.applyDynamics(initial_box, control);
 
-    IntervalVector result(DoubleIntegratorDynamicalModel::state_size);
+    IntervalVector result(DoubleIntegrator::state_size);
     result[0] = Interval(0.005, 0.105);
     result[1] = Interval(0.1, 1.1);
 
