@@ -317,7 +317,7 @@ if(TARGET imu_dynamical_model_tests)
     )
 endif()
 
-catkin_add_gtest(boat_bpf_localization_tests tests/boat_bpf_localization_tests.cpp)
+catkin_add_gtest(   boat_bpf_localization_tests tests/boat_bpf_localization_tests.cpp)
 if(TARGET boat_bpf_localization_tests)
     target_link_libraries(boat_bpf_localization_tests
         ${catkin_LIBRARIES}

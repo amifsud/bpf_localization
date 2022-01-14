@@ -8,8 +8,8 @@
 // Declare a test
 TEST(UniformPavingInitTest, testCase1)
 {
-    auto dynamical_model = std::shared_ptr<TurtleBotDynamicalModel>(
-            new TurtleBotDynamicalModel());
+    auto dynamical_model = std::shared_ptr<dynamical_systems::TurtleBot>(
+            new dynamical_systems::TurtleBot());
 
     unsigned int N = pow(pow(2,dynamical_model->stateSize()),1);
 
@@ -31,8 +31,8 @@ TEST(UniformPavingInitTest, testCase1)
 // Declare another test
 TEST(UniformPavingInitTest, testCase2)
 {
-    auto dynamical_model = std::shared_ptr<TurtleBotDynamicalModel>(
-            new TurtleBotDynamicalModel());
+    auto dynamical_model = std::shared_ptr<dynamical_systems::TurtleBot>(
+            new dynamical_systems::TurtleBot());
 
     unsigned int N = pow(pow(2,dynamical_model->stateSize()),2) + 10;
 

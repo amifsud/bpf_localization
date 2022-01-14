@@ -9,11 +9,11 @@
 TEST(IMUDynamicalModelTest, testDynamicsTranslationZ)
 {
     double dt = 1e-0;
-    INSDynamicalModel imu(dt = dt);
-    IntervalVector state1(INSDynamicalModel::state_size);
-    IntervalVector state_0(INSDynamicalModel::state_size);
-    IntervalVector state_k(INSDynamicalModel::state_size);
-    IntervalVector control(INSDynamicalModel::control_size);
+    dynamical_systems::INS imu(dt = dt);
+    IntervalVector state1(dynamical_systems::INS::state_size);
+    IntervalVector state_0(dynamical_systems::INS::state_size);
+    IntervalVector state_k(dynamical_systems::INS::state_size);
+    IntervalVector control(dynamical_systems::INS::control_size);
 
     // Linear acceleration Z axis
     control[0] = Interval(0., 0.); // gyrometer
@@ -51,11 +51,11 @@ TEST(IMUDynamicalModelTest, testDynamicsTranslationZ)
 TEST(IMUDynamicalModelTest, testDynamicsTranslationY)
 {
     double dt = 1e-0;
-    INSDynamicalModel imu(dt = dt);
-    IntervalVector state1(INSDynamicalModel::state_size);
-    IntervalVector state_0(INSDynamicalModel::state_size);
-    IntervalVector state_k(INSDynamicalModel::state_size);
-    IntervalVector control(INSDynamicalModel::control_size);
+    dynamical_systems::INS imu(dt = dt);
+    IntervalVector state1(dynamical_systems::INS::state_size);
+    IntervalVector state_0(dynamical_systems::INS::state_size);
+    IntervalVector state_k(dynamical_systems::INS::state_size);
+    IntervalVector control(dynamical_systems::INS::control_size);
 
     // Linear acceleration Y axis
     control[0] = Interval(0., 0.); // gyrometer
@@ -93,11 +93,11 @@ TEST(IMUDynamicalModelTest, testDynamicsTranslationY)
 TEST(IMUDynamicalModelTest, testDynamicsTranslationX)
 {
     double dt = 1e-0;
-    INSDynamicalModel imu(dt = dt);
-    IntervalVector state1(INSDynamicalModel::state_size);
-    IntervalVector state_0(INSDynamicalModel::state_size);
-    IntervalVector state_k(INSDynamicalModel::state_size);
-    IntervalVector control(INSDynamicalModel::control_size);
+    dynamical_systems::INS imu(dt = dt);
+    IntervalVector state1(dynamical_systems::INS::state_size);
+    IntervalVector state_0(dynamical_systems::INS::state_size);
+    IntervalVector state_k(dynamical_systems::INS::state_size);
+    IntervalVector control(dynamical_systems::INS::control_size);
 
     // Linear acceleration X axis
     control[0] = Interval(0., 0.); // gyrometer
@@ -135,11 +135,11 @@ TEST(IMUDynamicalModelTest, testDynamicsTranslationX)
 TEST(IMUDynamicalModelTest, testDynamicsRotationZ)
 {
     double dt = 1e-3;
-    INSDynamicalModel imu(dt);
-    IntervalVector state1(INSDynamicalModel::state_size);
-    IntervalVector state_0(INSDynamicalModel::state_size);
-    IntervalVector state_k(INSDynamicalModel::state_size);
-    IntervalVector control(INSDynamicalModel::control_size);
+    dynamical_systems::INS imu(dt);
+    IntervalVector state1(dynamical_systems::INS::state_size);
+    IntervalVector state_0(dynamical_systems::INS::state_size);
+    IntervalVector state_k(dynamical_systems::INS::state_size);
+    IntervalVector control(dynamical_systems::INS::control_size);
 
     // Linear acceleration Z axis
     control[0] = Interval(0., 0.); // gyrometer
@@ -178,11 +178,11 @@ TEST(IMUDynamicalModelTest, testDynamicsRotationZ)
 TEST(IMUDynamicalModelTest, testDynamicsRotationY)
 {
     double dt = 1e-3;
-    INSDynamicalModel imu(dt);
-    IntervalVector state1(INSDynamicalModel::state_size);
-    IntervalVector state_0(INSDynamicalModel::state_size);
-    IntervalVector state_k(INSDynamicalModel::state_size);
-    IntervalVector control(INSDynamicalModel::control_size);
+    dynamical_systems::INS imu(dt);
+    IntervalVector state1(dynamical_systems::INS::state_size);
+    IntervalVector state_0(dynamical_systems::INS::state_size);
+    IntervalVector state_k(dynamical_systems::INS::state_size);
+    IntervalVector control(dynamical_systems::INS::control_size);
 
     // Linear acceleration Y axis
     control[0] = Interval(0., 0.); // gyrometer
@@ -220,11 +220,11 @@ TEST(IMUDynamicalModelTest, testDynamicsRotationY)
 TEST(IMUDynamicalModelTest, testDynamicsRotationX)
 {
     double dt = 1e-3;
-    INSDynamicalModel imu(dt);
-    IntervalVector state1(INSDynamicalModel::state_size);
-    IntervalVector state_0(INSDynamicalModel::state_size);
-    IntervalVector state_k(INSDynamicalModel::state_size);
-    IntervalVector control(INSDynamicalModel::control_size);
+    dynamical_systems::INS imu(dt);
+    IntervalVector state1(dynamical_systems::INS::state_size);
+    IntervalVector state_0(dynamical_systems::INS::state_size);
+    IntervalVector state_k(dynamical_systems::INS::state_size);
+    IntervalVector control(dynamical_systems::INS::control_size);
 
     // Linear acceleration X axis
     control[0] = Interval(-10., -10.); // gyrometer

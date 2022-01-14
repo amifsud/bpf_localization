@@ -4,6 +4,8 @@
 #include <gtest/gtest.h>
 #include "bpf_localization/dynamical_systems/dynamical_systems.hpp"
 
+using namespace dynamical_systems;
+
 TEST(GuarantedIntegrationTest, testDynamics1)
 {
     double dt              = 0.1;

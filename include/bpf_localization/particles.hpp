@@ -390,6 +390,6 @@ namespace bpf
                 return sum;
             }
     };
-}
+} // namespace bpf
 
 #endif

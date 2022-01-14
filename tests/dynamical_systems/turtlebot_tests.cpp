@@ -10,18 +10,17 @@ TEST(TurtlebotTest, testDynamics1)
     double dt              = 0.1;
     double wheels_distance = 23e-2;
     double wheels_radius   = 3.5e-2;
-    bool   ivp             = true;
 
-    IntervalVector initial_box(TurtleBotDynamicalModel::state_size);
+    IntervalVector initial_box(dynamical_systems::TurtleBot::state_size);
     initial_box[0]= Interval(0.0, 2.0);
     initial_box[1]= Interval(0.0, 3.0);
     initial_box[2]= Interval(0.0, 1.0); //if we let zero we don't test y dynamics
 
-    IntervalVector control(TurtleBotDynamicalModel::control_size);
+    IntervalVector control(dynamical_systems::TurtleBot::control_size);
     control[0] = Interval(0.0, 1.0);
     control[1] = Interval(0.0, 2.0);
 
-    Variable state(TurtleBotDynamicalModel::state_size);
+    Variable state(dynamical_systems::TurtleBot::state_size);
     Function dynamical_model             
         = Function(state, 
                 Return(dt*wheels_radius/2*(control[0]+control[1])*cos(state[2])+state[0],
@@ -32,11 +31,8 @@ TEST(TurtlebotTest, testDynamics1)
 
     IntervalVector function_box = dynamical_model.eval_vector(initial_box);
 
-    TurtleBotDynamicalModel turtlebot
-        = TurtleBotDynamicalModel(  dt,
-                                    wheels_radius,
-                                    wheels_distance,
-                                    ivp);
+    dynamical_systems::TurtleBot turtlebot
+        = dynamical_systems::TurtleBot(dt, wheels_radius, wheels_distance);
 
     IntervalVector turtlebot_box = turtlebot.applyDynamics(initial_box, control);
 

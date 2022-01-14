@@ -18,7 +18,7 @@ int main(int argc, char **argv)
     IMUInterface        imu(&nh, "boat_imu", 3);
     GPSInterface        gps(&nh, "boat_gps", 3);
 
-    IntervalVector control(INSDynamicalModel::control_size);
+    IntervalVector control(dynamical_systems::INS::control_size);
     IntervalVector position(3);
 
     unsigned int u = 0;

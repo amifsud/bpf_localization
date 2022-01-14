@@ -8,8 +8,8 @@
 // Declare a test
 TEST(UniformlyChoosenPavingInitTest, testCase1)
 {
-    auto dynamical_model = std::shared_ptr<TurtleBotDynamicalModel>(
-            new TurtleBotDynamicalModel());
+    auto dynamical_model = std::shared_ptr<dynamical_systems::TurtleBot>(
+            new dynamical_systems::TurtleBot());
 
     unsigned int N = 1234;
 

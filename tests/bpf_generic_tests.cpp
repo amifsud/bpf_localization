@@ -8,16 +8,16 @@
 // Declare a test
 TEST(GenericTests, testCase1)
 {
-    unsigned int N = pow(pow(2,TurtleBotDynamicalModel::state_size),1);
+    unsigned int N = pow(pow(2,dynamical_systems::TurtleBot::state_size),1);
     double dt              = 0.1;
     double wheels_distance = 23e-2;
     double wheels_radius   = 3.5e-2;
 
-    IntervalVector control(TurtleBotDynamicalModel::control_size);
+    IntervalVector control(dynamical_systems::TurtleBot::control_size);
     control[0] = Interval(0.0, 1.0);
     control[1] = Interval(0.0, 2.0);
 
-    IntervalVector initial_box(TurtleBotDynamicalModel::state_size);
+    IntervalVector initial_box(dynamical_systems::TurtleBot::state_size);
     initial_box[0] = Interval(0.0, 2.0);
     initial_box[1] = Interval(0.0, 3.0);
     initial_box[2] = Interval(0.0, 1.0);
@@ -28,8 +28,8 @@ TEST(GenericTests, testCase1)
         = particle.subdivise(SUBDIVISION_TYPE::ALL_DIMENSIONS);
     deque<IntervalVector> turtlebot_boxes;
 
-    auto turtlebot = std::shared_ptr<TurtleBotDynamicalModel>(
-            new TurtleBotDynamicalModel(  dt              = dt,
+    auto turtlebot = std::shared_ptr<dynamical_systems::TurtleBot>(
+            new dynamical_systems::TurtleBot(  dt              = dt,
                                         wheels_radius   = wheels_radius,
                                         wheels_distance = wheels_distance));
 

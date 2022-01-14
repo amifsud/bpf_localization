@@ -103,7 +103,7 @@ namespace bpf
             */
             BoxParticleFilter(  unsigned int N, 
                                 IntervalVector& initial_box,
-                                std::shared_ptr<DynamicalModel> dynamical_model,
+                                std::shared_ptr<dynamical_systems::DynamicalSystem> dynamical_model,
                                 bool parallelize = false)
                 : uniform_distribution_(0.0, 1.0)
             {
@@ -279,7 +279,7 @@ namespace bpf
             /*! const unsigned int& N() const */
             const unsigned int& N() const { return N_; }
             /*! std::shared_ptr<DynamicalModel> dynamicalModel() const */
-            std::shared_ptr<DynamicalModel> dynamicalModel() const { return dynamical_model_; }
+            std::shared_ptr<dynamical_systems::DynamicalSystem> dynamicalModel() const { return dynamical_model_; }
             /*! const Particles& getParticles() const */
             const Particles& getParticles() const { return particles_; }
 
@@ -614,7 +614,7 @@ namespace bpf
             std::uniform_real_distribution<double> uniform_distribution_;
 
             /*! dynamical model base class from which particular systems inherit */
-            std::shared_ptr<DynamicalModel> dynamical_model_;
+            std::shared_ptr<dynamical_systems::DynamicalSystem> dynamical_model_;
 
             /*! Particles of the box particle filter */
             Particles particles_;
@@ -624,10 +624,12 @@ namespace bpf
 
             /*! Do we parallelize prediction or not 
              *
-             *  **WARNING : DynIbex doesn't seem thread safe, so parallelization don't work**
+             *  **WARNING : DynIbex doesn't seem thread safe, 
+             *  so parallelization don't work**
              *
              * */
             bool parallelize_;
     };
-}
+
+} // namespace bpf
 #endif
