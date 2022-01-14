@@ -57,7 +57,7 @@ using namespace ibex;
 /*! Contains everithing related to the dynamical systems */
 namespace dynamical_systems
 {
-    /*! \class DynamicalModel 
+    /*! \class DynamicalSystem 
      *
      *  \brief Abstract class that represent dynamical systems
      *
@@ -301,7 +301,7 @@ namespace dynamical_systems
 
     };
 
-    /*! \class Double integrator 
+    /*! \class DoubleIntegrator 
      *
      *  \brief Specialization of DynamicalSystem that implement a double integrator
      *

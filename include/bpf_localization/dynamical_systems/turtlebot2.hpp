@@ -16,7 +16,7 @@ namespace dynamical_systems
 {
     /*! \class TurtleBot
      *
-     *  \brief Specialization od DynamicalSystem that implement a TurtleBot
+     *  \brief Specialization of DynamicalSystem that implement a Turtle Bot
      *
      */
     class TurtleBot: public dynamical_systems::DynamicalSystem
