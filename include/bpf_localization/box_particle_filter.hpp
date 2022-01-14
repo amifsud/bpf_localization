@@ -319,7 +319,7 @@ namespace bpf
             /*! \name Initial paving */
 
             ///@{
-            #if INIT_METHOD == 0 | DOXYGEN
+            #if INIT_METHOD == 0 | defined DOXYGEN
             /*! \fn void uniformSubpaving(Particles* particles) 
              *
              *  \brief Particles subpaving from the subdivision of an initial box
@@ -341,7 +341,7 @@ namespace bpf
             }
             #endif
 
-            #if INIT_METHOD == 1 | DOXYGEN
+            #if INIT_METHOD == 1 | defined DOXYGEN
             /*! \fn void allDimensionsSubpaving(Particles* particles) 
              *
              *  \brief Particles subpaving from the subdivision of an initial box
@@ -403,7 +403,7 @@ namespace bpf
             /*! \name Number of subdivision choice */
             ///@{
 
-            #if RESAMPLING_METHOD == 0 | DOXYGEN
+            #if RESAMPLING_METHOD == 0 | defined DOXYGEN
             /*!  std::vector<unsigned int> multinomialSubdivisions(Particles* particles)
              *
              *  \brief Multinomial algorithm to determine the number of Particle subdivision
@@ -437,7 +437,7 @@ namespace bpf
             }
             #endif
 
-            #if RESAMPLING_METHOD == 1 | DOXYGEN
+            #if RESAMPLING_METHOD == 1 | defined DOXYGEN
             /*!  std::vector<unsigned int> gurantedSubdivisions(Particles* particles)
              *
              *  \brief Guaranted algorithm to determine the number of Particle subdivision
@@ -501,7 +501,7 @@ namespace bpf
             /*! \name Resampling direction */
 
             ///@{
-            #if RESAMPLING_DIRECTION == 0 | DOXYGEN
+            #if RESAMPLING_DIRECTION == 0 | defined DOXYGEN
             /*! unsigned int getRandomDirection(IntervalVector& box)
              * 
              *  \brief Get random direction for subdivision
@@ -523,7 +523,7 @@ namespace bpf
             }
             #endif
 
-            #if RESAMPLING_DIRECTION == 1 | DOXYGEN
+            #if RESAMPLING_DIRECTION == 1 | defined DOXYGEN
             /*! unsigned int getGeometricalDirection(IntervalVector& box)
              * 
              *  \brief Get geometrical direction for subdivision
@@ -562,7 +562,7 @@ namespace bpf
             }
             #endif
 
-            #if RESAMPLING_DIRECTION == 2 | DOXYGEN
+            #if RESAMPLING_DIRECTION == 2 | defined DOXYGEN
             /*! unsigned int getMaximumlikelihoodDirection(IntervalVector& box)
              * 
              *  \brief Get maximum likelihood direction for subdivision

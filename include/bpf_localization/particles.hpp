@@ -131,7 +131,7 @@ namespace bpf
         protected:
             /*** Boxes processing ***/
 
-            #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS | DOXYGEN
+            #if defined SUBDIVISE_OVER_ALL_DIMENSIONS || defined DOXYGEN
             /*! \fn std::deque<Particle> subdiviseOverAllDimensions(unsigned int dim = 0)
              *
              *  \brief Recusively subdivise over all dimensions of the particle, begining by dim
@@ -164,7 +164,7 @@ namespace bpf
             }
             #endif
 
-            #ifdef SUBDIVISE_OVER_GIVEN_DIRECTION | DOXYGEN
+            #if defined SUBDIVISE_OVER_GIVEN_DIRECTION | defined DOXYGEN
             /*! \fn std::deque<Particle> subdiviseOverGivenDirection(const unsigned int dim, 
              *      const unsigned int N = 1)
              *

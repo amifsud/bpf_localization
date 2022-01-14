@@ -174,7 +174,7 @@ namespace dynamical_systems
             }
             ///@}
 
-            #if INTEGRATION_METHOD == 0 | DOXYGEN
+            #if INTEGRATION_METHOD == 0 | defined DOXYGEN
             /*! void configureGuarantedIntegration( Method integration_method = RK4, 
                                                     double precision = 1e-6, 
                                                     bool adaptative_timestep = false, 
@@ -215,7 +215,7 @@ namespace dynamical_systems
             const unsigned int& measuresSize() const { return measures_size_; }
             ///@}
 
-        #if RESAMPLING_DIRECTION == 1 | DOXYGEN
+        #if RESAMPLING_DIRECTION == 1 | defined DOXYGEN
         public:
             /*! Used in bpf::BoxParticleFilter::getGeometricalDirection() */
             std::vector<std::tuple<int, int, double>> normalization_values_;
@@ -281,7 +281,7 @@ namespace dynamical_systems
             unsigned int measures_size_;
             ///@}
 
-            #if INTEGRATION_METHOD == 0 | DOXYGEN
+            #if INTEGRATION_METHOD == 0 | defined DOXYGEN
             /*! \name IVP configuration attributes 
              *
              *  Compiled if INTEGRATION_METHOD == 0.
