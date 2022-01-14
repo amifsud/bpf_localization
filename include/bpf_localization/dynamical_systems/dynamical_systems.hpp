@@ -219,10 +219,7 @@ namespace dynamical_systems
                 DynamicalSystem(state_size, control_size, measures_size, dt)
             {
                 #if INTEGRATION_METHOD == 0
-                configureGuarantedIntegration(RK4,   // integration method 
-                                              1e-6,  // precision
-                                              false, // adaptative_timestep
-                                              0.1);  // initial timestep
+                configureGuarantedIntegration(RK4, 1e-6, false, 0.1); 
                 #endif
             }
 
