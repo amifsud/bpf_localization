@@ -5,25 +5,70 @@
  *  - function composition to define model when we don't use dynibex
 **/
 
+/**
+ * \file   dynamical_systems.hpp
+ * \brief  Dynamical Systems
+ * \author Alexis Mifsud
+ * \date   2022 January
+ */
+
 #ifndef DYNAMICAL_SYSTEMS
 #define DYNAMICAL_SYSTEMS
 
-/*** Integrations methods ***/
-//  * guaranted with Dynibex IVPs                       : 0
-//  * Non guaranted interval integration                : 1
-//  * Non guaranted integration with affine arithmetic  : 2
+/*! \name Default MACROS
+ *
+ *  \brief Those MACROS are used to define the dynamical systems integration scheme.
+ *          **Values here are default values**
+ *
+ * */
+///@{
 
+/*! INTEGRATION_METHOD
+ *
+ *  \brief Integration method
+ *
+ *  * 0 : guaranted with Dynibex IVPs
+ *  * 1 : Non guaranted interval integration
+ *  * 2 : Non guaranted integration with affine arithmetic
+ *
+ */
 #ifndef INTEGRATION_METHOD
     #define INTEGRATION_METHOD 1
 #endif
+
+//@}
 
 #include "bpf_localization/utils.hpp"
 
 using namespace ibex;
 
+/*! \name Simplification MACROS
+ *
+ *  \brief Those MACROS are used to simplify dynamical models reading and writing
+ *
+ * */
+///@{
+
 #define STATE(x) state->operator[](x)
 #define CONTROL(x) control->operator[](x)
 
+///@}
+
+/*! Contains everithing related to the dynamical systems */
+namespace dynamical_systems
+{
+    /*! \class DynamicalModel 
+     *
+     *  \brief Abstract class that represent dynamical systems
+     *
+     *  This class is intended to be used by algorithms that are 
+     *  not dependant of specificitied of each dynamical systems
+     *
+     *  Specialize this class to use those algorithms with the corresponding
+     *  dynamical systems
+     *
+     *
+     * */
 class DynamicalModel
 {
     protected:
@@ -64,6 +109,18 @@ class DynamicalModel
     #endif
 
     public:
+        /*! DynamicalSystem( unsigned int state_size, unsigned int control_size, 
+                     		 unsigned int measures_size, double dt,
+                        	 Vector measures_noise_diams, Vector process_noise_diams)
+        *
+        *   \brief DynamicalSystem constructor
+        *
+        *   \param state_size size of the dynamical system state
+        *   \param control_size size of the dynamical system control
+        *   \param measures_size size of the dynamical system measures
+        *   \param dt integration sampling period
+        *
+        */
         DynamicalModel( unsigned int state_size, unsigned int control_size, 
                         unsigned int measures_size, double dt,
                         Vector measures_noise_diams, Vector process_noise_diams)
