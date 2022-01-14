@@ -187,7 +187,8 @@ namespace dynamical_systems
             *   \param integration_method Dynibex Method that select the integration method
             *   \param precision allowed integration error in ivp
             *   \param adaptative_timestep boolean to adapt or not the inner timestep #h_
-            *   \param h initial value ofthe inner timestep #h_ (timestep of the ivp on a timestep #dt_) 
+            *   \param h initial value ofthe inner timestep #h_ (timestep of the ivp on a 
+            *            timestep #dt_) 
             *
             */
             void configureGuarantedIntegration( Method integration_method = RK4, 
@@ -224,10 +225,10 @@ namespace dynamical_systems
             /*! virtual Function* computeDynamicalModel
                 (const IntervalVector* control, Variable* state) = 0
             *
-            *   \brief Method which provide the measures model of the state.
+            *   \brief Method which provide the dynamics of the state.
             *
             *   This **virtual method** has to be implemented in the specialized DynamicalSystem.
-            *   It describe the measures model applied in applyMeasures()
+            *   It describe the dynamics applied in applyDynamics()
             *
             *   \param state Dynibex Variable to be used in the dynamics
             *   \param control Interval vector that represent the control to apply to the system
@@ -238,10 +239,10 @@ namespace dynamical_systems
 
             /*! virtual Function* computeMeasuresModel(Variable* state) = 0
             *
-            *   \brief Method which provide the dynamical model of the state.
+            *   \brief Method which provide the measures model of the state.
             *
             *   This **virtual method** has to be implemented in the specialized DynamicalSystem.
-            *   It describe the dynamical model applied in applyDynamics()
+            *   It describe the measures model applied in applyMeasures()
             *
             *   \param state Dynibex Variable to be used in the dynamics
             *
@@ -302,14 +303,24 @@ namespace dynamical_systems
 
     /** Double integrator **/
 
+    /*! \class Double integrator 
+     *
+     *  \brief Specialization of DynamicalSystem that implement a double integrator
+     *
+     *  This class is used in the tests of DynamicalSystem, and it provide a minimal
+     *  example of how to specialized it.
+     *
+     * */
     class DoubleIntegrator: public DynamicalSystem
     {
         public:
-            static const unsigned int state_size       = 2;
-            static const unsigned int control_size     = 1;
-            static const unsigned int measures_size    = 1;
-
-        public:
+            /*! DoubleIntegrator(const double dt = 0.01)
+             *
+             *  \brief DoubleIntegrator constructor
+             *
+             *  \param dt integration timestep
+             *
+             */
             DoubleIntegrator(const double dt = 0.01): 
                 DynamicalSystem(state_size, control_size, measures_size, dt)
             {
@@ -318,7 +329,33 @@ namespace dynamical_systems
                 #endif
             }
 
+        public:
+            /*! \name Static const versions of sizes
+             *
+             *  Attributes which can be used without DoubleIntegrator instanciation 
+             *
+             */
+            ///@{
+            /*! State size */
+            static const unsigned int state_size       = 2;
+            /*! Control size */
+            static const unsigned int control_size     = 1;
+            /*! Measures size */
+            static const unsigned int measures_size    = 1;
+            ///@}
+
         protected:
+            /*! Function* computeDynamicalModel(const IntervalVector* control, Variable* state)
+             *
+            *   \brief Method which provide the dynamics of the state.
+            *
+            *   This  method has to be implemented so the class is not abstract
+            *   It describe the dynamics applied in applyDynamics()
+            *
+            *   \param state Dynibex Variable to be used in the dynamics
+            *   \param control Interval vector that represent the control to apply to the system
+            *
+            */
             Function* computeDynamicalModel(const IntervalVector* control, Variable* state)
             {
                 ROS_DEBUG_STREAM("set dynamical model begin");
@@ -327,6 +364,16 @@ namespace dynamical_systems
                 return dynamical_model;
             }
 
+            /*! Function* computeMeasuresModel(const IntervalVector* control, Variable* state)
+             *
+            *   \brief Method which provide the measures model of the state.
+            *
+            *   This  method has to be implemented so the class is not abstract
+            *   It describe the measures model applied in applyMeasures()
+            *
+            *   \param state Dynibex Variable to be used in the dynamics
+            *
+            */
             Function* computeMeasuresModel(Variable* state)
             {
                 ROS_DEBUG_STREAM("set measures model begin");
