@@ -43,7 +43,7 @@ namespace dynamical_systems
             }
 
         protected:
-            Function* getDynamicalModel(const IntervalVector* control, Variable* state)
+            Function* computeDynamicalModel(const IntervalVector* control, Variable* state)
             {
                 ROS_DEBUG_STREAM("set dynamical model begin");
                 auto dynamical_model =            
@@ -55,7 +55,7 @@ namespace dynamical_systems
                 return dynamical_model;
             }
 
-            Function* getMeasuresModel(Variable* state)
+            Function* computeMeasuresModel(Variable* state)
             {
                 ROS_DEBUG_STREAM("set measures model begin");
                 auto measures_model =  

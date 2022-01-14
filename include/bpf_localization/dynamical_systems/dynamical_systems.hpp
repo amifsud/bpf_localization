@@ -98,7 +98,7 @@ namespace dynamical_systems
                 //assertReady();
                 Variable state(state_size_);
                 IntervalVector result(state_size_, Interval(0., 0.));
-                Function* dynamical_model = getDynamicalModel(&control, &state);
+                Function* dynamical_model = computeDynamicalModel(&control, &state);
 
                 #if INTEGRATION_METHOD == 0
                     ROS_DEBUG_STREAM("guaranted integration method");
@@ -136,12 +136,12 @@ namespace dynamical_systems
                 return result;
             }
 
-            IntervalVector applyMeasures(const IntervalVector& box)
+            IntervalVector applyMeasures(const IntervalVector& state)
             {
                 //assertReady();
-                Variable state(state_size_);
-                Function* measures_model = getMeasuresModel(&state);
-                return measures_model->eval_vector(box);
+                Variable state_variable(state_size_);
+                Function* measures_model = computeMeasuresModel(&state_variable);
+                return measures_model->eval_vector(state);
             }
 
             const double& dt()                 const { return dt_; }
@@ -163,20 +163,20 @@ namespace dynamical_systems
             #endif
 
         protected:
-            virtual Function* getDynamicalModel
+            virtual Function* computeDynamicalModel
                 (const IntervalVector* control, Variable* state) = 0;
-            virtual Function* getMeasuresModel(Variable* state) = 0;
+            virtual Function* computeMeasuresModel(Variable* state) = 0;
 
             void assertReady()
             {
                 Variable state(state_size_);
                 IntervalVector control(state_size_, Interval(0.,0.));
 
-                Function* dynamical_model = getDynamicalModel( &control, &state);
+                Function* dynamical_model = computeDynamicalModel( &control, &state);
 
                 assert(dynamical_model != NULL && "dynamical_model_ not set");
 
-                dynamical_model = getMeasuresModel(&state);
+                dynamical_model = computeMeasuresModel(&state);
                 assert(dynamical_model != NULL  && "measures_model_ not set");
 
                 assert(state_size_ != 0         && "state_size not set");
@@ -224,7 +224,7 @@ namespace dynamical_systems
             }
 
         protected:
-            Function* getDynamicalModel(const IntervalVector* control, Variable* state)
+            Function* computeDynamicalModel(const IntervalVector* control, Variable* state)
             {
                 ROS_DEBUG_STREAM("set dynamical model begin");
                 auto dynamical_model =  new Function(*state, Return(STATE(1), CONTROL(0)));
@@ -232,7 +232,7 @@ namespace dynamical_systems
                 return dynamical_model;
             }
 
-            Function* getMeasuresModel(Variable* state)
+            Function* computeMeasuresModel(Variable* state)
             {
                 ROS_DEBUG_STREAM("set measures model begin");
                 auto measures_model = new Function(*state, STATE(0));
