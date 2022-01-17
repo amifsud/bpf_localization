@@ -57,11 +57,14 @@ class Calibrable
             size_(size), sum_(Vector(size, 0.)), 
             half_diameters_(Vector(size, 0.)),
             lb_(Vector(size, 1e7)), ub_(Vector(size, -1e7)),
-            mid_(Vector(size, 1e7)), mean_(Vector(size, 1e7))
+            mid_(Vector(size, 1e7)), mean_(Vector(size, 1e7)),
+            calibration_file_name_("")
         {
-            std::string path = ros::package::getPath("bpf_localization");
-            calibration_file_name_ = path + "/data/calibrations/" + 
-                                name_ + ".csv";
+        }
+
+        void setCalibrationFile(std::string path)
+        {
+            calibration_file_name_ = path;
         }
 
     protected:
@@ -124,13 +127,20 @@ class Calibrable
 
         bool openCalibrationFile()
         {
-            // Try to open file twice
-            calibration_file_ = 
-                new std::fstream(calibration_file_name_, std::ios::out | std::ios::in);
-            if(!calibration_file_->is_open())
+            if(calibration_file_name_ != "")
             {
-                calibration_file_ = 
-                    new std::fstream(calibration_file_name_, std::ios::out | std::ios::in);
+                // Try to open file twice
+                calibration_file_ = new std::fstream(calibration_file_name_, 
+                                                     std::ios::out | std::ios::in);
+                if(!calibration_file_->is_open())
+                {
+                    calibration_file_ = new std::fstream(
+                            calibration_file_name_, std::ios::out | std::ios::in);
+                }
+            }
+            else
+            {
+                ROS_ASSERT_MSG(false, "No calibration file provided");
             }
 
             if(calibration_file_->is_open()) 
@@ -336,6 +346,9 @@ class ROSSensor: virtual public Sensor
             diameters_server_ 
                 = nh->advertiseService( name + "_diameters", 
                                         &ROSSensor::getDiameters, this);
+
+            std::string path = ros::package::getPath("bpf_localization");
+            setCalibrationFile(path + "/data/calibrations/" + name + ".csv");
         }
 
         bool getDiameters(bpf_localization::GetDiameters::Request  &req,
