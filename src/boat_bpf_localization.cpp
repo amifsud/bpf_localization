@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 
     bpf::BoatBPFLocalization boat_localization(pos, vel, theta, false);
     ROSIMU        imu(&nh, "boat_imu", 3);
-    //ROSGPS        gps(&nh, "boat_gps", 3);
+    ROSGPS        gps(&nh, "boat_gps", 3);
 
     IntervalVector control(dynamical_systems::INS::control_size);
     IntervalVector position(3);
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
         {
             try
             {
-                //position = gps.getFirstIntervalValue();
+                position = gps.getFirstIntervalValue();
                 //boat_localization.GPSCallback(position);
                 ROS_INFO_STREAM("Position = " << position);
                 u = 0;
