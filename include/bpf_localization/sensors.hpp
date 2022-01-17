@@ -34,9 +34,9 @@ class Calibrable
         std::fstream* calibration_file_;
         std::vector<std::string> calibration_data_format_;
 
-        ros::Time     init_time_;
-        ros::Duration until_;
-        ros::Duration time_;
+        unsigned int init_time_;
+        unsigned int until_;
+        unsigned int time_;
 
         std::vector<Vector> data_;
         Vector lb_;
@@ -98,7 +98,6 @@ class Calibrable
 
             computeHalfDiameters();
             mean_ = 1./nb_*sum_;
-            time_ = ros::Time::now() - init_time_; 
             data_.clear();
         }
 
@@ -121,8 +120,7 @@ class Calibrable
             std::string number;
             line->erase(0, format->size());
             std::stringstream stream(*line);
-            while(getline(stream, number, ','))
-                values->push_back(std::stod(number));
+            while(getline(stream, number, ',')) values->push_back(std::stod(number));
         }
 
         bool openCalibrationFile()
@@ -257,12 +255,13 @@ class Calibrable
             writeCalibrationFile();
         }
 
-        void feed(const Vector& vect)
+        void feed(const Vector& vect, unsigned int time)
         {
             ROS_INFO_STREAM("Calibrating...");
 
             data_.push_back(Vector(vect));
             update();
+            time_ = time - init_time_; 
 
             if(time_ >= until_) endingCalibration();
         }
@@ -321,10 +320,10 @@ class Sensor: public Calibrable
             return interval;
         }
 
-        void feed(const Vector& data)
+        void feed(const Vector& data, unsigned int time)
         {
             buffer_.push_back(intervalFromVector(data));
-            if(isCalibrating()) Calibrable::feed(data);
+            if(isCalibrating()) Calibrable::feed(data, time);
         }
 };
 
@@ -368,8 +367,8 @@ class ROSSensor: virtual public Sensor
             sum_ = Vector(size_, 0.);
             nb_ = 0.;
             data_.clear();
-            init_time_ = ros::Time::now(); 
-            until_     = ros::Duration(req.duration, 0);
+            init_time_ = (unsigned int)(ros::Time::now().toSec()); 
+            until_     = (unsigned int)(ros::Duration(req.duration, 0).toSec());
             return true;
         }
 
@@ -441,7 +440,8 @@ class ROSIMU: public IMUInterface, public ROSSensor
             tmp_[3] = imu_data.linear_acceleration.x;
             tmp_[4] = imu_data.linear_acceleration.y;
             tmp_[5] = imu_data.linear_acceleration.z;
-            feed(tmp_);
+            unsigned int time = (unsigned int)(ros::Time::now().toSec());
+            feed(tmp_, time);
 
             IntervalVector interval = intervalFromVector(tmp_);
 
@@ -528,7 +528,8 @@ class ROSGPS: public GPSInterface, public ROSSensor
             tmp_[0] = gps_data.point.x - initial_pose_[0];
             tmp_[1] = gps_data.point.y - initial_pose_[1];
             tmp_[2] = gps_data.point.z - initial_pose_[2];
-            feed(tmp_);
+            unsigned int time = (unsigned int)(ros::Time::now().toSec());
+            feed(tmp_, time);
 
             IntervalVector interval = intervalFromVector(tmp_);
 
