@@ -38,9 +38,6 @@ class Calibrable
         ros::Duration until_;
         ros::Duration time_;
 
-        ros::ServiceServer start_calibration_server_;
-        ros::ServiceServer stop_calibration_server_;
-
         std::vector<Vector> data_;
         Vector lb_;
         Vector ub_;
@@ -54,8 +51,7 @@ class Calibrable
         double precision_;
 
     public:
-        Calibrable( ros::NodeHandle* nh, std::string name, 
-                    unsigned int size, unsigned int decimal):
+        Calibrable(std::string name, unsigned int size, unsigned int decimal):
             calibration_(false), name_(name), nb_(0), 
             precision_(pow(10, decimal)), 
             size_(size), sum_(Vector(size, 0.)), 
@@ -63,40 +59,12 @@ class Calibrable
             lb_(Vector(size, 1e7)), ub_(Vector(size, -1e7)),
             mid_(Vector(size, 1e7)), mean_(Vector(size, 1e7))
         {
-            start_calibration_server_ 
-                = nh->advertiseService(name + "_start_calibration", 
-                        &Calibrable::startCalibration, this);
-            stop_calibration_server_ 
-                = nh->advertiseService(name + "_stop_calibration", 
-                        &Calibrable::stopCalibration, this);
             std::string path = ros::package::getPath("bpf_localization");
             calibration_file_name_ = path + "/data/calibrations/" + 
                                 name_ + ".csv";
         }
 
     protected:
-        bool startCalibration(bpf_localization::StartCalibration::Request &req,
-                         bpf_localization::StartCalibration::Response     &res)
-        {
-            ROS_INFO_STREAM("Start calibration");
-            calibration_ = true;
-            sum_ = Vector(size_, 0.);
-            nb_ = 0.;
-            data_.clear();
-            init_time_ = ros::Time::now(); 
-            until_     = ros::Duration(req.duration, 0);
-            return true;
-        }
-
-        bool stopCalibration(bpf_localization::GetDiameters::Request  &req,
-                             bpf_localization::GetDiameters::Response &res)
-        {
-            endingCalibration();
-            for(auto i = 0; i < size_; ++i)
-                res.diameters.push_back(2*half_diameters_[i]);
-            return true;
-        }
-
         void computeHalfDiameters()
         {
             mid_ = 0.5*(ub_ + lb_);
@@ -298,33 +266,13 @@ class Calibrable
 class Sensor: public Calibrable
 {
     protected:
-        // ROS
-        ros::ServiceServer diameters_server_;
-        ros::Subscriber sub_;
-        ros::Publisher pub_;
-
-        Vector tmp_;
-
         // Interval
         std::deque<IntervalVector> buffer_;
 
     public:
-        Sensor(ros::NodeHandle* nh, std::string name, unsigned int size, 
-                unsigned int decimal):
-            Calibrable(nh, name, size, decimal),
-            tmp_(Vector(size, 0.))
+        Sensor(std::string name, unsigned int size, unsigned int decimal):
+            Calibrable(name, size, decimal)
         {
-            diameters_server_ 
-                = nh->advertiseService( name + "_diameters", 
-                                        &Sensor::getDiameters, this);
-        }
-
-        bool getDiameters(bpf_localization::GetDiameters::Request  &req,
-                          bpf_localization::GetDiameters::Response &res)
-        {
-            if(half_diameters_.max() < 1e-7) loadFromFile();
-            for(auto i = 0; i < size_; ++i)
-                res.diameters.push_back(2*half_diameters_[i]);
         }
 
         std::deque<IntervalVector> getIntervalData()
@@ -370,20 +318,104 @@ class Sensor: public Calibrable
         }
 };
 
+class ROSSensor: virtual public Sensor
+{
+    public:
+        ROSSensor(ros::NodeHandle* nh, std::string name, unsigned int size, unsigned int decimal):
+            Sensor(name, size, decimal),
+            tmp_(Vector(size, 0.))
+        {
+            start_calibration_server_ 
+                = nh->advertiseService(name + "_start_calibration", 
+                        &ROSSensor::startCalibration, this);
+
+            stop_calibration_server_ 
+                = nh->advertiseService(name + "_stop_calibration", 
+                        &ROSSensor::stopCalibration, this);
+
+            diameters_server_ 
+                = nh->advertiseService( name + "_diameters", 
+                                        &ROSSensor::getDiameters, this);
+        }
+
+        bool getDiameters(bpf_localization::GetDiameters::Request  &req,
+                          bpf_localization::GetDiameters::Response &res)
+        {
+            if(half_diameters_.max() < 1e-7) loadFromFile();
+            for(auto i = 0; i < size_; ++i)
+                res.diameters.push_back(2*half_diameters_[i]);
+        }
+
+    protected:
+        bool startCalibration(bpf_localization::StartCalibration::Request &req,
+                         bpf_localization::StartCalibration::Response     &res)
+        {
+            ROS_INFO_STREAM("Start calibration");
+            calibration_ = true;
+            sum_ = Vector(size_, 0.);
+            nb_ = 0.;
+            data_.clear();
+            init_time_ = ros::Time::now(); 
+            until_     = ros::Duration(req.duration, 0);
+            return true;
+        }
+
+        bool stopCalibration(bpf_localization::GetDiameters::Request  &req,
+                             bpf_localization::GetDiameters::Response &res)
+        {
+            endingCalibration();
+            for(auto i = 0; i < size_; ++i)
+                res.diameters.push_back(2*half_diameters_[i]);
+            return true;
+        }
+
+    protected:
+        ros::ServiceServer start_calibration_server_;
+        ros::ServiceServer stop_calibration_server_;
+
+        ros::ServiceServer diameters_server_;
+        ros::Subscriber sub_;
+        ros::Publisher pub_;
+
+        Vector tmp_;
+};
+
 /** 
  *      Common sensors
  */
 
-class IMUInterface: public Sensor
+class IMUInterface: virtual public Sensor
 {
     public:
         static const unsigned int size = 6;
 
     public:
-        IMUInterface(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-            Sensor(nh, name, size, decimal)
+        IMUInterface(std::string name, unsigned int decimal):
+            Sensor(name, size, decimal)
         {
-            sub_ = nh->subscribe(name + "_in", 50, &IMUInterface::callback, this);
+        }
+
+    protected:
+        void calibrationDataFormat()
+        {
+            calibration_data_format_.push_back("vector,component,data");
+            calibration_data_format_.push_back("angular_velocity,x");
+            calibration_data_format_.push_back("angular_velocity,y");
+            calibration_data_format_.push_back("angular_velocity,z");
+            calibration_data_format_.push_back("linear_acceleration,x");
+            calibration_data_format_.push_back("linear_acceleration,y");
+            calibration_data_format_.push_back("linear_acceleration,z");
+        }
+};
+
+class ROSIMU: public IMUInterface, public ROSSensor
+{
+    public:
+        ROSIMU(ros::NodeHandle* nh, std::string name, unsigned int decimal):
+            Sensor(name, IMUInterface::size, decimal), 
+            IMUInterface(name, decimal), ROSSensor(nh, name, IMUInterface::size, decimal)
+        {
+            sub_ = nh->subscribe(name + "_in", 50, &ROSIMU::callback, this);
             pub_ = nh->advertise<bpf_localization::IntervalIMU>(name+"_out", 1000);
         }
 
@@ -417,20 +449,9 @@ class IMUInterface: public Sensor
 
             pub_.publish(msg);
         }
-
-        void calibrationDataFormat()
-        {
-            calibration_data_format_.push_back("vector,component,data");
-            calibration_data_format_.push_back("angular_velocity,x");
-            calibration_data_format_.push_back("angular_velocity,y");
-            calibration_data_format_.push_back("angular_velocity,z");
-            calibration_data_format_.push_back("linear_acceleration,x");
-            calibration_data_format_.push_back("linear_acceleration,y");
-            calibration_data_format_.push_back("linear_acceleration,z");
-        }
 };
 
-class GPSInterface: public Sensor
+class GPSInterface: virtual public Sensor
 {
     public:
         static const unsigned int size = 3;
@@ -438,13 +459,32 @@ class GPSInterface: public Sensor
         bool initialized_;
 
     public:
-        GPSInterface(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-            Sensor(nh, name, size, decimal),
+        GPSInterface(std::string name, unsigned int decimal):
+            Sensor(name, size, decimal),
             initial_pose_(Vector(3,0.)), initialized_(false)
         {
-            sub_ = nh->subscribe(name + "_in", 50, &GPSInterface::callbackOdom, this);    
-            pub_ = nh->advertise<interval_msgs::Vector3IntervalStamped>(name+"_out", 1000);
             half_diameters_ = 1e-1*Vector(size_, 1.);
+        }
+
+    protected:
+        void calibrationDataFormat()
+        {
+            calibration_data_format_.push_back("component");
+            calibration_data_format_.push_back("x");
+            calibration_data_format_.push_back("y");
+            calibration_data_format_.push_back("z");
+        }
+};
+
+class ROSGPS: public GPSInterface, public ROSSensor
+{
+    public:
+        ROSGPS(ros::NodeHandle* nh, std::string name, unsigned int decimal):
+            Sensor(name, IMUInterface::size, decimal), 
+            GPSInterface(name, decimal), ROSSensor(nh, name, IMUInterface::size, decimal)
+        {
+            sub_ = nh->subscribe(name + "_in", 50, &ROSGPS::callbackOdom, this);
+            pub_ = nh->advertise<interval_msgs::Vector3IntervalStamped>(name+"_out", 1000);
         }
 
     protected:
@@ -489,13 +529,5 @@ class GPSInterface: public Sensor
             msg.vector.z.ub = interval[2].ub();
 
             pub_.publish(msg);
-        }
-
-        void calibrationDataFormat()
-        {
-            calibration_data_format_.push_back("component");
-            calibration_data_format_.push_back("x");
-            calibration_data_format_.push_back("y");
-            calibration_data_format_.push_back("z");
         }
 };
