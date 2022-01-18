@@ -1,7 +1,7 @@
 
 /**
- * \file   imu.hpp
- * \brief  IMU interfaces
+ * \file   gps.hpp
+ * \brief  GPS interfaces
  * \author Alexis Mifsud
  * \date   2022 January
  */

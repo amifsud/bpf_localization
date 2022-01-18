@@ -23,8 +23,21 @@
 #include "bpf_localization/StartCalibration.h"
 #include "bpf_localization/GetDiameters.h"
 
+
+/*! Interfaces
+ *
+ *  \brief Generic classes for interfaces
+ *
+ *  **For now only Sensors are implemented**
+ *
+ */
 namespace Interfaces
 {
+    /*! \class Calibrable
+     *
+     *
+     *
+     */
     class Calibrable
     {
         public:
@@ -275,6 +288,11 @@ namespace Interfaces
 
     };
 
+    /*! Sensors
+     *  
+     *  \brief Sensors classes
+     *
+     */
     namespace Sensors
     {
         class SensorInterface: public Calibrable
@@ -332,6 +350,11 @@ namespace Interfaces
                 std::deque<IntervalVector> buffer_;
         };
 
+        /*! ROS
+         *
+         *  \brief ROS Interface for Sensors
+         *
+         */
         namespace ROS
         {
             class ROSInterface: virtual public SensorInterface
