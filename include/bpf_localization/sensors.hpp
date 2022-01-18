@@ -1,3 +1,16 @@
+
+/** FIXME: 
+ * Make this file independant from ROS except for logging
+ * Make unit tests for the file
+**/
+
+/**
+ * \file   sensors.hpp
+ * \brief  Sensors interfaces
+ * \author Alexis Mifsud
+ * \date   2022 January
+ */
+
 #include <fstream>
 
 #include <ros/package.h>
@@ -12,536 +25,538 @@
 #include "bpf_localization/GetDiameters.h"
 #include "bpf_localization/IntervalIMU.h"
 
-/** FIXME: 
- * Make this file independant from ROS except for logging
- * Make unit tests for the file
-**/
-
-/*** Available calibrations ***/
-//  * midpoint offset : 0
-//  * mean offset     : 1
-
-//#define CALIBRATION_POLICY 0
-
-class Calibrable
+namespace Interfaces
 {
-    protected:
-        std::string name_;
-        unsigned int size_;
-
-        bool calibration_;
-        std::string calibration_file_name_;
-        std::fstream* calibration_file_;
-        std::vector<std::string> calibration_data_format_;
-
-        unsigned int init_time_;
-        unsigned int until_;
-        unsigned int time_;
-
-        std::vector<Vector> data_;
-        Vector lb_;
-        Vector ub_;
-        Vector mid_;
-        Vector half_diameters_;
-
-        Vector sum_;
-        double nb_;
-        Vector mean_;
-
-        double precision_;
-
-    public:
-        Calibrable(std::string name, unsigned int size, unsigned int decimal):
-            calibration_(false), name_(name), nb_(0), 
-            precision_(pow(10, decimal)), 
-            size_(size), sum_(Vector(size, 0.)), 
-            half_diameters_(Vector(size, 0.)),
-            lb_(Vector(size, 1e7)), ub_(Vector(size, -1e7)),
-            mid_(Vector(size, 1e7)), mean_(Vector(size, 1e7)),
-            calibration_file_name_("")
-        {
-        }
-
-        void setCalibrationFile(std::string path)
-        {
-            calibration_file_name_ = path;
-        }
-
-    protected:
-        void computeHalfDiameters()
-        {
-            mid_ = 0.5*(ub_ + lb_);
-            half_diameters_ = ub_ - lb_;
-        }
-
-        void update()
-        {
-            for(auto vect = data_.begin(); vect !=data_.end(); vect++)
+    class Calibrable
+    {
+        public:
+            Calibrable(std::string name, unsigned int size, unsigned int decimal):
+                calibration_(false), name_(name), nb_(0), 
+                precision_(pow(10, decimal)), 
+                size_(size), sum_(Vector(size, 0.)), 
+                half_diameters_(Vector(size, 0.)),
+                lb_(Vector(size, 1e7)), ub_(Vector(size, -1e7)),
+                mid_(Vector(size, 1e7)), mean_(Vector(size, 1e7)),
+                calibration_file_name_("")
             {
-                for(unsigned int i = 0; i < size_; ++i)
+            }
+
+        protected:
+            void setCalibrationFile(std::string path)
+            {
+                calibration_file_name_ = path;
+            }
+
+            void computeHalfDiameters()
+            {
+                mid_ = 0.5*(ub_ + lb_);
+                half_diameters_ = ub_ - lb_;
+            }
+
+            void update()
+            {
+                for(auto vect = data_.begin(); vect !=data_.end(); vect++)
                 {
-                    if(vect->operator[](i) > ub_[i] + 1./precision_)
+                    for(unsigned int i = 0; i < size_; ++i)
                     {
-                        ub_[i] = roundf(vect->operator[](i) * precision_) 
-                            / precision_ + 1./precision_;
+                        if(vect->operator[](i) > ub_[i] + 1./precision_)
+                        {
+                            ub_[i] = roundf(vect->operator[](i) * precision_) 
+                                / precision_ + 1./precision_;
+                        }
+
+                        if(vect->operator[](i) < lb_[i] - 1./precision_) 
+                        {
+                            lb_[i] = roundf(vect->operator[](i) * precision_) 
+                                / precision_ + 1./precision_;
+                        }
                     }
-
-                    if(vect->operator[](i) < lb_[i] - 1./precision_) 
-                    {
-                        lb_[i] = roundf(vect->operator[](i) * precision_) 
-                            / precision_ + 1./precision_;
-                    }
-                }
-                sum_ += *vect;
-                nb_ += 1.;
-            }
-
-            computeHalfDiameters();
-            mean_ = 1./nb_*sum_;
-            data_.clear();
-        }
-
-        void readCalibrationFile( std::vector<std::string>* lines)
-        {
-            std::string line;
-            calibration_file_->seekp(0, calibration_file_->beg);
-            while(!calibration_file_->eof())
-            {
-                std::getline(*calibration_file_, line);
-                line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
-                lines->push_back(line);
-            }
-        }
-
-        void spliToDouble(std::string* line, std::string* format,
-                                            std::vector<double>* values)
-        {
-            values->clear();
-            std::string number;
-            line->erase(0, format->size());
-            std::stringstream stream(*line);
-            while(getline(stream, number, ',')) values->push_back(std::stod(number));
-        }
-
-        bool openCalibrationFile()
-        {
-            if(calibration_file_name_ != "")
-            {
-                // Try to open file twice
-                calibration_file_ = new std::fstream(calibration_file_name_, 
-                                                     std::ios::out | std::ios::in);
-                if(!calibration_file_->is_open())
-                {
-                    calibration_file_ = new std::fstream(
-                            calibration_file_name_, std::ios::out | std::ios::in);
-                }
-            }
-            else
-            {
-                ROS_ASSERT_MSG(false, "No calibration file provided");
-            }
-
-            if(calibration_file_->is_open()) 
-            {
-                calibrationDataFormat();
-            }
-            else
-            {
-                ROS_ASSERT_MSG(false, "File can't be open, please create it");
-            }
-
-            return calibration_file_->is_open();
-        }
-
-        bool closeCalibrationFile()
-        {
-            calibration_file_->close();
-            calibration_data_format_.clear();
-        }
-
-        void loadFromFile()
-        {
-            if(openCalibrationFile())
-            {
-                // If file open
-                std:vector<std::string> lines;
-                readCalibrationFile(&lines);
-                std::string line, format;
-                std::vector<double> values;
-
-                for(auto u = 0; u < calibration_data_format_.size()-1; ++u)
-                {
-                    line   = lines[u*4+1];
-                    format = calibration_data_format_[u+1]+",lb,";
-                    spliToDouble(&line, &format, &values);
-                    lb_[u] = *std::min_element(values.begin(), values.end());
-
-                    line   = lines[u*4+2];
-                    format = calibration_data_format_[u+1]+",ub,";
-                    spliToDouble(&line, &format, &values);
-                    ub_[u] = *std::max_element(values.begin(), values.end());
+                    sum_ += *vect;
+                    nb_ += 1.;
                 }
 
                 computeHalfDiameters();
+                mean_ = 1./nb_*sum_;
+                data_.clear();
             }
 
-            closeCalibrationFile();
-        }
-
-        void writeCalibrationFile()
-        {
-            ROS_INFO_STREAM("Begin to write calibration file");
-
-            if(openCalibrationFile())
+            void readCalibrationFile( std::vector<std::string>* lines)
             {
-                // If file open
-                std:vector<std::string> lines;
-                calibration_file_->seekg(0, calibration_file_->end);
-                if(calibration_file_->tellg() == 0)
+                std::string line;
+                calibration_file_->seekp(0, calibration_file_->beg);
+                while(!calibration_file_->eof())
                 {
-                    // If file empty : create lines with sensor format
-                    ROS_INFO_STREAM("New file");
-                    calibrationDataFormat();
-                    lines.push_back("vector,component,data");
-                    for(auto u = 0; u < calibration_data_format_.size(); ++u)
+                    std::getline(*calibration_file_, line);
+                    line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+                    lines->push_back(line);
+                }
+            }
+
+            void spliToDouble(std::string* line, std::string* format,
+                                                std::vector<double>* values)
+            {
+                values->clear();
+                std::string number;
+                line->erase(0, format->size());
+                std::stringstream stream(*line);
+                while(getline(stream, number, ',')) values->push_back(std::stod(number));
+            }
+
+            bool openCalibrationFile()
+            {
+                if(calibration_file_name_ != "")
+                {
+                    // Try to open file twice
+                    calibration_file_ = new std::fstream(calibration_file_name_, 
+                                                         std::ios::out | std::ios::in);
+                    if(!calibration_file_->is_open())
                     {
-                        for(auto i = 0; i < size_; ++i)
-                        {
-                            lines.push_back(calibration_data_format_[u] + ",lb");
-                            lines.push_back(calibration_data_format_[u] + ",ub");
-                            lines.push_back(calibration_data_format_[u] + ",mid");
-                            lines.push_back(calibration_data_format_[u] + ",mean");
-                        }
+                        calibration_file_ = new std::fstream(
+                                calibration_file_name_, std::ios::out | std::ios::in);
                     }
                 }
                 else
                 {
-                    // If file not empty : read lines from file
+                    ROS_ASSERT_MSG(false, "No calibration file provided");
+                }
+
+                if(calibration_file_->is_open()) 
+                {
+                    calibrationDataFormat();
+                }
+                else
+                {
+                    ROS_ASSERT_MSG(false, "File can't be open, please create it");
+                }
+
+                return calibration_file_->is_open();
+            }
+
+            bool closeCalibrationFile()
+            {
+                calibration_file_->close();
+                calibration_data_format_.clear();
+            }
+
+            void loadFromFile()
+            {
+                if(openCalibrationFile())
+                {
+                    // If file open
+                    std:vector<std::string> lines;
                     readCalibrationFile(&lines);
+                    std::string line, format;
+                    std::vector<double> values;
+
+                    for(auto u = 0; u < calibration_data_format_.size()-1; ++u)
+                    {
+                        line   = lines[u*4+1];
+                        format = calibration_data_format_[u+1]+",lb,";
+                        spliToDouble(&line, &format, &values);
+                        lb_[u] = *std::min_element(values.begin(), values.end());
+
+                        line   = lines[u*4+2];
+                        format = calibration_data_format_[u+1]+",ub,";
+                        spliToDouble(&line, &format, &values);
+                        ub_[u] = *std::max_element(values.begin(), values.end());
+                    }
+
+                    computeHalfDiameters();
                 }
 
-                // Update calibration data
-                lines.operator[](0) += "," + to_string(ros::Time::now().toSec());
-                for(auto i = 0; i < size_; ++i)
+                closeCalibrationFile();
+            }
+
+            void writeCalibrationFile()
+            {
+                ROS_INFO_STREAM("Begin to write calibration file");
+
+                if(openCalibrationFile())
                 {
-                    lines.operator[](i*4+1) += "," + to_string(lb_[i]);
-                    lines.operator[](i*4+2) += "," + to_string(ub_[i]);
-                    lines.operator[](i*4+3) += "," + to_string(mid_[i]);
-                    lines.operator[](i*4+4) += "," + to_string(mean_[i]);
+                    // If file open
+                    std:vector<std::string> lines;
+                    calibration_file_->seekg(0, calibration_file_->end);
+                    if(calibration_file_->tellg() == 0)
+                    {
+                        // If file empty : create lines with sensor format
+                        ROS_INFO_STREAM("New file");
+                        calibrationDataFormat();
+                        lines.push_back("vector,component,data");
+                        for(auto u = 0; u < calibration_data_format_.size(); ++u)
+                        {
+                            for(auto i = 0; i < size_; ++i)
+                            {
+                                lines.push_back(calibration_data_format_[u] + ",lb");
+                                lines.push_back(calibration_data_format_[u] + ",ub");
+                                lines.push_back(calibration_data_format_[u] + ",mid");
+                                lines.push_back(calibration_data_format_[u] + ",mean");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // If file not empty : read lines from file
+                        readCalibrationFile(&lines);
+                    }
+
+                    // Update calibration data
+                    lines.operator[](0) += "," + to_string(ros::Time::now().toSec());
+                    for(auto i = 0; i < size_; ++i)
+                    {
+                        lines.operator[](i*4+1) += "," + to_string(lb_[i]);
+                        lines.operator[](i*4+2) += "," + to_string(ub_[i]);
+                        lines.operator[](i*4+3) += "," + to_string(mid_[i]);
+                        lines.operator[](i*4+4) += "," + to_string(mean_[i]);
+                    }
+
+                    // Write lines and close
+                    calibration_file_->clear(); 
+                    calibration_file_->seekp(0, calibration_file_->beg);
+                    for(auto i = 0; i < lines.size(); ++i)
+                    {
+                        *calibration_file_ << lines[i];
+                        if(i != lines.size()-1) *calibration_file_ << "\n";
+                    }
                 }
 
-                // Write lines and close
-                calibration_file_->clear(); 
-                calibration_file_->seekp(0, calibration_file_->beg);
-                for(auto i = 0; i < lines.size(); ++i)
+                closeCalibrationFile();
+
+                ROS_INFO_STREAM("End to write calibration file");
+            }
+
+            virtual void calibrationDataFormat() = 0;
+
+            void endingCalibration()
+            {
+                ROS_INFO_STREAM("Stoppping calibration");
+                calibration_ = false;
+                update();
+                writeCalibrationFile();
+            }
+
+            void feed(const Vector& vect, unsigned int time)
+            {
+                ROS_INFO_STREAM("Calibrating...");
+
+                data_.push_back(Vector(vect));
+                update();
+                time_ = time - init_time_; 
+
+                if(time_ >= until_) endingCalibration();
+            }
+
+            bool isCalibrating()
+            {
+                return calibration_;
+            }
+
+        protected:
+            std::string name_;
+            unsigned int size_;
+
+            bool calibration_;
+            std::string calibration_file_name_;
+            std::fstream* calibration_file_;
+            std::vector<std::string> calibration_data_format_;
+
+            unsigned int init_time_;
+            unsigned int until_;
+            unsigned int time_;
+
+            std::vector<Vector> data_;
+            Vector lb_;
+            Vector ub_;
+            Vector mid_;
+            Vector half_diameters_;
+
+            Vector sum_;
+            double nb_;
+            Vector mean_;
+
+            double precision_;
+
+    };
+
+    namespace Sensors
+    {
+        class SensorInterface: public Calibrable
+        {
+            public:
+                SensorInterface(std::string name, unsigned int size, unsigned int decimal):
+                    Calibrable(name, size, decimal)
                 {
-                    *calibration_file_ << lines[i];
-                    if(i != lines.size()-1) *calibration_file_ << "\n";
                 }
-            }
 
-            closeCalibrationFile();
-
-            ROS_INFO_STREAM("End to write calibration file");
-        }
-
-        virtual void calibrationDataFormat() = 0;
-
-        void endingCalibration()
-        {
-            ROS_INFO_STREAM("Stoppping calibration");
-            calibration_ = false;
-            update();
-            writeCalibrationFile();
-        }
-
-        void feed(const Vector& vect, unsigned int time)
-        {
-            ROS_INFO_STREAM("Calibrating...");
-
-            data_.push_back(Vector(vect));
-            update();
-            time_ = time - init_time_; 
-
-            if(time_ >= until_) endingCalibration();
-        }
-
-        bool isCalibrating()
-        {
-            return calibration_;
-        }
-};
-
-class Sensor: public Calibrable
-{
-    protected:
-        // Interval
-        std::deque<IntervalVector> buffer_;
-
-    public:
-        Sensor(std::string name, unsigned int size, unsigned int decimal):
-            Calibrable(name, size, decimal)
-        {
-        }
-
-        std::deque<IntervalVector> getIntervalData()
-        {
-            std::deque<IntervalVector> buffer(buffer_);
-            buffer_.clear();
-            return buffer;
-        }
-
-        IntervalVector getFirstIntervalValue()
-        {
-            if(!buffer_.empty())
-            {
-                auto interval = IntervalVector(buffer_.front());
-                buffer_.pop_front();
-                return interval;
-            }
-            else
-            {
-                throw 1;
-            }
-        }
-
-    protected:
-        IntervalVector intervalFromVector(const Vector& data)
-        {
-            IntervalVector interval(size_);
-            if(half_diameters_.max() < 1e-7) loadFromFile();
-
-            for(auto i = 0; i < size_; ++i)
-            {
-                interval[i] = Interval( data[i]-half_diameters_[i],
-                                        data[i]+half_diameters_[i]);
-            }
-
-            return interval;
-        }
-
-        void feed(const Vector& data, unsigned int time)
-        {
-            buffer_.push_back(intervalFromVector(data));
-            if(isCalibrating()) Calibrable::feed(data, time);
-        }
-};
-
-class ROSSensor: virtual public Sensor
-{
-    public:
-        ROSSensor(ros::NodeHandle* nh, std::string name, unsigned int size, unsigned int decimal):
-            Sensor(name, size, decimal),
-            tmp_(Vector(size, 0.))
-        {
-            start_calibration_server_ 
-                = nh->advertiseService(name + "_start_calibration", 
-                        &ROSSensor::startCalibration, this);
-
-            stop_calibration_server_ 
-                = nh->advertiseService(name + "_stop_calibration", 
-                        &ROSSensor::stopCalibration, this);
-
-            diameters_server_ 
-                = nh->advertiseService( name + "_diameters", 
-                                        &ROSSensor::getDiameters, this);
-
-            std::string path = ros::package::getPath("bpf_localization");
-            setCalibrationFile(path + "/data/calibrations/" + name + ".csv");
-        }
-
-        bool getDiameters(bpf_localization::GetDiameters::Request  &req,
-                          bpf_localization::GetDiameters::Response &res)
-        {
-            if(half_diameters_.max() < 1e-7) loadFromFile();
-            for(auto i = 0; i < size_; ++i)
-                res.diameters.push_back(2*half_diameters_[i]);
-        }
-
-    protected:
-        bool startCalibration(bpf_localization::StartCalibration::Request &req,
-                         bpf_localization::StartCalibration::Response     &res)
-        {
-            ROS_INFO_STREAM("Start calibration");
-            calibration_ = true;
-            sum_ = Vector(size_, 0.);
-            nb_ = 0.;
-            data_.clear();
-            init_time_ = (unsigned int)(ros::Time::now().toSec()); 
-            until_     = (unsigned int)(ros::Duration(req.duration, 0).toSec());
-            return true;
-        }
-
-        bool stopCalibration(bpf_localization::GetDiameters::Request  &req,
-                             bpf_localization::GetDiameters::Response &res)
-        {
-            endingCalibration();
-            for(auto i = 0; i < size_; ++i)
-                res.diameters.push_back(2*half_diameters_[i]);
-            return true;
-        }
-
-    protected:
-        ros::ServiceServer start_calibration_server_;
-        ros::ServiceServer stop_calibration_server_;
-
-        ros::ServiceServer diameters_server_;
-        ros::Subscriber sub_;
-        ros::Publisher pub_;
-
-        Vector tmp_;
-};
-
-/** 
- *      Common sensors
- */
-
-class IMUInterface: virtual public Sensor
-{
-    public:
-        static const unsigned int size = 6;
-
-    public:
-        IMUInterface(std::string name, unsigned int decimal):
-            Sensor(name, size, decimal)
-        {
-        }
-
-    protected:
-        void calibrationDataFormat()
-        {
-            calibration_data_format_.push_back("vector,component,data");
-            calibration_data_format_.push_back("angular_velocity,x");
-            calibration_data_format_.push_back("angular_velocity,y");
-            calibration_data_format_.push_back("angular_velocity,z");
-            calibration_data_format_.push_back("linear_acceleration,x");
-            calibration_data_format_.push_back("linear_acceleration,y");
-            calibration_data_format_.push_back("linear_acceleration,z");
-        }
-};
-
-class ROSIMU: public IMUInterface, public ROSSensor
-{
-    public:
-        ROSIMU(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-            Sensor(name, IMUInterface::size, decimal), 
-            IMUInterface(name, decimal), ROSSensor(nh, name, IMUInterface::size, decimal)
-        {
-            sub_ = nh->subscribe(name + "_in", 50, &ROSIMU::callback, this);
-            pub_ = nh->advertise<bpf_localization::IntervalIMU>(name+"_out", 1000);
-        }
-
-    protected:
-        void callback(const sensor_msgs::Imu& imu_data)
-        {
-            tmp_[0] = imu_data.angular_velocity.x;
-            tmp_[1] = imu_data.angular_velocity.y;
-            tmp_[2] = imu_data.angular_velocity.z;
-            tmp_[3] = imu_data.linear_acceleration.x;
-            tmp_[4] = imu_data.linear_acceleration.y;
-            tmp_[5] = imu_data.linear_acceleration.z;
-            unsigned int time = (unsigned int)(ros::Time::now().toSec());
-            feed(tmp_, time);
-
-            IntervalVector interval = intervalFromVector(tmp_);
-
-            bpf_localization::IntervalIMU msg;
-            msg.header = imu_data.header;
-            msg.angular_velocity.x.lb    = interval[0].lb();
-            msg.angular_velocity.x.ub    = interval[0].ub();
-            msg.angular_velocity.y.lb    = interval[1].lb();
-            msg.angular_velocity.y.ub    = interval[1].ub();
-            msg.angular_velocity.z.lb    = interval[2].lb();
-            msg.angular_velocity.z.ub    = interval[2].ub();
-            msg.linear_acceleration.x.lb = interval[3].lb();
-            msg.linear_acceleration.x.ub = interval[3].ub();
-            msg.linear_acceleration.y.lb = interval[4].lb();
-            msg.linear_acceleration.y.ub = interval[4].ub();
-            msg.linear_acceleration.z.lb = interval[5].lb();
-            msg.linear_acceleration.z.ub = interval[5].ub();
-
-            pub_.publish(msg);
-        }
-};
-
-class GPSInterface: virtual public Sensor
-{
-    public:
-        static const unsigned int size = 3;
-        Vector initial_pose_;
-        bool initialized_;
-
-    public:
-        GPSInterface(std::string name, unsigned int decimal):
-            Sensor(name, size, decimal),
-            initial_pose_(Vector(3,0.)), initialized_(false)
-        {
-            half_diameters_ = 1e-1*Vector(size_, 1.);
-        }
-
-    protected:
-        void calibrationDataFormat()
-        {
-            calibration_data_format_.push_back("component");
-            calibration_data_format_.push_back("x");
-            calibration_data_format_.push_back("y");
-            calibration_data_format_.push_back("z");
-        }
-};
-
-class ROSGPS: public GPSInterface, public ROSSensor
-{
-    public:
-        ROSGPS(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-            Sensor(name, IMUInterface::size, decimal), 
-            GPSInterface(name, decimal), ROSSensor(nh, name, IMUInterface::size, decimal)
-        {
-            sub_ = nh->subscribe(name + "_in", 50, &ROSGPS::callbackOdom, this);
-            pub_ = nh->advertise<interval_msgs::Vector3IntervalStamped>(name+"_out", 1000);
-        }
-
-    protected:
-        void callbackOdom(const nav_msgs::Odometry& gps_data)
-        {
-            geometry_msgs::PointStamped msg;
-            msg.header = gps_data.header;
-            msg.point  = gps_data.pose.pose.position;
-            callbackPoint(msg);
-        }
-
-        void callbackPoint(const geometry_msgs::PointStamped& gps_data)
-        {
-            ROS_INFO_STREAM("In callback");
-            if(!initialized_)
-            {
-                if( gps_data.point.x != 0. | 
-                    gps_data.point.y != 0. |
-                    gps_data.point.z != 0. )
+                std::deque<IntervalVector> getIntervalData()
                 {
-                    initial_pose_[0] = gps_data.point.x;
-                    initial_pose_[1] = gps_data.point.y;
-                    initial_pose_[2] = gps_data.point.z;
-                    initialized_ = true;
+                    std::deque<IntervalVector> buffer(buffer_);
+                    buffer_.clear();
+                    return buffer;
                 }
-            }
 
-            tmp_[0] = gps_data.point.x - initial_pose_[0];
-            tmp_[1] = gps_data.point.y - initial_pose_[1];
-            tmp_[2] = gps_data.point.z - initial_pose_[2];
-            unsigned int time = (unsigned int)(ros::Time::now().toSec());
-            feed(tmp_, time);
+                IntervalVector getFirstIntervalValue()
+                {
+                    if(!buffer_.empty())
+                    {
+                        auto interval = IntervalVector(buffer_.front());
+                        buffer_.pop_front();
+                        return interval;
+                    }
+                    else
+                    {
+                        throw 1;
+                    }
+                }
 
-            IntervalVector interval = intervalFromVector(tmp_);
+            protected:
+                IntervalVector intervalFromVector(const Vector& data)
+                {
+                    IntervalVector interval(size_);
+                    if(half_diameters_.max() < 1e-7) loadFromFile();
 
-            interval_msgs::Vector3IntervalStamped msg;
-            msg.header = gps_data.header;
-            msg.vector.x.lb = interval[0].lb();
-            msg.vector.x.ub = interval[0].ub();
-            msg.vector.y.lb = interval[1].lb();
-            msg.vector.y.ub = interval[1].ub();
-            msg.vector.z.lb = interval[2].lb();
-            msg.vector.z.ub = interval[2].ub();
+                    for(auto i = 0; i < size_; ++i)
+                    {
+                        interval[i] = Interval( data[i]-half_diameters_[i],
+                                                data[i]+half_diameters_[i]);
+                    }
 
-            pub_.publish(msg);
+                    return interval;
+                }
+
+                void feed(const Vector& data, unsigned int time)
+                {
+                    buffer_.push_back(intervalFromVector(data));
+                    if(isCalibrating()) Calibrable::feed(data, time);
+                }
+
+            protected:
+                // Interval
+                std::deque<IntervalVector> buffer_;
+        };
+
+        /** 
+         *      Common sensors
+         */
+
+        class IMU: virtual public SensorInterface
+        {
+            public:
+                IMU(std::string name, unsigned int decimal):
+                    SensorInterface(name, size, decimal)
+                {
+                }
+
+            protected:
+                void calibrationDataFormat()
+                {
+                    calibration_data_format_.push_back("vector,component,data");
+                    calibration_data_format_.push_back("angular_velocity,x");
+                    calibration_data_format_.push_back("angular_velocity,y");
+                    calibration_data_format_.push_back("angular_velocity,z");
+                    calibration_data_format_.push_back("linear_acceleration,x");
+                    calibration_data_format_.push_back("linear_acceleration,y");
+                    calibration_data_format_.push_back("linear_acceleration,z");
+                }
+
+            public:
+                static const unsigned int size = 6;
+        };
+
+        class GPS: virtual public SensorInterface
+        {
+            public:
+                GPS(std::string name, unsigned int decimal):
+                    SensorInterface(name, size, decimal),
+                    initial_pose_(Vector(3,0.)), initialized_(false)
+                {
+                    half_diameters_ = 1e-1*Vector(size_, 1.);
+                }
+
+            protected:
+                void calibrationDataFormat()
+                {
+                    calibration_data_format_.push_back("component");
+                    calibration_data_format_.push_back("x");
+                    calibration_data_format_.push_back("y");
+                    calibration_data_format_.push_back("z");
+                }
+
+            public:
+                static const unsigned int size = 3;
+                Vector initial_pose_;
+                bool initialized_;
+        };
+
+        namespace ROS
+        {
+            class ROSInterface: virtual public SensorInterface
+            {
+                public:
+                    ROSInterface(ros::NodeHandle* nh, std::string name, 
+                        unsigned int size, unsigned int decimal):
+                        SensorInterface(name, size, decimal),
+                        tmp_(Vector(size, 0.))
+                    {
+                        start_calibration_server_ 
+                            = nh->advertiseService(name + "_start_calibration", 
+                                    &ROSInterface::startCalibration, this);
+
+                        stop_calibration_server_ 
+                            = nh->advertiseService(name + "_stop_calibration", 
+                                    &ROSInterface::stopCalibration, this);
+
+                        diameters_server_ 
+                            = nh->advertiseService( name + "_diameters", 
+                                                    &ROSInterface::getDiameters, this);
+
+                        std::string path = ros::package::getPath("bpf_localization");
+                        setCalibrationFile(path + "/data/calibrations/" + name + ".csv");
+                    }
+
+                    bool getDiameters(bpf_localization::GetDiameters::Request  &req,
+                                      bpf_localization::GetDiameters::Response &res)
+                    {
+                        if(half_diameters_.max() < 1e-7) loadFromFile();
+                        for(auto i = 0; i < size_; ++i)
+                            res.diameters.push_back(2*half_diameters_[i]);
+                    }
+
+                protected:
+                    bool startCalibration(bpf_localization::StartCalibration::Request &req,
+                                     bpf_localization::StartCalibration::Response     &res)
+                    {
+                        ROS_INFO_STREAM("Start calibration");
+                        calibration_ = true;
+                        sum_ = Vector(size_, 0.);
+                        nb_ = 0.;
+                        data_.clear();
+                        init_time_ = (unsigned int)(ros::Time::now().toSec()); 
+                        until_     = (unsigned int)(ros::Duration(req.duration, 0).toSec());
+                        return true;
+                    }
+
+                    bool stopCalibration(bpf_localization::GetDiameters::Request  &req,
+                                         bpf_localization::GetDiameters::Response &res)
+                    {
+                        endingCalibration();
+                        for(auto i = 0; i < size_; ++i)
+                            res.diameters.push_back(2*half_diameters_[i]);
+                        return true;
+                    }
+
+                protected:
+                    ros::ServiceServer start_calibration_server_;
+                    ros::ServiceServer stop_calibration_server_;
+
+                    ros::ServiceServer diameters_server_;
+                    ros::Subscriber sub_;
+                    ros::Publisher pub_;
+
+                    Vector tmp_;
+            };
+
+            class IMU: public Interfaces::Sensors::IMU, public ROSInterface
+            {
+                public:
+                    IMU(ros::NodeHandle* nh, std::string name, unsigned int decimal):
+                        SensorInterface(name, IMU::size, decimal), 
+                        Interfaces::Sensors::IMU(name, decimal), 
+                        ROSInterface(nh, name, IMU::size, decimal)
+                    {
+                        sub_ = nh->subscribe(name + "_in", 50, &IMU::callback, this);
+                        pub_ = nh->advertise<bpf_localization::IntervalIMU>(name+"_out", 1000);
+                    }
+
+                protected:
+                    void callback(const sensor_msgs::Imu& imu_data)
+                    {
+                        tmp_[0] = imu_data.angular_velocity.x;
+                        tmp_[1] = imu_data.angular_velocity.y;
+                        tmp_[2] = imu_data.angular_velocity.z;
+                        tmp_[3] = imu_data.linear_acceleration.x;
+                        tmp_[4] = imu_data.linear_acceleration.y;
+                        tmp_[5] = imu_data.linear_acceleration.z;
+                        unsigned int time = (unsigned int)(ros::Time::now().toSec());
+                        feed(tmp_, time);
+
+                        IntervalVector interval = intervalFromVector(tmp_);
+
+                        bpf_localization::IntervalIMU msg;
+                        msg.header = imu_data.header;
+                        msg.angular_velocity.x.lb    = interval[0].lb();
+                        msg.angular_velocity.x.ub    = interval[0].ub();
+                        msg.angular_velocity.y.lb    = interval[1].lb();
+                        msg.angular_velocity.y.ub    = interval[1].ub();
+                        msg.angular_velocity.z.lb    = interval[2].lb();
+                        msg.angular_velocity.z.ub    = interval[2].ub();
+                        msg.linear_acceleration.x.lb = interval[3].lb();
+                        msg.linear_acceleration.x.ub = interval[3].ub();
+                        msg.linear_acceleration.y.lb = interval[4].lb();
+                        msg.linear_acceleration.y.ub = interval[4].ub();
+                        msg.linear_acceleration.z.lb = interval[5].lb();
+                        msg.linear_acceleration.z.ub = interval[5].ub();
+
+                        pub_.publish(msg);
+                    }
+            };
+
+            class GPS: public Interfaces::Sensors::GPS, public ROSInterface
+            {
+                public:
+                    GPS(ros::NodeHandle* nh, std::string name, unsigned int decimal):
+                        SensorInterface(name, IMU::size, decimal), 
+                        Interfaces::Sensors::GPS(name, decimal), 
+                        ROSInterface(nh, name, IMU::size, decimal)
+                    {
+                        sub_ = nh->subscribe(name + "_in", 50, &GPS::callbackOdom, this);
+                        pub_ = nh->advertise<interval_msgs::Vector3IntervalStamped>(name+"_out", 1000);
+                    }
+
+                protected:
+                    void callbackOdom(const nav_msgs::Odometry& gps_data)
+                    {
+                        geometry_msgs::PointStamped msg;
+                        msg.header = gps_data.header;
+                        msg.point  = gps_data.pose.pose.position;
+                        callbackPoint(msg);
+                    }
+
+                    void callbackPoint(const geometry_msgs::PointStamped& gps_data)
+                    {
+                        ROS_INFO_STREAM("In callback");
+                        if(!initialized_)
+                        {
+                            if( gps_data.point.x != 0. | 
+                                gps_data.point.y != 0. |
+                                gps_data.point.z != 0. )
+                            {
+                                initial_pose_[0] = gps_data.point.x;
+                                initial_pose_[1] = gps_data.point.y;
+                                initial_pose_[2] = gps_data.point.z;
+                                initialized_ = true;
+                            }
+                        }
+
+                        tmp_[0] = gps_data.point.x - initial_pose_[0];
+                        tmp_[1] = gps_data.point.y - initial_pose_[1];
+                        tmp_[2] = gps_data.point.z - initial_pose_[2];
+                        unsigned int time = (unsigned int)(ros::Time::now().toSec());
+                        feed(tmp_, time);
+
+                        IntervalVector interval = intervalFromVector(tmp_);
+
+                        interval_msgs::Vector3IntervalStamped msg;
+                        msg.header = gps_data.header;
+                        msg.vector.x.lb = interval[0].lb();
+                        msg.vector.x.ub = interval[0].ub();
+                        msg.vector.y.lb = interval[1].lb();
+                        msg.vector.y.ub = interval[1].ub();
+                        msg.vector.z.lb = interval[2].lb();
+                        msg.vector.z.ub = interval[2].ub();
+
+                        pub_.publish(msg);
+                    }
+            };
         }
-};
+    }
+}

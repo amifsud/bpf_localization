@@ -15,8 +15,8 @@ int main(int argc, char **argv)
     double theta = 10./180.*3.14;
 
     bpf::BoatBPFLocalization boat_localization(pos, vel, theta, false);
-    ROSIMU        imu(&nh, "boat_imu", 3);
-    ROSGPS        gps(&nh, "boat_gps", 3);
+    Interfaces::Sensors::ROS::IMU imu(&nh, "boat_imu", 3);
+    Interfaces::Sensors::ROS::GPS gps(&nh, "boat_gps", 3);
 
     IntervalVector control(dynamical_systems::INS::control_size);
     IntervalVector position(3);

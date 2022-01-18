@@ -7,7 +7,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "imu_standalone");
     ros::NodeHandle nh;
 
-    auto imu = ROSIMU(&nh, "boat_imu", 3);
+    auto imu = Interfaces::Sensors::ROS::IMU(&nh, "boat_imu", 3);
 
     ros::Rate r(5.);
 
