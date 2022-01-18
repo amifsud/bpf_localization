@@ -1,6 +1,6 @@
 #define LOG_LEVEL Info
 
-#include "bpf_localization/sensors.hpp"
+#include "bpf_localization/interfaces/imu.hpp"
 
 int main(int argc, char** argv)
 {

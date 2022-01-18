@@ -5,25 +5,23 @@
 **/
 
 /**
- * \file   sensors.hpp
- * \brief  Sensors interfaces
+ * \file   interfaces.hpp
+ * \brief  Interfaces
  * \author Alexis Mifsud
  * \date   2022 January
  */
+
+#ifndef INTERFACES
+#define INTERFACES
 
 #include <fstream>
 
 #include <ros/package.h>
 #include <message_filters/subscriber.h>
-#include <sensor_msgs/Imu.h>
-#include <geometry_msgs/PointStamped.h>
-#include <nav_msgs/Odometry.h>
-#include <interval_msgs/Vector3IntervalStamped.h>
 
 #include "bpf_localization/utils.hpp"
 #include "bpf_localization/StartCalibration.h"
 #include "bpf_localization/GetDiameters.h"
-#include "bpf_localization/IntervalIMU.h"
 
 namespace Interfaces
 {
@@ -334,59 +332,6 @@ namespace Interfaces
                 std::deque<IntervalVector> buffer_;
         };
 
-        /** 
-         *      Common sensors
-         */
-
-        class IMU: virtual public SensorInterface
-        {
-            public:
-                IMU(std::string name, unsigned int decimal):
-                    SensorInterface(name, size, decimal)
-                {
-                }
-
-            protected:
-                void calibrationDataFormat()
-                {
-                    calibration_data_format_.push_back("vector,component,data");
-                    calibration_data_format_.push_back("angular_velocity,x");
-                    calibration_data_format_.push_back("angular_velocity,y");
-                    calibration_data_format_.push_back("angular_velocity,z");
-                    calibration_data_format_.push_back("linear_acceleration,x");
-                    calibration_data_format_.push_back("linear_acceleration,y");
-                    calibration_data_format_.push_back("linear_acceleration,z");
-                }
-
-            public:
-                static const unsigned int size = 6;
-        };
-
-        class GPS: virtual public SensorInterface
-        {
-            public:
-                GPS(std::string name, unsigned int decimal):
-                    SensorInterface(name, size, decimal),
-                    initial_pose_(Vector(3,0.)), initialized_(false)
-                {
-                    half_diameters_ = 1e-1*Vector(size_, 1.);
-                }
-
-            protected:
-                void calibrationDataFormat()
-                {
-                    calibration_data_format_.push_back("component");
-                    calibration_data_format_.push_back("x");
-                    calibration_data_format_.push_back("y");
-                    calibration_data_format_.push_back("z");
-                }
-
-            public:
-                static const unsigned int size = 3;
-                Vector initial_pose_;
-                bool initialized_;
-        };
-
         namespace ROS
         {
             class ROSInterface: virtual public SensorInterface
@@ -455,108 +400,8 @@ namespace Interfaces
                     Vector tmp_;
             };
 
-            class IMU: public Interfaces::Sensors::IMU, public ROSInterface
-            {
-                public:
-                    IMU(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-                        SensorInterface(name, IMU::size, decimal), 
-                        Interfaces::Sensors::IMU(name, decimal), 
-                        ROSInterface(nh, name, IMU::size, decimal)
-                    {
-                        sub_ = nh->subscribe(name + "_in", 50, &IMU::callback, this);
-                        pub_ = nh->advertise<bpf_localization::IntervalIMU>(name+"_out", 1000);
-                    }
-
-                protected:
-                    void callback(const sensor_msgs::Imu& imu_data)
-                    {
-                        tmp_[0] = imu_data.angular_velocity.x;
-                        tmp_[1] = imu_data.angular_velocity.y;
-                        tmp_[2] = imu_data.angular_velocity.z;
-                        tmp_[3] = imu_data.linear_acceleration.x;
-                        tmp_[4] = imu_data.linear_acceleration.y;
-                        tmp_[5] = imu_data.linear_acceleration.z;
-                        unsigned int time = (unsigned int)(ros::Time::now().toSec());
-                        feed(tmp_, time);
-
-                        IntervalVector interval = intervalFromVector(tmp_);
-
-                        bpf_localization::IntervalIMU msg;
-                        msg.header = imu_data.header;
-                        msg.angular_velocity.x.lb    = interval[0].lb();
-                        msg.angular_velocity.x.ub    = interval[0].ub();
-                        msg.angular_velocity.y.lb    = interval[1].lb();
-                        msg.angular_velocity.y.ub    = interval[1].ub();
-                        msg.angular_velocity.z.lb    = interval[2].lb();
-                        msg.angular_velocity.z.ub    = interval[2].ub();
-                        msg.linear_acceleration.x.lb = interval[3].lb();
-                        msg.linear_acceleration.x.ub = interval[3].ub();
-                        msg.linear_acceleration.y.lb = interval[4].lb();
-                        msg.linear_acceleration.y.ub = interval[4].ub();
-                        msg.linear_acceleration.z.lb = interval[5].lb();
-                        msg.linear_acceleration.z.ub = interval[5].ub();
-
-                        pub_.publish(msg);
-                    }
-            };
-
-            class GPS: public Interfaces::Sensors::GPS, public ROSInterface
-            {
-                public:
-                    GPS(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-                        SensorInterface(name, IMU::size, decimal), 
-                        Interfaces::Sensors::GPS(name, decimal), 
-                        ROSInterface(nh, name, IMU::size, decimal)
-                    {
-                        sub_ = nh->subscribe(name + "_in", 50, &GPS::callbackOdom, this);
-                        pub_ = nh->advertise<interval_msgs::Vector3IntervalStamped>(name+"_out", 1000);
-                    }
-
-                protected:
-                    void callbackOdom(const nav_msgs::Odometry& gps_data)
-                    {
-                        geometry_msgs::PointStamped msg;
-                        msg.header = gps_data.header;
-                        msg.point  = gps_data.pose.pose.position;
-                        callbackPoint(msg);
-                    }
-
-                    void callbackPoint(const geometry_msgs::PointStamped& gps_data)
-                    {
-                        ROS_INFO_STREAM("In callback");
-                        if(!initialized_)
-                        {
-                            if( gps_data.point.x != 0. | 
-                                gps_data.point.y != 0. |
-                                gps_data.point.z != 0. )
-                            {
-                                initial_pose_[0] = gps_data.point.x;
-                                initial_pose_[1] = gps_data.point.y;
-                                initial_pose_[2] = gps_data.point.z;
-                                initialized_ = true;
-                            }
-                        }
-
-                        tmp_[0] = gps_data.point.x - initial_pose_[0];
-                        tmp_[1] = gps_data.point.y - initial_pose_[1];
-                        tmp_[2] = gps_data.point.z - initial_pose_[2];
-                        unsigned int time = (unsigned int)(ros::Time::now().toSec());
-                        feed(tmp_, time);
-
-                        IntervalVector interval = intervalFromVector(tmp_);
-
-                        interval_msgs::Vector3IntervalStamped msg;
-                        msg.header = gps_data.header;
-                        msg.vector.x.lb = interval[0].lb();
-                        msg.vector.x.ub = interval[0].ub();
-                        msg.vector.y.lb = interval[1].lb();
-                        msg.vector.y.ub = interval[1].ub();
-                        msg.vector.z.lb = interval[2].lb();
-                        msg.vector.z.ub = interval[2].ub();
-
-                        pub_.publish(msg);
-                    }
-            };
         }
     }
 }
+
+#endif

@@ -2,7 +2,8 @@
 #define UNIFORMLY_CHOOSEN_PAVING_INIT
 
 #include <bpf_localization/boat_bpf_localization.hpp>
-#include "bpf_localization/sensors.hpp"
+#include "bpf_localization/interfaces/imu.hpp"
+#include "bpf_localization/interfaces/gps.hpp"
 #include <ros/ros.h>
 
 int main(int argc, char **argv) 
