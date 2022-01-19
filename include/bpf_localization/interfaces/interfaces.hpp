@@ -151,7 +151,7 @@ namespace Interfaces
 
             void loadFromFile()
             {
-                if(openCalibrationFile())
+                if(openCalibrationFile() & !isCalibrationFileEmpty())
                 {
                     // If file open
                     std:vector<std::string> lines;
@@ -178,6 +178,15 @@ namespace Interfaces
                 closeCalibrationFile();
             }
 
+            bool isCalibrationFileEmpty()
+            {
+                unsigned int previous_line = calibration_file_->tellg();
+                calibration_file_->seekg(0, calibration_file_->end);
+                bool res = calibration_file_->tellg() == 0;
+                calibration_file_->seekg(previous_line);
+                return res;
+            }
+
             void writeCalibrationFile()
             {
                 ROS_INFO_STREAM("Begin to write calibration file");
@@ -187,7 +196,7 @@ namespace Interfaces
                     // If file open
                     std:vector<std::string> lines;
                     calibration_file_->seekg(0, calibration_file_->end);
-                    if(calibration_file_->tellg() == 0)
+                    if(isCalibrationFileEmpty())
                     {
                         // If file empty : create lines with sensor format
                         ROS_INFO_STREAM("New file");
