@@ -18,6 +18,27 @@ using namespace ibex;
 
 #include "bpf_localization/dynamical_systems/functions.hpp"
 
+std::random_device rd;
+
+class UniformDistribution 
+{
+    public:
+        UniformDistribution(double lower = 0.0, double upper = 1.0):
+            uniform_distribution_(lower, upper),
+            generator_(rd())
+        {
+        }
+
+        double get()
+        {
+            return uniform_distribution_(generator_);
+        }
+
+    protected:
+        std::default_random_engine generator_;
+        std::uniform_real_distribution<double> uniform_distribution_;
+};
+
 class ReturnIMU
 {
     public:

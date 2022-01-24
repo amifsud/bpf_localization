@@ -131,7 +131,7 @@ namespace bpf
         protected:
             /*** Boxes processing ***/
 
-            #if defined SUBDIVISE_OVER_ALL_DIMENSIONS || defined DOXYGEN
+            #if defined SUBDIVISE_OVER_ALL_DIMENSIONS | defined DOXYGEN
             /*! \fn std::deque<Particle> subdiviseOverAllDimensions(unsigned int dim = 0)
              *
              *  \brief Recusively subdivise over all dimensions of the particle, begining by dim
@@ -209,14 +209,12 @@ namespace bpf
                 ROS_DEBUG("Subdivise over random dimension begin");
                 std::deque<Particle> boxes;
                 if(N > 0) boxes.push_back(*this);
-                std::random_device rd;
-                std::default_random_engine generator(rd());
 
                 unsigned int direction;
 
                 while (boxes.size() < N)
                 {
-                    direction = int(uniform_distribution_(generator) * this->size());
+                    direction = int(uniform_distribution_.get() * this->size());
                     std::pair<IntervalVector, IntervalVector> pair
                         = boxes[0].bisect(direction, 0.5);
                     boxes.push_back(Particle(std::get<0>(pair), boxes[0].weight_/2.));
@@ -233,7 +231,7 @@ namespace bpf
             double weight_;
 
             /*! uniform distribution used to randomly subdivise particles */
-            std::uniform_real_distribution<double> uniform_distribution_;
+            UniformDistribution uniform_distribution_;
     };
 
     /*! \class Particles

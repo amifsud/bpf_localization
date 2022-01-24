@@ -430,10 +430,9 @@ namespace bpf
                 double ui;
                 unsigned int j;
                 std::vector<unsigned int> n(cumulative_weights.size(), 0.0);
-                std::default_random_engine generator;
                 for(unsigned int i = 0; i < N_; ++i)
                 {
-                    ui = uniform_distribution_(generator);
+                    ui = uniform_distribution_.get();
                     j=0;
                     while(ui >= cumulative_weights[j]) j++;
                     n[j] += 1;
@@ -474,11 +473,9 @@ namespace bpf
 
                 double ui;
                 unsigned int j;
-                std::random_device rd;
-                std::default_random_engine generator(rd());
                 for(unsigned int i = 0; i < M; ++i)
                 {
-                    ui = uniform_distribution_(generator);
+                    ui = uniform_distribution_.get();
                     j=0;
                     while(ui >= cumulative_weights[j]) j++;
                     n[j] += 1;
@@ -527,9 +524,9 @@ namespace bpf
             unsigned int getRandomDirection(IntervalVector& box)
             {
                 ROS_DEBUG_STREAM("Get random direction for resampling begin");
-                std::default_random_engine generator;
+                unsigned int dir = int(uniform_distribution_.get() * box.size());
                 ROS_DEBUG_STREAM("Get random direction for resampling end");
-                return int(uniform_distribution_(generator) * box.size());
+                return dir;
             }
             #endif
 
@@ -623,7 +620,7 @@ namespace bpf
             unsigned int N_;
 
             /*! uniform distribution used to randomly subdivise particles */
-            std::uniform_real_distribution<double> uniform_distribution_;
+            UniformDistribution uniform_distribution_;
 
             /*! dynamical model base class from which particular systems inherit */
             std::shared_ptr<dynamical_systems::DynamicalSystem> dynamical_model_;
