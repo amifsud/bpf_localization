@@ -29,6 +29,12 @@ class UniformDistribution
         {
         }
 
+        UniformDistribution(std::random_device device, double lower = 0.0, double upper = 1.0):
+            uniform_distribution_(lower, upper),
+            generator_(device())
+        {
+        }
+
         double get()
         {
             return uniform_distribution_(generator_);
