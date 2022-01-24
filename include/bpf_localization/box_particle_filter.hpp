@@ -216,7 +216,7 @@ namespace bpf
                 ROS_DEBUG_STREAM("Begin correction");
                 assertReady();
 
-                #pragma omp parallel for
+                #pragma omp parallel for if(parallelize_)
                 for(auto it = particles_.begin(); it < particles_.end(); it++)
                 {
                     IntervalVector predicted_measures  = dynamical_model_->applyMeasures(*it);
@@ -230,12 +230,17 @@ namespace bpf
                     }
                 }
 
+                resampling();
+
                 ROS_DEBUG_STREAM("End correction");
             }
 
             /*! void resampling()
              *
              *  \brief Resampling the Particles in particles_ if necessary
+             *
+             *  To determine if the resempling is necessary, we use the 
+             *  criterion of \cite merlinge2018thesis page 20
              *
              *  Use the preprocessor definitions RESAMPLING_METHOD and RESAMPLING_DIRECTION 
              *  to choose the resampling scheme
@@ -279,7 +284,9 @@ namespace bpf
             /*! const unsigned int& N() const */
             const unsigned int& N() const { return N_; }
             /*! std::shared_ptr<DynamicalModel> dynamicalModel() const */
-            std::shared_ptr<dynamical_systems::DynamicalSystem> dynamicalModel() const { return dynamical_model_; }
+            std::shared_ptr<dynamical_systems::DynamicalSystem> 
+                dynamicalModel() const { return dynamical_model_; }
+
             /*! const Particles& getParticles() const */
             const Particles& getParticles() const { return particles_; }
 
@@ -423,9 +430,9 @@ namespace bpf
                 double ui;
                 unsigned int j;
                 std::vector<unsigned int> n(cumulative_weights.size(), 0.0);
+                std::default_random_engine generator;
                 for(unsigned int i = 0; i < N_; ++i)
                 {
-                    std::default_random_engine generator;
                     ui = uniform_distribution_(generator);
                     j=0;
                     while(ui >= cumulative_weights[j]) j++;
@@ -456,10 +463,13 @@ namespace bpf
 
                 std::vector<unsigned int> n(cumulative_weights.size(), 1.0);
                 unsigned int M = 0;
-                for(unsigned int i = 0; n.size(); ++i)
+                for(unsigned int i = 0; i < n.size(); ++i)
                 {
-                    if(particles->operator[](i).weight() == 0.0) n[i] = 0.0;
-                    M++;
+                    if(particles->operator[](i).weight() == 0.0) 
+                    {
+                        n[i] = 0.0;
+                        M++;
+                    }
                 }
 
                 double ui;
