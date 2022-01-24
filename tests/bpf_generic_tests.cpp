@@ -5,6 +5,38 @@
 #include <bpf_localization/tests.hpp>
 #include <bpf_localization/dynamical_systems/turtlebot2.hpp>
 
+TEST(GenericTests, testUniformDistribution)
+{
+    double lower = 0.0;
+    double upper = 1.0;
+    UniformDistribution distrib(lower, upper);
+
+    unsigned int nb = 10;
+    double size = (upper-lower)/nb;
+    std::map<double, int> results;
+
+    for(auto i = 0; i < nb; ++i)
+        results.emplace(i*size, 0);
+
+    double real;
+    unsigned int N = 2e7;
+    for(auto i = 0; i < N; ++i)
+    {
+        real = distrib.get();
+        for(auto interval = results.begin(); interval != results.end(); ++interval)
+        {
+            if(Interval(interval->first, interval->first+size).contains(real))
+            {
+                interval->second += 1;
+                break;
+            }
+        }
+    }
+
+    for(auto interval = results.begin(); interval != results.end(); ++interval)
+        EXPECT_TRUE(std::abs(interval->second - double(N)/double(nb)) < 1e4);
+}
+
 // Declare a test
 TEST(GenericTests, testCase1)
 {
