@@ -5,7 +5,16 @@
 #include <bpf_localization/tests.hpp>
 #include <bpf_localization/dynamical_systems/turtlebot2.hpp>
 
-TEST(GenericTests, testUniformDistribution)
+TEST(GenericTests, UniformDistribution1)
+{
+    unsigned int N = 1000;
+    UniformDistribution distrib1, distrib2;
+
+    for(auto i = 0; i < N; i++)
+        EXPECT_TRUE(distrib1.get() != distrib2.get());
+}
+
+TEST(GenericTests, testUniformDistribution2)
 {
     double lower = 0.0;
     double upper = 1.0;
@@ -37,7 +46,6 @@ TEST(GenericTests, testUniformDistribution)
         EXPECT_TRUE(std::abs(interval->second - double(N)/double(nb)) < 1e4);
 }
 
-// Declare a test
 TEST(GenericTests, testCase1)
 {
     unsigned int N = pow(pow(2,dynamical_systems::TurtleBot::state_size),1);
