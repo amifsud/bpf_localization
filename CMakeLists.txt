@@ -333,6 +333,14 @@ if(TARGET functions_tests)
     )
 endif()
 
+catkin_add_gtest(bpf_particle_weight_tests tests/bpf_particle_weight_tests.cpp)
+if(TARGET bpf_particle_weight_tests)
+    target_link_libraries(bpf_particle_weight_tests
+        ${catkin_LIBRARIES}
+        ${IBEX_DEPENDENCIES}
+    )
+endif()
+
 ## ROSTESTS
 
 add_rostest_gtest(tests_imu_standalone rostests/imu_standalone.test tests/rostest_imu_standalone.cpp)

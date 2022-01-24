@@ -4,6 +4,22 @@
 #include <gtest/gtest.h>
 #include <bpf_localization/tests.hpp>
 
+void test(  Particles* particles, unsigned int N, 
+            IntervalVector* initial_box, unsigned int subdivision_dir)
+{
+    EXPECT_TRUE(wellPavedTest(particles, *initial_box))
+        << "boxes don't well pave initial box";
+
+    EXPECT_TRUE(subdiviseOverGivenDirectionTest(particles, *initial_box, subdivision_dir))
+        << "test of the subdivision over given direction failed";
+
+    EXPECT_EQ(particles->size(), N) << "In this test case we should have exactly N boxes";
+
+    for(auto it = particles->begin(); it != particles->end(); it++)
+        EXPECT_TRUE(std::abs(it->weight() - 1./N) < 1e-7);
+}
+
+
 // Declare a test
 TEST(GivenDirSubdivisionTest, testCase1)
 {
@@ -20,15 +36,10 @@ TEST(GivenDirSubdivisionTest, testCase1)
     initial_box[5]= Interval(-2.0, 2.0);
 
     Particle particle(initial_box, 1.);
-    Particles particles(particle.subdivise(SUBDIVISION_TYPE::GIVEN, N, subdivision_dir));
+    Particles particles(particle.subdivise( SUBDIVISION_TYPE::GIVEN, 
+                                            N, subdivision_dir));
 
-    EXPECT_TRUE(wellPavedTest(&particles, initial_box))
-        << "boxes don't well pave initial box";
-
-    EXPECT_TRUE(subdiviseOverGivenDirectionTest(&particles, initial_box, subdivision_dir))
-        << "test of the subdivision over given direction failed";
-
-    EXPECT_EQ(particles.size(), N) << "In this test case we should have exactly N boxes";
+    test(&particles, N, &initial_box, subdivision_dir);
 }
 
 // Run all the tests that were declared with TEST()

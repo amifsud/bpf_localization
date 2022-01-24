@@ -8,7 +8,6 @@
 TEST(UniformSubdivisionTest, testCase1)
 {
     unsigned int state_size = 6;
-    unsigned int N = pow(2,state_size);
 
     IntervalVector initial_box(state_size);
     initial_box[0]= Interval(-2.0, 2.0);
@@ -26,13 +25,16 @@ TEST(UniformSubdivisionTest, testCase1)
 
     EXPECT_TRUE(subdiviseOverAllDimensionsTest(&particles))
         << "the paving is not uniform";
+
+    unsigned int N = pow(2,state_size);
+    for(auto it = particles.begin(); it != particles.end(); ++it)
+        EXPECT_TRUE(std::abs(it->weight() - 1./N) < 1e-7);
 }
 
 // Declare another test
 TEST(UniformSubdivisionTest, testCase2)
 {
     unsigned int state_size = 2;
-    unsigned int N = pow(2,state_size);
 
     IntervalVector initial_box(state_size);
     initial_box[0]= Interval(-2.0, 2.0);
@@ -46,6 +48,10 @@ TEST(UniformSubdivisionTest, testCase2)
 
     EXPECT_TRUE(subdiviseOverAllDimensionsTest(&particles))
         << "the paving is not uniform";
+
+    unsigned int N = pow(2,state_size);
+    for(auto it = particles.begin(); it != particles.end(); ++it)
+        EXPECT_TRUE(std::abs(it->weight() - 1./N) < 1e-7);
 }
 
 // Run all the tests that were declared with TEST()

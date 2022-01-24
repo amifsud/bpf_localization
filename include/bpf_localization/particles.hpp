@@ -84,14 +84,14 @@ namespace bpf
                         #ifdef SUBDIVISE_OVER_ALL_DIMENSIONS
                         particles = subdiviseOverAllDimensions();
                         #else
-                        ROS_ERROR_STREAM("Not compiled method");
+                        ROS_ERROR_STREAM("SUBDIVISION_TYPE: Not compiled method");
                         #endif
                         break;
                     case SUBDIVISION_TYPE::GIVEN:
                         #ifdef SUBDIVISE_OVER_GIVEN_DIRECTION
                         particles = subdiviseOverGivenDirection(dim, N);
                         #else
-                        ROS_ERROR_STREAM("Not compiled method");
+                        ROS_ERROR_STREAM("SUBDIVISION_TYPE: Not compiled method");
                         #endif
                         break;
                     default:
@@ -187,7 +187,7 @@ namespace bpf
                     std::pair<IntervalVector, IntervalVector> pair
                         = boxes[0].bisect(dim, 1.-1./(N-i));
                     boxes.erase(boxes.begin());
-                    boxes.push_front(Particle(std::get<0>(pair), 1.));
+                    boxes.push_front(Particle(std::get<0>(pair), this->weight_/N));
                     boxes.push_back(Particle(std::get<1>(pair), this->weight_/N));
                 }
 
@@ -283,16 +283,31 @@ namespace bpf
 
             /*! \name Weights processing */
             ///@{
+            /*! float sumOfWeights() 
+             *
+             *  \return sum of the weights of the Particle objects in the list
+             *
+             * */
+            float sumOfWeights()
+            {
+                float sum = 0;
+                for(auto it= this->begin(); it != this->end(); it++)
+                    sum += it->weight();
+                return sum;
+            }
+
             /*! resetWeightsUniformly() 
              *
              *  \brief Reset the weights of the Particle objects to a constant value so that the 
              *         sum over the list is one
              *
+             *  \param sum double that define the sum of weights
+             *
              * */
-            void resetWeightsUniformly()
+            void resetWeightsUniformly(double sum = 1.)
             {
                 for(auto it = this->begin(); it != this->end(); it++)
-                    it->weight() = 1./this->size();
+                    it->weight() = sum/this->size();
             }
 
             /*! std::deque<float> getCumulativeWeights() 
@@ -335,8 +350,10 @@ namespace bpf
             *   \brief Subdivise the ith element of the list and delete it
             *
             *   \param sub_type #SUBDIVISION_TYPE
-            *   \param N (usefullness determined by the #SUBDIVISION_TYPE) number of subdivisions
-            *   \param dim (usefullness determined by the #SUBDIVISION_TYPE) dimension of subdivision 
+            *   \param N (usefullness determined by the #SUBDIVISION_TYPE) number 
+            *           of subdivisions
+            *   \param dim (usefullness determined by the #SUBDIVISION_TYPE) 
+            *           dimension of subdivision 
             *
             */
             void subdivise( unsigned int i = 0, 
@@ -375,20 +392,6 @@ namespace bpf
                 this->insert(this->end(), particle);
             }
             ///@}
-
-        protected:
-            /*! float sumOfWeights() 
-             *
-             *  \return sum of the weights of the Particle objects in the list
-             *
-             * */
-            float sumOfWeights()
-            {
-                float sum = 0;
-                for(auto it= this->begin(); it != this->end(); it++)
-                    sum += it->weight();
-                return sum;
-            }
     };
 } // namespace bpf
 
