@@ -169,6 +169,32 @@ namespace bpf
                 particles_ = particles;
                 parallelize_ = parallelize;
             }
+
+            /*! BoxParticleFilter(  unsigned int N, 
+                                    const Particles& particles,
+                                    std::shared_ptr<DynamicalModel> dynamical_model,
+                                    bool parallelize = false)
+            *
+            *   \brief Constructor
+            *
+            *   \param N number of particles
+            *   \param particles initial set of Particles
+            *   \param dynamical dynamical model on which to apply the filter
+            *   \param parallelize use parallelization or not 
+            *           (**WARNING : DynIbex is not thread safe**)
+            *
+            */
+            BoxParticleFilter(  unsigned int N, 
+                                const Particles& particles,
+                                std::shared_ptr<dynamical_systems::DynamicalSystem> dynamical_model,
+                                bool parallelize = false)
+                : uniform_distribution_(0.0, 1.0)
+            {
+                dynamical_model_ = dynamical_model;            
+                N_ = N;
+                particles_ = particles;
+                parallelize_ = parallelize;
+            }
             ///@}
 
             /*! \name Box particle filter workflow */
