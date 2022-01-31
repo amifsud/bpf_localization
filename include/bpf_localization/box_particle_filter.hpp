@@ -462,7 +462,7 @@ namespace bpf
                 for(unsigned int i = 0; i < N_; ++i)
                 {
                     j=0;
-                    while(uis[i] >= cumulative_weights[j]) j++;
+                    while(uis[i] - cumulative_weights[j] >= 1e-5) j++;
                     n[j] += 1;
                 }
 
@@ -492,7 +492,7 @@ namespace bpf
                 unsigned int M = 0;
                 for(unsigned int i = 0; i < n.size(); ++i)
                 {
-                    if(particles_.operator[](i).weight() == 0.0) 
+                    if(particles_.operator[](i).weight() <= 1e-5) 
                     {
                         n[i] = 0.0;
                         M++;
@@ -503,7 +503,7 @@ namespace bpf
                 for(unsigned int i = 0; i < M; ++i)
                 {
                     j=0;
-                    while(uis[i] >= cumulative_weights[j]) j++;
+                    while(uis[i] - cumulative_weights[j] >= 1e-7) j++;
                     n[j] += 1;
                 }
 
@@ -587,6 +587,7 @@ namespace bpf
             unsigned int getGeometricalDirection(IntervalVector& box)
             {
                 ROS_DEBUG_STREAM("Get geometrical direction for resampling begin");
+
                 double norm;
                 Vector diameters(box.size()), diam(1);
                 IntervalVector subvect(1);
@@ -595,7 +596,7 @@ namespace bpf
                 {
                     subvect = box.subvector(std::get<0>(it), std::get<1>(it));
                     diam = subvect.diam();
-                    norm = diam.norm();// or std::get<2>(it)
+                    norm = std::get<2>(it);//diam.norm();
                     diameters.put(i, (1./norm)*diam);
                     i += subvect.size();
                 }
