@@ -27,7 +27,8 @@
  *
  *  \brief Initialization method
  *
- *  * 0 : Subpaving defined by choosing directions of bisections randomly with an uniform distribution
+ *  * 0 : Subpaving defined by choosing directions of bisections randomly with 
+ *          an uniform distribution
  *  * 1 : Subpaving defined by bisecting over all directions
  */
 #ifndef INIT_METHOD
@@ -38,10 +39,12 @@
  *
  *  \brief Resampling method
  *
- *  * 0 : Multinomial resampling : For each particle, determine the number of subdivision to perform, 
+ *  * 0 : Multinomial resampling : For each particle, determine the number of subdivision 
+ *          to perform, 
  *        using the multinomial algortihm in \cite merlinge2018thesis (algorithm 3 page 19)
- *  * 1 : Guaranted resampling : For each particle, determine the number of subdivision to perform, 
- *        using the guaranted  algortihm in \cite merlinge2018thesis (algorithm 6 page 72)
+ *  * 1 : Guaranted resampling : For each particle, determine the number of subdivision to 
+ *          perform, using the guaranted  algortihm in \cite merlinge2018thesis 
+ *          (algorithm 6 page 72)
  *
  */
 #ifndef RESAMPLING_METHOD
@@ -53,8 +56,8 @@
  * \brief Resamplinmg direction
  *
  * * 0 : Random direction : The direction is choosed randomly with an uniform distribution
- * * 1 : Geometrical direction : The direction is choosed geometrically like in \cite merlinge2018thesis 
- *       (section 4.3.1 page 87)
+ * * 1 : Geometrical direction : The direction is choosed geometrically like in 
+ *          \cite merlinge2018thesis (section 4.3.1 page 87)
  * * 2 : Maximum likelihood : The direction is choosed maximizing the likelihood like in 
  *       \cite merlinge2018thesis (section 4.3.2 page 88)
  *
@@ -78,7 +81,8 @@ namespace bpf
      *  \brief Box particle filter, mainly implemented from \cite merlinge2018thesis
      *
      *  This a base class which has to be specialized for your system. 
-     *  This class only use the DynamicalModel base class from which particular systems inherit.
+     *  This class only use the DynamicalModel base class from which particular systems 
+     *  inherit.
      *
      * */
     class BoxParticleFilter
