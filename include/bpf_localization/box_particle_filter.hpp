@@ -289,7 +289,7 @@ namespace bpf
                     ROS_DEBUG_STREAM("We will resample");
 
                     // Compute number of subdivisions per boxes
-                    std::vector<unsigned int> n = chooseSubdivisions(&particles_);
+                    std::vector<unsigned int> n = chooseSubdivisions();
 
                     // Subdivise boxes with ni boxes (delete box if ni=0) 
                     unsigned int i = 0;
@@ -451,11 +451,11 @@ namespace bpf
              *  multinomial algortihm in \cite merlinge2018thesis (algorithm 3 page 19)
              *
              * */
-            std::vector<unsigned int> multinomialSubdivisions(Particles* particles)
+            std::vector<unsigned int> multinomialSubdivisions()
             {
                 ROS_DEBUG_STREAM("Begin multinomial resampling");
 
-                std::vector<float> cumulative_weights = particles->getCumulativeWeights();
+                std::vector<float> cumulative_weights = particles_.getCumulativeWeights();
 
                 double ui;
                 unsigned int j;
@@ -484,17 +484,17 @@ namespace bpf
              *  guaranted algortihm in \cite merlinge2018thesis (algorithm 6 page 72)
              *
              * */
-            std::vector<unsigned int> guarantedSubdivisions(Particles* particles)
+            std::vector<unsigned int> guarantedSubdivisions()
             {
                 ROS_DEBUG_STREAM("Begin guaranted resampling");
 
-                std::vector<float> cumulative_weights = particles->getCumulativeWeights();
+                std::vector<float> cumulative_weights = particles_.getCumulativeWeights();
 
                 std::vector<unsigned int> n(cumulative_weights.size(), 1.0);
                 unsigned int M = 0;
                 for(unsigned int i = 0; i < n.size(); ++i)
                 {
-                    if(particles->operator[](i).weight() == 0.0) 
+                    if(particles_.operator[](i).weight() == 0.0) 
                     {
                         n[i] = 0.0;
                         M++;
@@ -525,12 +525,12 @@ namespace bpf
              *  \param particles Particles to subdivise
              *
              * */
-            std::vector<unsigned int> chooseSubdivisions(Particles* particles)
+            std::vector<unsigned int> chooseSubdivisions()
             {
                 #if RESAMPLING_METHOD == 0
-                return multinomialSubdivisions(particles);
+                return multinomialSubdivisions();
                 #elif RESAMPLING_METHOD == 1
-                return guarantedSubdivisions(particles);
+                return guarantedSubdivisions();
                 #endif
             }
             ///@}
