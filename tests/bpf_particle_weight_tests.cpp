@@ -127,7 +127,7 @@ int main(int argc, char **argv)
                 ros::console::levels::LOG_LEVEL) ) // LOG_LEVEL defined as macro 
        ros::console::notifyLoggerLevelsChanged();
     testing::InitGoogleTest(&argc, argv);
-    ros::init(argc, argv, "generic_bpf_tester");
+    ros::init(argc, argv, "particle_weight_bpf_tester");
     ros::NodeHandle nh;
     return RUN_ALL_TESTS();
 }
