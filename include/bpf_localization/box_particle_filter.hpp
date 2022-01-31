@@ -451,20 +451,18 @@ namespace bpf
              *  multinomial algortihm in \cite merlinge2018thesis (algorithm 3 page 19)
              *
              * */
-            std::vector<unsigned int> multinomialSubdivisions()
+            std::vector<unsigned int> multinomialSubdivisions(std::vector<double> uis)
             {
                 ROS_DEBUG_STREAM("Begin multinomial resampling");
 
                 std::vector<float> cumulative_weights = particles_.getCumulativeWeights();
 
-                double ui;
                 unsigned int j;
-                std::vector<unsigned int> n(cumulative_weights.size(), 0.0);
+                std::vector<unsigned int> n(cumulative_weights.size(), 0);
                 for(unsigned int i = 0; i < N_; ++i)
                 {
-                    ui = uniform_distribution_.get();
                     j=0;
-                    while(ui >= cumulative_weights[j]) j++;
+                    while(uis[i] >= cumulative_weights[j]) j++;
                     n[j] += 1;
                 }
 
@@ -484,7 +482,7 @@ namespace bpf
              *  guaranted algortihm in \cite merlinge2018thesis (algorithm 6 page 72)
              *
              * */
-            std::vector<unsigned int> guarantedSubdivisions()
+            std::vector<unsigned int> guarantedSubdivisions(std::vector<double> uis)
             {
                 ROS_DEBUG_STREAM("Begin guaranted resampling");
 
@@ -501,13 +499,11 @@ namespace bpf
                     }
                 }
 
-                double ui;
                 unsigned int j;
                 for(unsigned int i = 0; i < M; ++i)
                 {
-                    ui = uniform_distribution_.get();
                     j=0;
-                    while(ui >= cumulative_weights[j]) j++;
+                    while(uis[i] >= cumulative_weights[j]) j++;
                     n[j] += 1;
                 }
 
@@ -525,12 +521,26 @@ namespace bpf
              *  \param particles Particles to subdivise
              *
              * */
-            std::vector<unsigned int> chooseSubdivisions()
+            std::vector<unsigned int> 
+                chooseSubdivisions(std::vector<double> uis_in = std::vector<double>(0))
             {
+                std::vector<double> uis;
+                if(uis_in.size() == 0)
+                {
+                    for(auto i = 0; i < N_; i++)
+                        uis.push_back(uniform_distribution_.get());
+                }
+                else
+                {
+                    uis = uis_in;
+                }
+
+                particles_.weigthsNormalization();
+
                 #if RESAMPLING_METHOD == 0
-                return multinomialSubdivisions();
+                return multinomialSubdivisions(uis);
                 #elif RESAMPLING_METHOD == 1
-                return guarantedSubdivisions();
+                return guarantedSubdivisions(uis);
                 #endif
             }
             ///@}
