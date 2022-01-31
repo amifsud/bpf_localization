@@ -328,6 +328,11 @@ namespace dynamical_systems
                 #if INTEGRATION_METHOD == 0
                 configureGuarantedIntegration(RK4, 1e-6, false, 0.1); 
                 #endif
+
+                #if RESAMPLING_DIRECTION == 1
+                normalization_values_.push_back(std::make_tuple(0, 0, 1.));
+                normalization_values_.push_back(std::make_tuple(1, 1, 2.));
+                #endif
             }
 
         public:

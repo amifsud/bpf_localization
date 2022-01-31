@@ -29,9 +29,9 @@ namespace dynamical_systems
                 #endif
 
                 #if RESAMPLING_DIRECTION == 1
-                normalization_values_.push_back(std::make_tuple(0, 1, 1.));
+                normalization_values_.push_back(std::make_tuple(0, 0, 1.));
                 normalization_values_.push_back(std::make_tuple(1, 1, 1.));
-                normalization_values_.push_back(std::make_tuple(2, 1, 1.));
+                normalization_values_.push_back(std::make_tuple(2, 2, 1.));
                 #endif
             }
 
