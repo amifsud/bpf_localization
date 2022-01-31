@@ -248,6 +248,23 @@ if(TARGET bpf_particle_random_subdivision)
     )
 endif()
 
+catkin_add_gtest(bpf_resampling_multinomial_tests tests/bpf_resampling_multinomial_tests.cpp)
+if(TARGET bpf_resampling_multinomial_tests)
+    target_link_libraries(bpf_resampling_multinomial_tests
+        ${catkin_LIBRARIES}
+        ${IBEX_DEPENDENCIES}
+    )
+endif()
+
+catkin_add_gtest(   bpf_resampling_guaranted_geometrical_tests 
+                    tests/bpf_resampling_guaranted_geometrical_tests.cpp)
+if(TARGET bpf_resampling_guaranted_geometrical_tests)
+    target_link_libraries(bpf_resampling_guaranted_geometrical_tests
+        ${catkin_LIBRARIES}
+        ${IBEX_DEPENDENCIES}
+    )
+endif()
+
 catkin_add_gtest(bpf_generic_tests tests/bpf_generic_tests.cpp)
 if(TARGET bpf_generic_tests)
     target_link_libraries(bpf_generic_tests
