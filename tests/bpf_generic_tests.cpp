@@ -43,7 +43,7 @@ TEST(GenericTests, testUniformDistribution2)
     }
 
     for(auto interval = results.begin(); interval != results.end(); ++interval)
-        EXPECT_TRUE(std::abs(interval->second - double(N)/double(nb)) < 1e4);
+        EXPECT_TRUE(std::abs(interval->second - double(N)/double(nb)) < 5e3);
 }
 
 TEST(GenericTests, testCase1)
