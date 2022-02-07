@@ -296,18 +296,6 @@ namespace Interfaces
                 return calibration_;
             }
 
-            void readCalibrationFile( std::vector<std::string>* lines)
-            {
-                std::string line;
-                calibration_file_->seekp(0, calibration_file_->beg);
-                while(!calibration_file_->eof())
-                {
-                    std::getline(*calibration_file_, line);
-                    line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
-                    lines->push_back(line);
-                }
-            }
-
             void spliToDouble(std::string* line, std::string* format,
                                                 std::vector<double>* values)
             {
@@ -318,52 +306,16 @@ namespace Interfaces
                 while(getline(stream, number, ',')) values->push_back(std::stod(number));
             }
 
-            bool openCalibrationFile()
-            {
-                if(calibration_file_name_ != "")
-                {
-                    // Try to open file twice
-                    calibration_file_ = new std::fstream(calibration_file_name_, 
-                                                         std::ios::out | std::ios::in);
-                    if(!calibration_file_->is_open())
-                    {
-                        calibration_file_ = new std::fstream(
-                                calibration_file_name_, std::ios::out | std::ios::in);
-                    }
-                }
-                else
-                {
-                    ROS_ASSERT_MSG(false, "No calibration file provided");
-                }
-
-                if(calibration_file_->is_open()) 
-                {
-                    calibrationDataFormat();
-                }
-                else
-                {
-                    ROS_ASSERT_MSG(false, "File can't be open, please create it");
-                }
-
-                return calibration_file_->is_open();
-            }
-
-            bool closeCalibrationFile()
-            {
-                calibration_file_->close();
-                calibration_data_format_.clear();
-            }
-
             void loadFromFile()
             {
-                if(openCalibrationFile() & !isCalibrationFileEmpty())
-                {
-                    // If file open
-                    std:vector<std::string> lines;
-                    readCalibrationFile(&lines);
-                    std::string line, format;
-                    std::vector<double> values;
+                calibrationDataFormat();
 
+                std::string line, format;
+                std::vector<double> values;
+                std:vector<std::string> lines;
+
+                if(calibration_file_.read(&lines))
+                {
                     for(auto u = 0; u < calibration_data_format_.size()-1; ++u)
                     {
                         line   = lines[u*4+1];
@@ -381,74 +333,51 @@ namespace Interfaces
 
                     computeHalfDiameters();
                 }
-
-                closeCalibrationFile();
-            }
-
-            bool isCalibrationFileEmpty()
-            {
-                unsigned int previous_line = calibration_file_->tellg();
-                calibration_file_->seekg(0, calibration_file_->end);
-                bool res = calibration_file_->tellg() == 0;
-                calibration_file_->seekg(previous_line);
-                return res;
+                calibration_data_format_.clear();
             }
 
             void writeCalibrationFile()
             {
                 ROS_INFO_STREAM("Begin to write calibration file");
 
-                if(openCalibrationFile())
+                // If file open
+                calibrationDataFormat();
+
+                std:vector<std::string> lines;
+
+                if(!calibration_file_.read(&lines))
                 {
-                    // If file open
-                    std:vector<std::string> lines;
-                    calibration_file_->seekg(0, calibration_file_->end);
-                    if(isCalibrationFileEmpty())
+                    // If file empty : create lines with sensor format
+                    ROS_INFO_STREAM("New file");
+                    calibrationDataFormat();
+                    lines.push_back("vector,component,data");
+                    for(auto u = 0; u < calibration_data_format_.size(); ++u)
                     {
-                        // If file empty : create lines with sensor format
-                        ROS_INFO_STREAM("New file");
-                        calibrationDataFormat();
-                        lines.push_back("vector,component,data");
-	                    for(auto u = 0; u < calibration_data_format_.size(); ++u)
-	                    {
-	                        for(auto it = data_map_.begin(); it != data_map_.end(); ++it)
-	                        {
-	                            lines.push_back(
-	                                calibration_data_format_[u] + "," + it->first);
-	                        }
-	                    }
-                    }
-                    else
-                    {
-                        // If file not empty : read lines from file
-                        readCalibrationFile(&lines);
-                    }
-
-                    // Update calibration data
-	                lines.operator[](0) += "," + to_string(ros::Time::now().toSec());
-	                unsigned int u;
-	                for(auto i = 0; i < size_; ++i)
-	                {
-	                    u = 1;
-	                    for(auto it = data_map_.begin(); it != data_map_.end(); ++it)
-	                    {
-	                        lines.operator[](i*data_map_.size()+u) 
-	                            += ","+to_string(it->second.operator[](i));
-	                        u += 1;
-	                    }
-	                }
-
-                    // Write lines and close
-                    calibration_file_->clear(); 
-                    calibration_file_->seekp(0, calibration_file_->beg);
-                    for(auto i = 0; i < lines.size(); ++i)
-                    {
-                        *calibration_file_ << lines[i];
-                        if(i != lines.size()-1) *calibration_file_ << "\n";
+                        for(auto it = data_map_.begin(); it != data_map_.end(); ++it)
+                        {
+                            lines.push_back(
+                                calibration_data_format_[u] + "," + it->first);
+                        }
                     }
                 }
 
-                closeCalibrationFile();
+                // Update calibration data
+                lines.operator[](0) += "," + to_string(ros::Time::now().toSec());
+                unsigned int u;
+                for(auto i = 0; i < size_; ++i)
+                {
+                    u = 1;
+                    for(auto it = data_map_.begin(); it != data_map_.end(); ++it)
+                    {
+                        lines.operator[](i*data_map_.size()+u) 
+                            += ","+to_string(it->second.operator[](i));
+                        u += 1;
+                    }
+                }
+
+                // Write lines and close
+                calibration_file_.write(&lines);
+                calibration_data_format_.clear();
 
                 ROS_INFO_STREAM("End to write calibration file");
             }
@@ -459,10 +388,10 @@ namespace Interfaces
             unsigned int size_;
             bool calibration_;
             std::string name_;
-            std::fstream* calibration_file_;
 
             std::map<std::string, Vector> data_map_;
             std::vector<std::string> calibration_data_format_;
+            File calibration_file_;
 
             unsigned int init_time_;
             unsigned int until_;
