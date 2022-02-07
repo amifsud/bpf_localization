@@ -8,7 +8,10 @@ TEST(IMU_standalone, basicTest)
 {
     ros::NodeHandle nh;
 
-    auto imu = IMUInterface(&nh, "boat_imu", 3);
+    std::string path = ros::package::getPath("bpf_localization");
+    path += "/data/calibrations/";
+
+    auto imu = Interfaces::Sensors::ROS::IMU(&nh, path, "boat_imu", 3);
 
     ros::Rate r(1./5);
 
