@@ -227,17 +227,19 @@ namespace Interfaces
                 precision_(pow(10, decimal)), 
                 size_(size), sum_(Vector(size, 0.)), 
                 half_diameters_(Vector(size, 0.)),
-                lb_(Vector(size, 1e7)), ub_(Vector(size, -1e7)),
-                mid_(Vector(size, 1e7)), mean_(Vector(size, 1e7)),
                 calibration_file_(path + name + ".csv")
             {
+                data_map_.emplace("lb",   Vector(size, 1e7));
+                data_map_.emplace("ub",   Vector(size, -1e7));
+                data_map_.emplace("mid",  Vector(size, 1e7));
+                data_map_.emplace("mean", Vector(size, 1e7));
             }
 
         protected:
             void computeHalfDiameters()
             {
-                mid_ = 0.5*(ub_ + lb_);
-                half_diameters_ = ub_ - lb_;
+                data_map_.at("mid") = 0.5*(data_map_.at("ub") + data_map_.at("lb"));
+                half_diameters_ = data_map_.at("ub") - data_map_.at("lb");
             }
 
             void update()
@@ -246,16 +248,18 @@ namespace Interfaces
                 {
                     for(unsigned int i = 0; i < size_; ++i)
                     {
-                        if(vect->operator[](i) > ub_[i] + 1./precision_)
+                        if(vect->operator[](i) > data_map_.at("ub")[i] + 1./precision_)
                         {
-                            ub_[i] = roundf(vect->operator[](i) * precision_) 
-                                / precision_ + 1./precision_;
+                            data_map_.at("ub")[i] 
+                                = roundf(vect->operator[](i) * precision_) 
+                                    / precision_ + 1./precision_;
                         }
 
-                        if(vect->operator[](i) < lb_[i] - 1./precision_) 
+                        if(vect->operator[](i) < data_map_.at("lb")[i] - 1./precision_) 
                         {
-                            lb_[i] = roundf(vect->operator[](i) * precision_) 
-                                / precision_ + 1./precision_;
+                            data_map_.at("lb")[i] 
+                                = roundf(vect->operator[](i) * precision_) 
+                                    / precision_ + 1./precision_;
                         }
                     }
                     sum_ += *vect;
@@ -263,7 +267,7 @@ namespace Interfaces
                 }
 
                 computeHalfDiameters();
-                mean_ = 1./nb_*sum_;
+                data_map_.at("mean") = 1./nb_*sum_;
                 data_.clear();
             }
 
@@ -340,12 +344,14 @@ namespace Interfaces
                         line   = lines[u*4+1];
                         format = calibration_data_format_[u+1]+",lb,";
                         spliToDouble(&line, &format, &values);
-                        lb_[u] = *std::min_element(values.begin(), values.end());
+                        data_map_.at("lb")[u] 
+                            = *std::min_element(values.begin(), values.end());
 
                         line   = lines[u*4+2];
                         format = calibration_data_format_[u+1]+",ub,";
                         spliToDouble(&line, &format, &values);
-                        ub_[u] = *std::max_element(values.begin(), values.end());
+                        data_map_.at("ub")[u] 
+                            = *std::max_element(values.begin(), values.end());
                     }
 
                     computeHalfDiameters();
@@ -378,16 +384,14 @@ namespace Interfaces
                         ROS_INFO_STREAM("New file");
                         calibrationDataFormat();
                         lines.push_back("vector,component,data");
-                        for(auto u = 0; u < calibration_data_format_.size(); ++u)
-                        {
-                            for(auto i = 0; i < size_; ++i)
-                            {
-                                lines.push_back(calibration_data_format_[u] + ",lb");
-                                lines.push_back(calibration_data_format_[u] + ",ub");
-                                lines.push_back(calibration_data_format_[u] + ",mid");
-                                lines.push_back(calibration_data_format_[u] + ",mean");
-                            }
-                        }
+	                    for(auto u = 0; u < calibration_data_format_.size(); ++u)
+	                    {
+	                        for(auto it = data_map_.begin(); it != data_map_.end(); ++it)
+	                        {
+	                            lines.push_back(
+	                                calibration_data_format_[u] + "," + it->first);
+	                        }
+	                    }
                     }
                     else
                     {
@@ -396,14 +400,18 @@ namespace Interfaces
                     }
 
                     // Update calibration data
-                    lines.operator[](0) += "," + to_string(ros::Time::now().toSec());
-                    for(auto i = 0; i < size_; ++i)
-                    {
-                        lines.operator[](i*4+1) += "," + to_string(lb_[i]);
-                        lines.operator[](i*4+2) += "," + to_string(ub_[i]);
-                        lines.operator[](i*4+3) += "," + to_string(mid_[i]);
-                        lines.operator[](i*4+4) += "," + to_string(mean_[i]);
-                    }
+	                lines.operator[](0) += "," + to_string(ros::Time::now().toSec());
+	                unsigned int u;
+	                for(auto i = 0; i < size_; ++i)
+	                {
+	                    u = 1;
+	                    for(auto it = data_map_.begin(); it != data_map_.end(); ++it)
+	                    {
+	                        lines.operator[](i*data_map_.size()+u) 
+	                            += ","+to_string(it->second.operator[](i));
+	                        u += 1;
+	                    }
+	                }
 
                     // Write lines and close
                     calibration_file_->clear(); 
@@ -452,6 +460,8 @@ namespace Interfaces
             bool calibration_;
             std::string name_;
             std::fstream* calibration_file_;
+
+            std::map<std::string, Vector> data_map_;
             std::vector<std::string> calibration_data_format_;
 
             unsigned int init_time_;
@@ -459,14 +469,9 @@ namespace Interfaces
             unsigned int time_;
 
             std::vector<Vector> data_;
-            Vector lb_;
-            Vector ub_;
-            Vector mid_;
             Vector half_diameters_;
-
             Vector sum_;
             double nb_;
-            Vector mean_;
 
             double precision_;
 
