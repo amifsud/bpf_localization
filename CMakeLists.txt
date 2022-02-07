@@ -358,6 +358,14 @@ if(TARGET bpf_particle_weight_tests)
     )
 endif()
 
+catkin_add_gtest(file_tests tests/interfaces/file_tests.cpp)
+if(TARGET file_tests)
+    target_link_libraries(file_tests
+        ${catkin_LIBRARIES}
+        ${IBEX_DEPENDENCIES}
+    )
+endif()
+
 ## ROSTESTS
 
 add_rostest_gtest(tests_imu_standalone rostests/imu_standalone.test tests/rostest_imu_standalone.cpp)
