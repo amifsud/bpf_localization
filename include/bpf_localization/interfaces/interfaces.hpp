@@ -221,6 +221,7 @@ namespace Interfaces
      */
     class Calibrable
     {
+
         public:
             Calibrable(std::string path, std::string name, unsigned int size, unsigned int decimal):
                 calibration_(false), name_(name), nb_(0), 
@@ -269,6 +270,30 @@ namespace Interfaces
                 computeHalfDiameters();
                 data_map_.at("mean") = 1./nb_*sum_;
                 data_.clear();
+            }
+
+            void endingCalibration()
+            {
+                ROS_INFO_STREAM("Stoppping calibration");
+                calibration_ = false;
+                update();
+                writeCalibrationFile();
+            }
+
+            void feed(const Vector& vect, unsigned int time)
+            {
+                ROS_INFO_STREAM("Calibrating...");
+
+                data_.push_back(Vector(vect));
+                update();
+                time_ = time - init_time_; 
+
+                if(time_ >= until_) endingCalibration();
+            }
+
+            bool isCalibrating()
+            {
+                return calibration_;
             }
 
             void readCalibrationFile( std::vector<std::string>* lines)
@@ -430,33 +455,8 @@ namespace Interfaces
 
             virtual void calibrationDataFormat() = 0;
 
-            void endingCalibration()
-            {
-                ROS_INFO_STREAM("Stoppping calibration");
-                calibration_ = false;
-                update();
-                writeCalibrationFile();
-            }
-
-            void feed(const Vector& vect, unsigned int time)
-            {
-                ROS_INFO_STREAM("Calibrating...");
-
-                data_.push_back(Vector(vect));
-                update();
-                time_ = time - init_time_; 
-
-                if(time_ >= until_) endingCalibration();
-            }
-
-            bool isCalibrating()
-            {
-                return calibration_;
-            }
-
         protected:
             unsigned int size_;
-
             bool calibration_;
             std::string name_;
             std::fstream* calibration_file_;
