@@ -109,6 +109,38 @@ TEST(InterfacesTests, FileTest4)
 
 TEST(InterfacesTests, FileTest5)
 {
+    std::string path = ros::package::getPath("bpf_localization");
+    path += "/tests/interfaces/test.txt";
+    std::remove(&path[0]);
+
+    PublicFile fileObject(path);
+
+    std::vector<std::string> lines, read_lines;
+    for(auto i = 0; i < 10; i++)
+        lines.push_back("line " + std::to_string(i+1));
+
+    // We write two times but we close and reopen the file 
+    // (so we replace and not append)
+    fileObject.write(&lines);
+    fileObject.write(&lines);
+
+    std::fstream file(path, ios::in);
+    std::string line;
+    for(auto i = 0; i < lines.size(); ++i)
+    {
+        std::getline(file, line);
+        read_lines.push_back(line);
+    }
+
+    EXPECT_TRUE(read_lines.size() == lines.size());
+    for(auto i = 0; i < lines.size(); ++i)
+        EXPECT_TRUE(lines[i] == read_lines[i]);
+
+    std::remove(&path[0]);
+}
+
+TEST(InterfacesTests, FileTest6)
+{
     std::vector<std::string> lines;
     for(auto i = 0; i < 10; i++)
         lines.push_back("line " + std::to_string(i+1));
@@ -131,7 +163,19 @@ TEST(InterfacesTests, FileTest5)
     std::remove(&path[0]);
 }
 
-TEST(InterfacesTests, FileTest6)
+TEST(InterfacesTests, FileTest7)
+{
+    std::string path = ros::package::getPath("bpf_localization");
+    path += "/tests/interfaces/test.txt";
+    std::remove(&path[0]);
+
+    std::vector<std::string> lines;
+
+    PublicFile fileObject(path);
+    EXPECT_FALSE(fileObject.read(&lines));
+}
+
+TEST(InterfacesTests, FileTest8)
 {
     std::vector<std::string> lines, read_lines;
     for(auto i = 0; i < 10; i++)
