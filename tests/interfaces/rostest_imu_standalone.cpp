@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "bpf_localization/sensors.hpp"
+#include "bpf_localization/interfaces/imu.hpp"
 
 TEST(IMU_standalone, basicTest)
 {

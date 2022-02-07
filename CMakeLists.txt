@@ -368,7 +368,8 @@ endif()
 
 ## ROSTESTS
 
-add_rostest_gtest(tests_imu_standalone rostests/imu_standalone.test tests/rostest_imu_standalone.cpp)
+add_rostest_gtest(  tests_imu_standalone rostests/imu_standalone.test 
+                    tests/interfaces/rostest_imu_standalone.cpp)
 if(TARGET tests_imu_standalone)
     target_link_libraries(tests_imu_standalone 
         ${catkin_LIBRARIES}
