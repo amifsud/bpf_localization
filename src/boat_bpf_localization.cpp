@@ -15,9 +15,12 @@ int main(int argc, char **argv)
     double vel = 0.1;
     double theta = 10./180.*3.14;
 
+    std::string path = ros::package::getPath("bpf_localization");
+    path += "/data/calibrations/";
+
     bpf::BoatBPFLocalization boat_localization(pos, vel, theta, false);
-    Interfaces::Sensors::ROS::IMU imu(&nh, "boat_imu", 3);
-    Interfaces::Sensors::ROS::GPS gps(&nh, "boat_gps", 3);
+    Interfaces::Sensors::ROS::IMU imu(&nh, path, "boat_imu", 3);
+    Interfaces::Sensors::ROS::GPS gps(&nh, path, "boat_gps", 3);
 
     IntervalVector control(dynamical_systems::INS::control_size);
     IntervalVector position(3);

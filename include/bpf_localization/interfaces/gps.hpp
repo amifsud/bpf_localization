@@ -22,8 +22,8 @@ namespace Interfaces
         class GPS: virtual public SensorInterface
         {
             public:
-                GPS(std::string name, unsigned int decimal):
-                    SensorInterface(name, size, decimal),
+                GPS(std::string path, std::string name, unsigned int decimal):
+                    SensorInterface(path, name, size, decimal),
                     initial_pose_(Vector(3,0.)), initialized_(false)
                 {
                     half_diameters_ = 1e-1*Vector(size_, 1.);
@@ -49,10 +49,10 @@ namespace Interfaces
             class GPS: public Interfaces::Sensors::GPS, public ROSInterface
             {
                 public:
-                    GPS(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-                        SensorInterface(name, IMU::size, decimal), 
-                        Interfaces::Sensors::GPS(name, decimal), 
-                        ROSInterface(nh, name, IMU::size, decimal)
+                    GPS(ros::NodeHandle* nh, std::string path, std::string name, unsigned int decimal):
+                        SensorInterface(path, name, IMU::size, decimal), 
+                        Interfaces::Sensors::GPS(path, name, decimal), 
+                        ROSInterface(nh, path, name, IMU::size, decimal)
                     {
                         sub_ = nh->subscribe(name + "_in", 50, &GPS::callbackOdom, this);
                         pub_ = nh->advertise<interval_msgs::Vector3IntervalStamped>(name+"_out", 1000);

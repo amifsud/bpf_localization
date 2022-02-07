@@ -41,23 +41,18 @@ namespace Interfaces
     class Calibrable
     {
         public:
-            Calibrable(std::string name, unsigned int size, unsigned int decimal):
+            Calibrable(std::string path, std::string name, unsigned int size, unsigned int decimal):
                 calibration_(false), name_(name), nb_(0), 
                 precision_(pow(10, decimal)), 
                 size_(size), sum_(Vector(size, 0.)), 
                 half_diameters_(Vector(size, 0.)),
                 lb_(Vector(size, 1e7)), ub_(Vector(size, -1e7)),
                 mid_(Vector(size, 1e7)), mean_(Vector(size, 1e7)),
-                calibration_file_name_("")
+                calibration_file_(path + name + ".csv")
             {
             }
 
         protected:
-            void setCalibrationFile(std::string path)
-            {
-                calibration_file_name_ = path;
-            }
-
             void computeHalfDiameters()
             {
                 mid_ = 0.5*(ub_ + lb_);
@@ -271,11 +266,10 @@ namespace Interfaces
             }
 
         protected:
-            std::string name_;
             unsigned int size_;
 
             bool calibration_;
-            std::string calibration_file_name_;
+            std::string name_;
             std::fstream* calibration_file_;
             std::vector<std::string> calibration_data_format_;
 
@@ -307,8 +301,8 @@ namespace Interfaces
         class SensorInterface: public Calibrable
         {
             public:
-                SensorInterface(std::string name, unsigned int size, unsigned int decimal):
-                    Calibrable(name, size, decimal)
+                SensorInterface(std::string path, std::string name, unsigned int size, unsigned int decimal):
+                    Calibrable(path, name, size, decimal)
                 {
                 }
 
@@ -369,9 +363,9 @@ namespace Interfaces
             class ROSInterface: virtual public SensorInterface
             {
                 public:
-                    ROSInterface(ros::NodeHandle* nh, std::string name, 
+                    ROSInterface(ros::NodeHandle* nh, std::string path, std::string name, 
                         unsigned int size, unsigned int decimal):
-                        SensorInterface(name, size, decimal),
+                        SensorInterface(path, name, size, decimal),
                         tmp_(Vector(size, 0.))
                     {
                         start_calibration_server_ 
@@ -385,9 +379,6 @@ namespace Interfaces
                         diameters_server_ 
                             = nh->advertiseService( name + "_diameters", 
                                                     &ROSInterface::getDiameters, this);
-
-                        std::string path = ros::package::getPath("bpf_localization");
-                        setCalibrationFile(path + "/data/calibrations/" + name + ".csv");
                     }
 
                     bool getDiameters(bpf_localization::GetDiameters::Request  &req,

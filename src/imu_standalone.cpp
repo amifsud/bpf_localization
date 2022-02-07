@@ -7,7 +7,10 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "imu_standalone");
     ros::NodeHandle nh;
 
-    auto imu = Interfaces::Sensors::ROS::IMU(&nh, "boat_imu", 3);
+    std::string path = ros::package::getPath("bpf_localization");
+    path += "/data/calibrations/";
+
+    auto imu = Interfaces::Sensors::ROS::IMU(&nh, path, "boat_imu", 3);
 
     ros::Rate r(5.);
 

@@ -21,8 +21,8 @@ namespace Interfaces
         class IMU: virtual public SensorInterface
         {
             public:
-                IMU(std::string name, unsigned int decimal):
-                    SensorInterface(name, size, decimal)
+                IMU(std::string path, std::string name, unsigned int decimal):
+                    SensorInterface(path, name, size, decimal)
                 {
                 }
 
@@ -47,10 +47,10 @@ namespace Interfaces
             class IMU: public Interfaces::Sensors::IMU, public ROSInterface
             {
                 public:
-                    IMU(ros::NodeHandle* nh, std::string name, unsigned int decimal):
-                        SensorInterface(name, IMU::size, decimal), 
-                        Interfaces::Sensors::IMU(name, decimal), 
-                        ROSInterface(nh, name, IMU::size, decimal)
+                    IMU(ros::NodeHandle* nh, std::string path, std::string name, unsigned int decimal):
+                        SensorInterface(path, name, IMU::size, decimal), 
+                        Interfaces::Sensors::IMU(path, name, decimal), 
+                        ROSInterface(nh, path, name, IMU::size, decimal)
                     {
                         sub_ = nh->subscribe(name + "_in", 50, &IMU::callback, this);
                         pub_ = nh->advertise<bpf_localization::IntervalIMU>(name+"_out", 1000);
