@@ -43,6 +43,26 @@ namespace Interfaces
                 ROS_ASSERT_MSG(createFile(), "File not created");
             }
 
+            bool isEmpty()
+            {
+                bool res;
+                ROS_ASSERT_MSG(open(false), "file can't be open");
+                if(file_->is_open())
+                {
+                    unsigned int previous_line = file_->tellg();
+                    goReadEnd();
+                    res = file_->tellg() == 0;
+                    file_->seekg(previous_line);
+                }
+                else
+                {
+                    ROS_INFO_STREAM("File not open");
+                }
+                close();
+
+                return res;
+            }
+
             bool read(std::vector<std::string>* lines)
             {
                 if(!isEmpty())
@@ -129,26 +149,6 @@ namespace Interfaces
                 return file_->is_open();
             }
 
-            bool isEmpty()
-            {
-                bool res;
-                ROS_ASSERT_MSG(open(false), "file can't be open");
-                if(file_->is_open())
-                {
-                    unsigned int previous_line = file_->tellg();
-                    goReadEnd();
-                    res = file_->tellg() == 0;
-                    file_->seekg(previous_line);
-                }
-                else
-                {
-                    ROS_INFO_STREAM("File not open");
-                }
-                close();
-
-                return res;
-            }
-
             inline void goWriteBegin(){ file_->seekp(0, file_->beg); }
             inline void goWriteEnd(){ file_->seekp(0, file_->end); }
             inline void goReadBegin(){ file_->seekg(0, file_->beg); }
@@ -178,9 +178,9 @@ namespace Interfaces
      */
     class Calibrable
     {
-
         public:
-            Calibrable(std::string path, std::string name, unsigned int size, unsigned int decimal):
+            Calibrable( std::string path, std::string name, 
+                        unsigned int size, unsigned int decimal):
                 calibration_(false), name_(name), nb_(0), 
                 precision_(pow(10, decimal)), 
                 size_(size), sum_(Vector(size, 0.)), 
@@ -193,65 +193,10 @@ namespace Interfaces
                 data_map_.emplace("mean", Vector(size, 1e7));
             }
 
+            bool isCalibrating(){ return calibration_; }
+
         protected:
-            void computeHalfDiameters()
-            {
-                data_map_.at("mid") = 0.5*(data_map_.at("ub") + data_map_.at("lb"));
-                half_diameters_ = data_map_.at("ub") - data_map_.at("lb");
-            }
-
-            void update()
-            {
-                for(auto vect = data_.begin(); vect !=data_.end(); vect++)
-                {
-                    for(unsigned int i = 0; i < size_; ++i)
-                    {
-                        if(vect->operator[](i) > data_map_.at("ub")[i] + 1./precision_)
-                        {
-                            data_map_.at("ub")[i] 
-                                = roundf(vect->operator[](i) * precision_) 
-                                    / precision_ + 1./precision_;
-                        }
-
-                        if(vect->operator[](i) < data_map_.at("lb")[i] - 1./precision_) 
-                        {
-                            data_map_.at("lb")[i] 
-                                = roundf(vect->operator[](i) * precision_) 
-                                    / precision_ + 1./precision_;
-                        }
-                    }
-                    sum_ += *vect;
-                    nb_ += 1.;
-                }
-
-                computeHalfDiameters();
-                data_map_.at("mean") = 1./nb_*sum_;
-                data_.clear();
-            }
-
-            void endingCalibration()
-            {
-                ROS_INFO_STREAM("Stoppping calibration");
-                calibration_ = false;
-                update();
-                writeCalibrationFile();
-            }
-
-            void feed(const Vector& vect, unsigned int time)
-            {
-                ROS_INFO_STREAM("Calibrating...");
-
-                data_.push_back(Vector(vect));
-                update();
-                time_ = time - init_time_; 
-
-                if(time_ >= until_) endingCalibration();
-            }
-
-            bool isCalibrating()
-            {
-                return calibration_;
-            }
+            virtual void calibrationDataFormat() = 0;
 
             void spliToDouble(std::string* line, std::string* format,
                                                 std::vector<double>* values)
@@ -261,6 +206,12 @@ namespace Interfaces
                 line->erase(0, format->size());
                 std::stringstream stream(*line);
                 while(getline(stream, number, ',')) values->push_back(std::stod(number));
+            }
+
+            void computeHalfDiameters()
+            {
+                data_map_.at("mid") = 0.5*(data_map_.at("ub") + data_map_.at("lb"));
+                half_diameters_ = data_map_.at("ub") - data_map_.at("lb");
             }
 
             void loadFromFile()
@@ -290,23 +241,80 @@ namespace Interfaces
 
                     computeHalfDiameters();
                 }
+
                 calibration_data_format_.clear();
+            }
+
+            void startCalibration(unsigned int init_time, unsigned int until)
+            {
+                calibration_ = true;
+                sum_ = Vector(size_, 0.);
+                nb_ = 0.;
+                data_.clear();
+                init_time_ = init_time;
+                until_ = until;
+            }
+
+            void update()
+            {
+                for(auto vect = data_.begin(); vect !=data_.end(); vect++)
+                {
+                    for(unsigned int i = 0; i < size_; ++i)
+                    {
+                        if(vect->operator[](i) > data_map_.at("ub")[i] + 1./precision_)
+                        {
+                            data_map_.at("ub")[i] 
+                                = roundf(vect->operator[](i) * precision_) 
+                                    / precision_ + 1./precision_;
+                        }
+
+                        if(vect->operator[](i) < data_map_.at("lb")[i] - 1./precision_) 
+                        {
+                            data_map_.at("lb")[i] 
+                                = roundf(vect->operator[](i) * precision_) 
+                                    / precision_ + 1./precision_;
+                        }
+                    }
+
+                    sum_ += *vect;
+                    nb_ += 1.;
+                }
+
+                computeHalfDiameters();
+                data_map_.at("mean") = 1./nb_*sum_;
+                data_.clear();
+            }
+
+            void feed(const Vector& vect, unsigned int time)
+            {
+                ROS_INFO_STREAM("Calibrating...");
+
+                data_.push_back(Vector(vect));
+                update();
+                time_ = time - init_time_; 
+
+                if(time_ >= until_) stopCalibration();
+            }
+
+            void stopCalibration()
+            {
+                ROS_INFO_STREAM("Stoppping calibration");
+                calibration_ = false;
+                update();
+                writeCalibrationFile();
             }
 
             void writeCalibrationFile()
             {
                 ROS_INFO_STREAM("Begin to write calibration file");
 
-                // If file open
                 calibrationDataFormat();
 
                 std:vector<std::string> lines;
 
-                if(!calibration_file_.read(&lines))
+                // Initialize if empty
+                if(calibration_file_.isEmpty())
                 {
-                    // If file empty : create lines with sensor format
-                    ROS_INFO_STREAM("New file");
-                    calibrationDataFormat();
                     lines.push_back("vector,component,data");
                     for(auto u = 0; u < calibration_data_format_.size(); ++u)
                     {
@@ -316,6 +324,10 @@ namespace Interfaces
                                 calibration_data_format_[u] + "," + it->first);
                         }
                     }
+                }
+                else
+                {
+                    calibration_file_.read(&lines);
                 }
 
                 // Update calibration data
@@ -332,32 +344,30 @@ namespace Interfaces
                     }
                 }
 
-                // Write lines and close
                 calibration_file_.write(&lines);
-                calibration_data_format_.clear();
 
+                calibration_data_format_.clear();
                 ROS_INFO_STREAM("End to write calibration file");
             }
-
-            virtual void calibrationDataFormat() = 0;
 
         protected:
             unsigned int size_;
             bool calibration_;
+
+            File calibration_file_;
             std::string name_;
 
             std::map<std::string, Vector> data_map_;
             std::vector<std::string> calibration_data_format_;
-            File calibration_file_;
-
-            unsigned int init_time_;
-            unsigned int until_;
-            unsigned int time_;
 
             std::vector<Vector> data_;
             Vector half_diameters_;
             Vector sum_;
             double nb_;
+
+            unsigned int init_time_;
+            unsigned int until_;
+            unsigned int time_;
 
             double precision_;
 
@@ -373,7 +383,8 @@ namespace Interfaces
         class SensorInterface: public Calibrable
         {
             public:
-                SensorInterface(std::string path, std::string name, unsigned int size, unsigned int decimal):
+                SensorInterface(std::string path, std::string name, 
+                                unsigned int size, unsigned int decimal):
                     Calibrable(path, name, size, decimal)
                 {
                 }
@@ -421,7 +432,6 @@ namespace Interfaces
                 }
 
             protected:
-                // Interval
                 std::deque<IntervalVector> buffer_;
         };
 
@@ -462,23 +472,21 @@ namespace Interfaces
                     }
 
                 protected:
-                    bool startCalibration(bpf_localization::StartCalibration::Request &req,
-                                     bpf_localization::StartCalibration::Response     &res)
+                    bool startCalibration(  bpf_localization::StartCalibration::Request &req,
+                                            bpf_localization::StartCalibration::Response     &res)
                     {
                         ROS_INFO_STREAM("Start calibration");
-                        calibration_ = true;
-                        sum_ = Vector(size_, 0.);
-                        nb_ = 0.;
-                        data_.clear();
-                        init_time_ = (unsigned int)(ros::Time::now().toSec()); 
-                        until_     = (unsigned int)(ros::Duration(req.duration, 0).toSec());
+                        unsigned int init_time = (unsigned int)(ros::Time::now().toSec()); 
+                        unsigned int until 
+                            = (unsigned int)(ros::Duration(req.duration, 0).toSec());
+                        Calibrable::startCalibration(init_time, until);
                         return true;
                     }
 
                     bool stopCalibration(bpf_localization::GetDiameters::Request  &req,
                                          bpf_localization::GetDiameters::Response &res)
                     {
-                        endingCalibration();
+                        Calibrable::stopCalibration();
                         for(auto i = 0; i < size_; ++i)
                             res.diameters.push_back(2*half_diameters_[i]);
                         return true;
