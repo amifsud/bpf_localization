@@ -149,53 +149,10 @@ namespace Interfaces
                 return res;
             }
 
-            void goWriteBegin()
-            {
-                if(file_->is_open())
-                {
-                    file_->seekp(0, file_->beg);
-                }
-                else
-                {
-                    ROS_INFO_STREAM("File not open");
-                }
-            }
-
-            void goReadBegin()
-            {
-                if(file_->is_open())
-                {
-                    file_->seekg(0, file_->beg);
-                }
-                else
-                {
-                    ROS_INFO_STREAM("File not open");
-                }
-            }
-
-            void goReadEnd()
-            {
-                if(file_->is_open())
-                {
-                    file_->seekg(0, file_->end);
-                }
-                else
-                {
-                    ROS_INFO_STREAM("File not open");
-                }
-            }
-
-            void goWriteEnd()
-            {
-                if(file_->is_open())
-                {
-                    file_->seekp(0, file_->end);
-                }
-                else
-                {
-                    ROS_INFO_STREAM("File not open");
-                }
-            }
+            inline void goWriteBegin(){ file_->seekp(0, file_->beg); }
+            inline void goWriteEnd(){ file_->seekp(0, file_->end); }
+            inline void goReadBegin(){ file_->seekg(0, file_->beg); }
+            inline void goReadEnd(){ file_->seekg(0, file_->end); }
 
             bool close()
             {
