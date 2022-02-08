@@ -22,7 +22,7 @@ class PublicFile: public Interfaces::File
         }
 };
 
-TEST(InterfacesTests, FileTest0)
+TEST(FileTests, FileTest0)
 {
     std::string path = ros::package::getPath("bpf_localization");
     path += "/tests/interfaces/test.txt";
@@ -39,7 +39,7 @@ TEST(InterfacesTests, FileTest0)
     EXPECT_FALSE(fileObject.publicExist());
 }
 
-TEST(InterfacesTests, FileTest1)
+TEST(FileTests, FileTest1)
 {
     std::string path = ros::package::getPath("bpf_localization");
     path += "/tests/interfaces/test.txt";
@@ -53,7 +53,7 @@ TEST(InterfacesTests, FileTest1)
     std::remove(&path[0]);
 }
 
-TEST(InterfacesTests, FileTest2)
+TEST(FileTests, FileTest2)
 {
     std::string path = ros::package::getPath("bpf_localization");
     path += "/tests/interfaces/test.txt";
@@ -73,7 +73,7 @@ TEST(InterfacesTests, FileTest2)
     std::remove(&path[0]);
 }
 
-TEST(InterfacesTests, FileTest3)
+TEST(FileTests, FileTest3)
 {
     std::string path = ros::package::getPath("bpf_localization");
     path += "/tests/interfaces/test.txt";
@@ -91,7 +91,7 @@ TEST(InterfacesTests, FileTest3)
     std::remove(&path[0]);
 }
 
-TEST(InterfacesTests, FileTest4)
+TEST(FileTests, FileTest4)
 {
     std::string path = ros::package::getPath("bpf_localization");
     path += "/tests/interfaces/test.txt";
@@ -107,7 +107,7 @@ TEST(InterfacesTests, FileTest4)
     EXPECT_FALSE(file->is_open());
 }
 
-TEST(InterfacesTests, FileTest5)
+TEST(FileTests, FileTest5)
 {
     std::string path = ros::package::getPath("bpf_localization");
     path += "/tests/interfaces/test.txt";
@@ -139,7 +139,7 @@ TEST(InterfacesTests, FileTest5)
     std::remove(&path[0]);
 }
 
-TEST(InterfacesTests, FileTest6)
+TEST(FileTests, FileTest6)
 {
     std::vector<std::string> lines;
     for(auto i = 0; i < 10; i++)
@@ -163,7 +163,7 @@ TEST(InterfacesTests, FileTest6)
     std::remove(&path[0]);
 }
 
-TEST(InterfacesTests, FileTest7)
+TEST(FileTests, FileTest7)
 {
     std::string path = ros::package::getPath("bpf_localization");
     path += "/tests/interfaces/test.txt";
@@ -175,7 +175,7 @@ TEST(InterfacesTests, FileTest7)
     EXPECT_FALSE(fileObject.read(&lines));
 }
 
-TEST(InterfacesTests, FileTest8)
+TEST(FileTests, FileTest8)
 {
     std::vector<std::string> lines, read_lines;
     for(auto i = 0; i < 10; i++)
