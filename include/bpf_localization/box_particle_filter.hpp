@@ -99,7 +99,8 @@ namespace bpf
             *   \brief Constructor
             *
             *   \param N number of particles
-            *   \param initial_box initial interval vector that encapsulate all possible states
+            *   \param initial_box initial interval vector that encapsulate all 
+            *           possible states
             *   \param dynamical dynamical model on which to apply the filter
             *   \param parallelize use parallelization or not 
             *           (**WARNING : DynIbex is not thread safe**)
@@ -366,7 +367,9 @@ namespace bpf
              *  **Uniform subpaving method**
              *
              *  \param N exact number of resulting particles
-             *  \param particles the Particles object that contains the init Particle
+             *  \param particle the Particle object to subdivise
+             *
+             *  \result the Particles that subpave the input Particle
              *
              * */
             Particles uniformSubpaving(Particle particle, unsigned int N)
@@ -388,7 +391,9 @@ namespace bpf
              *  **Subpaving over all dimensions method**
              *  
              *  \param N maximum of resulting particles
-             *  \param particles the Particles object that contains the initial Particle objects
+             *  \param particle the Particle object to subdivise
+             *
+             *  \result the Particles that subpave the input Particle
              *
              * */
             Particles allDimensionsSubpaving(Particle particle, unsigned int N)
@@ -450,6 +455,11 @@ namespace bpf
              *  For each particle, determine the number of subdivision to perform, using the 
              *  multinomial algortihm in \cite merlinge2018thesis (algorithm 3 page 19)
              *
+             *  \param uis generator for determining subdivisions
+             *              (usually uniformly randomly choosen)
+             *
+             *  \result number of subdivisions to perform for each particle
+             *
              * */
             std::vector<unsigned int> multinomialSubdivisions(std::vector<double> uis)
             {
@@ -481,6 +491,10 @@ namespace bpf
              *  For each particle, determine the number of subdivision to perform, using the 
              *  guaranted algortihm in \cite merlinge2018thesis (algorithm 6 page 72)
              *
+             *  \param uis generator for determining subdivisions
+             *              (usually uniformly randomly choosen)
+             *
+             *  \result number of subdivisions to perform for each particle
              * */
             std::vector<unsigned int> guarantedSubdivisions(std::vector<double> uis)
             {
@@ -518,7 +532,10 @@ namespace bpf
              *
              *  For each particle, determine the number of subdivision to perform
              *
-             *  \param particles Particles to subdivise
+             *  \param particles uis_in given subdivisions generator or not 
+             *                      (if not given, randomly generated)
+             *
+             *  \result number of subdivisions to perform for each particle
              *
              * */
             std::vector<unsigned int> 
