@@ -366,6 +366,14 @@ if(TARGET file_tests)
     )
 endif()
 
+catkin_add_gtest(calibrable_tests tests/interfaces/calibrable_tests.cpp)
+if(TARGET calibrable_tests)
+    target_link_libraries(calibrable_tests
+        ${catkin_LIBRARIES}
+        ${IBEX_DEPENDENCIES}
+    )
+endif()
+
 ## ROSTESTS
 
 add_rostest_gtest(  tests_imu_standalone rostests/imu_standalone.test 

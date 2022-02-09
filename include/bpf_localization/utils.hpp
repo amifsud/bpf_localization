@@ -67,6 +67,14 @@ inline bool eps_equals( IntervalVector v1, IntervalVector v2, double eps = 1e-13
     return v1.is_subset(IntervalVector(v2).inflate(eps)) && v2.is_subset(v1.inflate(eps));
 }
 
+inline bool eps_equals( Vector v1, Vector v2, double eps = 1e-13)
+{
+    bool b = true;
+    for(auto i = 0; i < v1.size(); ++i)
+        if(std::abs(v1[i] - v2[i]) > eps) b = false;
+    return b;
+}
+
 #endif
 
 #endif
