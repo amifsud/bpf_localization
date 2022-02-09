@@ -68,7 +68,7 @@ class CalibrableDerivation: public Interfaces::Calibrable
         int getInitTime() { return init_time_; }
         int getUntil(){ return until_; }
 
-        void publicWriteCalibrationFile(){ writeCalibrationFile(); }
+        void publicWriteCalibrationFile(){ writeToFile(); }
 };
 
 
