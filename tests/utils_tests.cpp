@@ -1,8 +1,9 @@
 #define LOG_LEVEL Info
 
 #include <stdio.h>
+#include <ros/package.h>
 #include <gtest/gtest.h>
-#include "bpf_localization/interfaces/interfaces.hpp"
+#include "bpf_localization/utils.hpp"
 
 class PublicFile: public File
 {
@@ -247,7 +248,7 @@ int main(int argc, char **argv)
                 ros::console::levels::LOG_LEVEL) ) // LOG_LEVEL defined as macro 
        ros::console::notifyLoggerLevelsChanged();
     testing::InitGoogleTest(&argc, argv);
-    ros::init(argc, argv, "file_tester");
+    ros::init(argc, argv, "utils_tester");
     ros::NodeHandle nh;
     return RUN_ALL_TESTS();
 }

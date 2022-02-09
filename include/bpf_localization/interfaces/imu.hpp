@@ -12,7 +12,7 @@
 #include <sensor_msgs/Imu.h>
 #include "bpf_localization/IntervalIMU.h"
 
-#include "bpf_localization/interfaces/interfaces.hpp"
+#include "bpf_localization/interfaces/sensors.hpp"
 
 namespace Interfaces
 {

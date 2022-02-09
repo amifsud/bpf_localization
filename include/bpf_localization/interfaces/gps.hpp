@@ -13,7 +13,7 @@
 #include <nav_msgs/Odometry.h>
 #include <interval_msgs/Vector3IntervalStamped.h>
 
-#include "bpf_localization/interfaces/interfaces.hpp"
+#include "bpf_localization/interfaces/sensors.hpp"
 
 namespace Interfaces
 {

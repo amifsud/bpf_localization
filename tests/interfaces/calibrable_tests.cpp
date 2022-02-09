@@ -1,8 +1,9 @@
 #define LOG_LEVEL Info
 
 #include <stdio.h>
+#include <ros/package.h>
 #include <gtest/gtest.h>
-#include "bpf_localization/interfaces/interfaces.hpp"
+#include "bpf_localization/interfaces/calibrable.hpp"
 
 std::string calibration_data_format[]={ "vector,component,data",
                                         "vector_1,x",
@@ -308,7 +309,7 @@ int main(int argc, char **argv)
                 ros::console::levels::LOG_LEVEL) ) // LOG_LEVEL defined as macro 
        ros::console::notifyLoggerLevelsChanged();
     testing::InitGoogleTest(&argc, argv);
-    ros::init(argc, argv, "file_tester");
+    ros::init(argc, argv, "calibrable_tester");
     ros::NodeHandle nh;
     return RUN_ALL_TESTS();
 }

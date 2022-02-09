@@ -2,6 +2,7 @@
 #define UTILS
 
 #include <ros/ros.h>
+#include <fstream>
 #include <vector>
 #include <utility>
 #include <numeric>
