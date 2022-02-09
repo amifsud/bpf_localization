@@ -185,7 +185,7 @@ TEST(CalibrableTests, CalibrableTest5)
         lines.push_back(calibration_data_format[u] + ",mean,2.0,2.0");
     }
 
-    Interfaces::File file(file_path);
+    File file(file_path);
     file.write(&lines);
 
     CalibrableDerivation calibrable(path, "calibrable", 1e-2);
@@ -242,7 +242,7 @@ TEST(CalibrableTests, CalibrableTest7)
     calibrable.publicUpdate();
     calibrable.publicWriteCalibrationFile();
 
-    Interfaces::File file(file_path);
+    File file(file_path);
     std::vector<std::string> lines, expected_lines;
     file.read(&lines);
 
@@ -282,7 +282,7 @@ TEST(CalibrableTests, CalibrableTest8)
     calibrable.publicUpdate();
     calibrable.publicWriteCalibrationFile();
 
-    Interfaces::File file(file_path);
+    File file(file_path);
     std::vector<std::string> lines, expected_lines;
     file.read(&lines);
 

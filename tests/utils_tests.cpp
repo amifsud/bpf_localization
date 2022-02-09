@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include "bpf_localization/interfaces/interfaces.hpp"
 
-class PublicFile: public Interfaces::File
+class PublicFile: public File
 {
     public:
         PublicFile(std::string path): File(path)
@@ -197,6 +197,47 @@ TEST(FileTests, FileTest8)
     EXPECT_TRUE(read_lines.size() == lines.size());
     for(auto i = 0; i < lines.size(); ++i)
         EXPECT_TRUE(lines[i] == read_lines[i]);
+}
+
+TEST(GenericTests, UniformDistribution1)
+{
+    unsigned int N = 1000;
+    UniformDistribution distrib1, distrib2;
+
+    for(auto i = 0; i < N; i++)
+        EXPECT_TRUE(distrib1.get() != distrib2.get());
+}
+
+TEST(GenericTests, testUniformDistribution2)
+{
+    double lower = 0.0;
+    double upper = 1.0;
+    UniformDistribution distrib(lower, upper);
+
+    unsigned int nb = 10;
+    double size = (upper-lower)/nb;
+    std::map<double, int> results;
+
+    for(auto i = 0; i < nb; ++i)
+        results.emplace(i*size, 0);
+
+    double real;
+    unsigned int N = 2e7;
+    for(auto i = 0; i < N; ++i)
+    {
+        real = distrib.get();
+        for(auto interval = results.begin(); interval != results.end(); ++interval)
+        {
+            if(Interval(interval->first, interval->first+size).contains(real))
+            {
+                interval->second += 1;
+                break;
+            }
+        }
+    }
+
+    for(auto interval = results.begin(); interval != results.end(); ++interval)
+        EXPECT_TRUE(std::abs(interval->second - double(N)/double(nb)) < 5e3);
 }
 
 // Run all the tests that were declared with TEST()

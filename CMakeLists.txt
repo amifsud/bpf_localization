@@ -358,9 +358,9 @@ if(TARGET bpf_particle_weight_tests)
     )
 endif()
 
-catkin_add_gtest(file_tests tests/interfaces/file_tests.cpp)
-if(TARGET file_tests)
-    target_link_libraries(file_tests
+catkin_add_gtest(utils_tests tests/utils_tests.cpp)
+if(TARGET utils_tests)
+    target_link_libraries(utils_tests
         ${catkin_LIBRARIES}
         ${IBEX_DEPENDENCIES}
     )
