@@ -1,6 +1,5 @@
 
 /** FIXME: 
- * Make this file independant from ROS except for logging
  * Make unit tests for the file
 **/
 
@@ -198,8 +197,8 @@ namespace Interfaces
         protected:
             virtual void calibrationDataFormat() = 0;
 
-            void spliToDouble(std::string* line, std::string* format,
-                                                std::vector<double>* values)
+            void splitToDouble(  std::string* line, std::string* format,
+                                std::vector<double>* values)
             {
                 values->clear();
                 std::string number;
@@ -211,6 +210,7 @@ namespace Interfaces
             void computeHalfDiameters()
             {
                 data_map_.at("mid") = 0.5*(data_map_.at("ub") + data_map_.at("lb"));
+                // half_diameter = 2*((ub-lb)/2)
                 half_diameters_ = data_map_.at("ub") - data_map_.at("lb");
             }
 
@@ -222,19 +222,21 @@ namespace Interfaces
                 std::vector<double> values;
                 std:vector<std::string> lines;
 
-                if(calibration_file_.read(&lines))
+                if(!calibration_file_.isEmpty())
                 {
+                    calibration_file_.read(&lines);
+
                     for(auto u = 0; u < calibration_data_format_.size()-1; ++u)
                     {
                         line   = lines[u*4+1];
                         format = calibration_data_format_[u+1]+",lb,";
-                        spliToDouble(&line, &format, &values);
+                        splitToDouble(&line, &format, &values);
                         data_map_.at("lb")[u] 
                             = *std::min_element(values.begin(), values.end());
 
                         line   = lines[u*4+2];
                         format = calibration_data_format_[u+1]+",ub,";
-                        spliToDouble(&line, &format, &values);
+                        splitToDouble(&line, &format, &values);
                         data_map_.at("ub")[u] 
                             = *std::max_element(values.begin(), values.end());
                     }
@@ -272,7 +274,7 @@ namespace Interfaces
                         {
                             data_map_.at("lb")[i] 
                                 = roundf(vect->operator[](i) * precision_) 
-                                    / precision_ + 1./precision_;
+                                    / precision_ - 1./precision_;
                         }
                     }
 
@@ -306,7 +308,7 @@ namespace Interfaces
 
             void writeCalibrationFile()
             {
-                ROS_INFO_STREAM("Begin to write calibration file");
+                ROS_DEBUG_STREAM("Begin to write calibration file");
 
                 calibrationDataFormat();
 
@@ -316,7 +318,7 @@ namespace Interfaces
                 if(calibration_file_.isEmpty())
                 {
                     lines.push_back("vector,component,data");
-                    for(auto u = 0; u < calibration_data_format_.size(); ++u)
+                    for(auto u = 1; u < calibration_data_format_.size(); ++u)
                     {
                         for(auto it = data_map_.begin(); it != data_map_.end(); ++it)
                         {
@@ -347,7 +349,7 @@ namespace Interfaces
                 calibration_file_.write(&lines);
 
                 calibration_data_format_.clear();
-                ROS_INFO_STREAM("End to write calibration file");
+                ROS_DEBUG_STREAM("End to write calibration file");
             }
 
         protected:
@@ -472,8 +474,8 @@ namespace Interfaces
                     }
 
                 protected:
-                    bool startCalibration(  bpf_localization::StartCalibration::Request &req,
-                                            bpf_localization::StartCalibration::Response     &res)
+                    bool startCalibration(bpf_localization::StartCalibration::Request  &req,
+                                          bpf_localization::StartCalibration::Response &res)
                     {
                         ROS_INFO_STREAM("Start calibration");
                         unsigned int init_time = (unsigned int)(ros::Time::now().toSec()); 
