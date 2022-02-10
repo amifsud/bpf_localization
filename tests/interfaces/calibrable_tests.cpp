@@ -79,7 +79,7 @@ TEST(CalibrableTests, CalibrableTest0)
     ROS_INFO_STREAM("toto");
     path += "/tests/interfaces/test.txt";
 
-    CalibrableDerivation calibrable(path, "calibrable", 1e-2);
+    CalibrableDerivation calibrable(path, "calibrable", 3);
 
     std::map<std::string, Vector> map;
     map.emplace("lb",   Vector(CalibrableDerivation::size, 1e7));
@@ -95,7 +95,7 @@ TEST(CalibrableTests, CalibrableTest1)
     std::string path = ros::package::getPath("bpf_localization");
     path += "/tests/interfaces/test.txt";
 
-    CalibrableDerivation calibrable(path, "calibrable", 1e-2);
+    CalibrableDerivation calibrable(path, "calibrable", 3);
     calibrable.publicCalibrableDataFormat();
 
     EXPECT_TRUE(
@@ -111,7 +111,7 @@ TEST(CalibrableTests, CalibrableTest2)
 
     std::vector<double> given_values = {10., 11., 12.}; 
 
-    CalibrableDerivation calibrable(path, "calibrable", 1e-2);
+    CalibrableDerivation calibrable(path, "calibrable", 3);
     calibrable.publicCalibrableDataFormat();
 
     std::vector<double> values;
@@ -130,7 +130,7 @@ TEST(CalibrableTests, CalibrableTest3)
     std::string path = ros::package::getPath("bpf_localization");
     path += "/tests/interfaces/test.txt";
 
-    CalibrableDerivation calibrable(path, "calibrable", 1e-2);
+    CalibrableDerivation calibrable(path, "calibrable", 3);
 
     std::map<std::string, Vector> map, map_out;
     map.emplace("lb",   Vector(CalibrableDerivation::size, 10.));
@@ -153,7 +153,7 @@ TEST(CalibrableTests, CalibrableTest4)
     std::string path = ros::package::getPath("bpf_localization");
     path += "/tests/interfaces/test.txt";
 
-    CalibrableDerivation calibrable(path, "calibrable", 1e-2);
+    CalibrableDerivation calibrable(path, "calibrable", 3);
 
     std::vector<Vector> data;
     for(auto i = 0; i < 5; ++i) data.push_back(Vector(2, 1.));
@@ -189,7 +189,7 @@ TEST(CalibrableTests, CalibrableTest5)
     File file(file_path);
     file.write(&lines);
 
-    CalibrableDerivation calibrable(path, "calibrable", 1e-2);
+    CalibrableDerivation calibrable(path, "calibrable", 3);
     calibrable.publicLoadFromFile();
 
     std::map<std::string, Vector> map = calibrable.getMap();
