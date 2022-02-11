@@ -83,7 +83,7 @@ class MatrixFunction: public SpecializedFunction
                     if(col == 1)
                     {
                         sums.add(ExprAdd::new_(mat_[row][0]*x->operator[](i),
-                                            mat_[row][1]*x->operator[](i+1)));
+                                               mat_[row][1]*x->operator[](i+1)));
                     }
                     else
                     {
@@ -167,7 +167,14 @@ class QuaternionFunction: public MatrixFunction
         Interval       a_;
         IntervalVector v_;
 
+        SubVariable* var_;
+
     public:
+        QuaternionFunction(const SubVariable* var)
+            : MatrixFunction(4, 4), v_(3, Interval(0., 0.))
+        {
+        }
+
         QuaternionFunction(const IntervalVector& vect)
             : MatrixFunction(4, 4), v_(3, Interval(0., 0.))
         {
@@ -194,13 +201,14 @@ class QuaternionFunction: public MatrixFunction
             v_[1] = vect[1];
             v_[2] = vect[2];
 
-            mat_ = a_*MatrixFunction::identity(4).getIntervalMatrix();
+            mat_[0][0] = a_;
 
             mat_.put(0, 1, -v_, true);
             mat_.put(1, 0,  v_, false);
 
             IntervalMatrix m = a_*MatrixFunction::identity(3).getIntervalMatrix()
                                 + CrossProductFunction(v_).getIntervalMatrix();
+
             mat_.put(1, 1, m);
         }
 
@@ -220,10 +228,14 @@ class QuaternionFunction: public MatrixFunction
 
         QuaternionFunction rightProduct()
         {
-            IntervalMatrix mat = this->getIntervalMatrix();
-            IntervalMatrix cross = a_*MatrixFunction::identity(3).getIntervalMatrix()
-                                    + CrossProductFunction(v_).getIntervalMatrix();
-            mat.submatrix(1, 1, 3, 3) -= 2*cross;
+            IntervalMatrix mat(4, 4);
+            mat[0][0] = a_;
+
+            mat.put(0, 1, -v_, true);
+            mat.put(1, 0,  v_, false);
+
+            mat.submatrix(1, 1, 3, 3) = a_*MatrixFunction::identity(3).getIntervalMatrix()
+                                        + CrossProductFunction(-v_).getIntervalMatrix();
 
             return QuaternionFunction(mat);
         }
@@ -232,12 +244,34 @@ class QuaternionFunction: public MatrixFunction
         {
             return QuaternionFunction(a_, -v_);
         }
+
+        SubVariable* getVar()
+        {
+            return var_;
+        }
 };
 
 const ExprApply& operator*(SubVariable* x, QuaternionFunction& q)
 {
     QuaternionFunction q_right_product = q.rightProduct();
     return q_right_product.operator()(x, x->index()); 
+}
+
+const ExprApply& operator*(QuaternionFunction& q, const IntervalVector& vect)
+{
+    IntervalVector v(4);
+    if(vect.size() == 3)
+    {
+        v[0] = 0;
+        v.subvector(1, 3) = vect;
+    }
+    else
+    {
+        v = vect;
+    }
+
+    QuaternionFunction v_right_product = QuaternionFunction(v).rightProduct();
+    return v_right_product.operator()(q.getVar(), q.getVar()->index()); 
 }
 
 #endif

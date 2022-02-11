@@ -96,6 +96,77 @@ TEST(FunctionsTest, testTranslationFunction2)
     EXPECT_TRUE(x1 == x1_result) << "wrong matrix multiplication";
 }
 
+TEST(FunctionsTest, testQuaternionFunction1)
+{
+    IntervalVector axis(3);
+    axis[0] = 0.;
+    axis[1] = 1.;
+    axis[2] = 0.;
+    double angle = 90./180.*3.14;
+
+    IntervalVector t(4);
+    t[0] = cos(angle/2.);
+    t[1] = sin(angle/2.)*axis[0];
+    t[2] = sin(angle/2.)*axis[1];
+    t[3] = sin(angle/2.)*axis[2];
+
+    QuaternionFunction quaternion(t);
+
+    SubVariable x(5, 1, 4);
+    SubVariable* px = &x;
+
+    IntervalVector x0(5);
+    x0[0] = 1.;
+    x0[1] = 1.;
+    x0[2] = 0.;
+    x0[3] = 0.;
+    x0[4] = 0.;
+
+    Function function(*px, quaternion*px);
+    IntervalVector x1 = function.eval_vector(x0);
+
+    IntervalVector x1_result(4);
+    x1_result[0] = Interval(2., 2.);
+    x1_result[1] = Interval(4., 4.);
+    x1_result[2] = Interval(8., 8.);
+    x1_result[3] = Interval(8., 8.);
+
+    //ROS_INFO_STREAM(x1);
+    //EXPECT_TRUE(x1 == x1_result) << "wrong matrix multiplication";
+}
+
+TEST(FunctionsTest, testQuaternionFunction2)
+{
+    IntervalVector axis(3);
+    axis[0] = 0.;
+    axis[1] = 1.;
+    axis[2] = 0.;
+
+    SubVariable x(5, 1, 4);
+    SubVariable* px = &x;
+
+    QuaternionFunction quaternion(px);
+
+    IntervalVector x0(5);
+    x0[0] = 1.;
+    x0[1] = 1.;
+    x0[2] = 0.;
+    x0[3] = 0.;
+    x0[4] = 0.;
+
+    Function function(*px, quaternion*axis);
+    IntervalVector x1 = function.eval_vector(x0);
+
+    IntervalVector x1_result(4);
+    x1_result[0] = Interval(2., 2.);
+    x1_result[1] = Interval(4., 4.);
+    x1_result[2] = Interval(8., 8.);
+    x1_result[3] = Interval(8., 8.);
+
+    ROS_INFO_STREAM(x1);
+    EXPECT_TRUE(x1 == x1_result) << "wrong matrix multiplication";
+}
+
 // Run all the tests that were declared with TEST()
 int main(int argc, char **argv)
 {

@@ -1,8 +1,16 @@
+.PHONY: test make
+
 .ONESHELL:
 make:
 	cwd=$$PWD
 	ws=`echo $$ROS_PACKAGE_PATH | awk -F: '{print $$1}'`
-	echo "ws="$$ws
 	cd $$ws/..
 	catkin_make
-	echo "We where in this workspace : "$$PWD
+
+.ONESHELL:
+test:
+	make
+	cwd=$$PWD
+	ws=`echo $$ROS_PACKAGE_PATH | awk -F: '{print $$1}'`
+	cd $$ws/..
+	catkin_make run_tests_bpf_localization_gtest
