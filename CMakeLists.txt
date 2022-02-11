@@ -366,6 +366,14 @@ if(TARGET utils_tests)
     )
 endif()
 
+catkin_add_gtest(sensors_tests tests/interfaces/sensors_tests.cpp)
+if(TARGET sensors_tests)
+    target_link_libraries(sensors_tests
+        ${catkin_LIBRARIES}
+        ${IBEX_DEPENDENCIES}
+    )
+endif()
+
 catkin_add_gtest(calibrable_tests tests/interfaces/calibrable_tests.cpp)
 if(TARGET calibrable_tests)
     target_link_libraries(calibrable_tests

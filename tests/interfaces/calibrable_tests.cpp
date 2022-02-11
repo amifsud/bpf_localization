@@ -99,8 +99,8 @@ TEST(CalibrableTests, CalibrableTest1)
     calibrable.publicCalibrableDataFormat();
 
     EXPECT_TRUE(
-        std::vector<std::string>(   calibration_data_format, 
-                                    calibration_data_format+CalibrableDerivation::size+1)
+        std::vector<std::string>(calibration_data_format, 
+                                 calibration_data_format+CalibrableDerivation::size+1)
             == calibrable.getCalibrationDataFormat());
 }
 
